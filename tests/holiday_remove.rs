@@ -35,7 +35,7 @@ fn remove_holiday_removes_entry() -> Result<(), Box<dyn std::error::Error>> {
     let contents = fs::read_to_string(file)?;
     let parsed: BTreeMap<String, HolidayEntry> = toml::from_str(&contents)?;
 
-    assert!(parsed.get("2025-05-28").is_none(), "Unexpected entry found for 2025-05-28");
+    assert!(!parsed.contains_key("2025-05-28"), "Unexpected entry found for 2025-05-28");
     assert_eq!(parsed.get("2025-05-29").unwrap().description, "Ocean Day");
 
     Ok(())
