@@ -1,5 +1,6 @@
 use crate::Commands::Sickday;
 use anyhow::{Result};
+use chrono::Datelike;
 use chrono::NaiveDate;
 use clap::{Args, Parser, Subcommand};
 use std::{collections::BTreeMap, fs, path::PathBuf};
@@ -47,8 +48,11 @@ enum SickdayCommands {
         description: String,
     },
     /// List all sick days
-    List {},
-    /// Remove a sick day
+    List {
+        /// Filter by year
+        #[arg(short, long)]
+        year: Option<i32>,
+    },
     Remove {
         #[arg(required = true)]
         date: NaiveDate,
@@ -104,6 +108,32 @@ pub fn run(cli: &Cli) -> Result<()> {
                 println!("Edited sick day: {} - {}", date, description);
             }
 
+            SickdayCommands::List { year } => {
+                let sickdays = load_sickdays(&sickdays_file)?;
+
+                let mut filtered: Vec<_> = sickdays
+                    .iter()
+                    .filter(|(date, _)| year.map_or(true, |y| date.year() == y))
+                    .collect();
+
+                filtered.sort_by_key(|(date, _)| *date);
+
+                if filtered.is_empty() {
+                    match year {
+                        Some(y) => println!("No sick days found for {}.", y),
+                        None => println!("No sick days recorded."),
+                    }
+                } else {
+                    println!(
+                        "Sick days{}:",
+                        year.map_or(String::new(), |y| format!(" in {}", y))
+                    );
+                    for (date, description) in filtered {
+                        println!("• {} — {}", date.format("%Y-%m-%d"), description);
+                    }
+                }
+            }
+
             SickdayCommands::Remove { date } => {
                 let mut sickdays = load_sickdays(&sickdays_file)?;
 
@@ -115,9 +145,6 @@ pub fn run(cli: &Cli) -> Result<()> {
                 save_sickdays(&sickdays_file, &sickdays)?;
                 println!("Removed sick day: {}", date);
             }
-
-            _ =>
-            println!("Subcommand: {:?}", command)
         }
     }
     Ok(())
