@@ -74,12 +74,13 @@ fn save_sickdays(path: &PathBuf, sickdays: &Sickdays) -> Result<()> {
 pub fn run(cli: &Cli) -> Result<()> {
     let config_dir = shellexpand::tilde(&cli.config_dir.to_string_lossy()).to_string();
     let config_path = PathBuf::from(config_dir);
+    fs::create_dir_all(&config_path)?;
+
     let sickdays_file = config_path.join("sickdays.toml");
 
     match &cli.command {
         Sickday(SickdayArgs { command }) => match command {
             SickdayCommands::Add { date, description } => {
-                fs::create_dir_all(&config_path)?;
                 let mut sickdays = load_sickdays(&sickdays_file)?;
 
                 if sickdays.contains_key(date) {
@@ -89,6 +90,18 @@ pub fn run(cli: &Cli) -> Result<()> {
                 sickdays.insert(*date, description.clone());
                 save_sickdays(&sickdays_file, &sickdays)?;
                 println!("Added sick day: {} - {}", date, description);
+            }
+
+            SickdayCommands::Remove { date } => {
+                let mut sickdays = load_sickdays(&sickdays_file)?;
+
+                if !sickdays.contains_key(date) {
+                    anyhow::bail!("No sick day exists on {}", date);
+                }
+
+                sickdays.remove(date);
+                save_sickdays(&sickdays_file, &sickdays)?;
+                println!("Removed sick day: {}", date);
             }
 
             _ =>
