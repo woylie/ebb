@@ -1,4 +1,5 @@
 use assert_cmd::Command;
+use ebb::types::{DayPortion, SickdayEntry};
 use predicates::str::contains;
 use std::collections::BTreeMap;
 use std::fs;
@@ -21,9 +22,10 @@ fn add_sickday_creates_file() -> Result<(), Box<dyn std::error::Error>> {
     assert!(file.exists());
 
     let contents = fs::read_to_string(file)?;
-    let parsed: BTreeMap<String, String> = toml::from_str(&contents)?;
+    let parsed: BTreeMap<String, SickdayEntry> = toml::from_str(&contents)?;
 
-    assert_eq!(parsed.get("2025-05-28"), Some(&"headache".to_string()));
+    assert_eq!(parsed.get("2025-05-28").unwrap().description, "headache");
+    assert_eq!(parsed.get("2025-05-28").unwrap().portion, DayPortion::Full);
 
     Ok(())
 }
@@ -36,7 +38,7 @@ fn add_sickday_fails_if_date_exists() -> Result<(), Box<dyn std::error::Error>> 
     let file_path = config_dir.join("sickdays.toml");
     fs::write(
         &file_path,
-        r#"2025-05-28 = "fever""#,
+        r#"2025-05-28 = {"description" = "fever", "portion" = "half"}"#,
     )?;
 
     let mut cmd = Command::cargo_bin("ebb")?;
@@ -51,9 +53,10 @@ fn add_sickday_fails_if_date_exists() -> Result<(), Box<dyn std::error::Error>> 
         .stderr(contains("already exists"));
 
     let contents = fs::read_to_string(&file_path)?;
-    let parsed: BTreeMap<String, String> = toml::from_str(&contents)?;
+    let parsed: BTreeMap<String, SickdayEntry> = toml::from_str(&contents)?;
 
-    assert_eq!(parsed.get("2025-05-28"), Some(&"fever".to_string()));
+    assert_eq!(parsed.get("2025-05-28").unwrap().description, "fever");
+    assert_eq!(parsed.get("2025-05-28").unwrap().portion, DayPortion::Half);
 
     Ok(())
 }

@@ -1,4 +1,4 @@
-use crate::types::Sickdays;
+use crate::types::{DayPortion, SickdayEntry, Sickdays};
 use crate::SickdayArgs;
 use crate::SickdayCommands;
 use anyhow::Result;
@@ -12,22 +12,36 @@ pub fn run_sickday(args: &SickdayArgs, config_path: &Path) -> anyhow::Result<()>
     let mut sickdays = load_sickdays(&sickdays_file)?;
 
     match &args.command {
-        SickdayCommands::Add { date, description } => {
+        SickdayCommands::Add { date, description, portion } => {
             if sickdays.contains_key(date) {
                 anyhow::bail!("A sick day already exists for {}", date);
             }
 
-            sickdays.insert(*date, description.clone());
+            sickdays.insert(
+                *date,
+                SickdayEntry {
+                    description: description.clone(),
+                    portion: portion.clone().unwrap_or(DayPortion::Full),
+                },
+            );
+
             save_sickdays(&sickdays_file, &sickdays)?;
             println!("Added sick day: {} - {}", date, description);
         }
 
-        SickdayCommands::Edit { date, description } => {
+        SickdayCommands::Edit { date, description, portion } => {
             if !sickdays.contains_key(date) {
                 anyhow::bail!("No sick day exists on {}", date);
             }
 
-            sickdays.insert(*date, description.clone());
+            sickdays.insert(
+                *date,
+                SickdayEntry {
+                    description: description.clone(),
+                    portion: portion.clone().unwrap_or(DayPortion::Full),
+                },
+            );
+
             save_sickdays(&sickdays_file, &sickdays)?;
             println!("Edited sick day: {} - {}", date, description);
         }
@@ -48,8 +62,8 @@ pub fn run_sickday(args: &SickdayArgs, config_path: &Path) -> anyhow::Result<()>
                     "Sick days{}:",
                     year.map_or(String::new(), |y| format!(" in {}", y))
                 );
-                for (date, description) in filtered {
-                    println!("• {} — {}", fmt_date(date), description);
+                for (date, entry) in filtered {
+                    println!("• {} — {}", fmt_date(date), entry.description);
                 }
             }
         }

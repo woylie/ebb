@@ -1,4 +1,5 @@
 use crate::Commands::Sickday;
+use crate::types::DayPortion;
 use anyhow::Result;
 use chrono::NaiveDate;
 use clap::{Args, Parser, Subcommand};
@@ -44,11 +45,15 @@ pub enum SickdayCommands {
         date: NaiveDate,
         #[arg(default_value = "sick")]
         description: String,
+        #[arg(short, long, default_value = "full")]
+        portion: Option<DayPortion>
     },
     /// Edit the description of an existing sick day
     Edit {
         date: NaiveDate,
         description: String,
+        #[arg(short, long)]
+        portion: Option<DayPortion>
     },
     /// List all sick days
     List {
