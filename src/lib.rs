@@ -1,5 +1,5 @@
 use crate::types::DayPortion;
-use crate::Commands::{Holiday, Sickday};
+use crate::Commands::{Holiday, Sickday, Vacation};
 use anyhow::Result;
 use chrono::NaiveDate;
 use clap::{Args, Parser, Subcommand};
@@ -32,6 +32,8 @@ pub enum Commands {
     Holiday(HolidayArgs),
     /// Manage sick days
     Sickday(SickdayArgs),
+    /// Manage vacation days
+    Vacation(VacationArgs),
 }
 
 #[derive(Debug, Args)]
@@ -46,6 +48,13 @@ pub struct HolidayArgs {
 pub struct SickdayArgs {
     #[command(subcommand)]
     command: SickdayCommands,
+}
+
+#[derive(Debug, Args)]
+#[command(args_conflicts_with_subcommands = true)]
+pub struct VacationArgs {
+    #[command(subcommand)]
+    command: VacationCommands,
 }
 
 #[derive(Debug, Subcommand)]
@@ -108,6 +117,36 @@ pub enum SickdayCommands {
     },
 }
 
+#[derive(Debug, Subcommand)]
+pub enum VacationCommands {
+    /// Add a new vacation day
+    Add {
+        date: NaiveDate,
+        #[arg(default_value = "Vacation")]
+        description: String,
+        #[arg(short, long, default_value = "full")]
+        portion: Option<DayPortion>,
+    },
+    /// Edit the description of an existing vacation day
+    Edit {
+        date: NaiveDate,
+        description: String,
+        #[arg(short, long)]
+        portion: Option<DayPortion>,
+    },
+    /// List all vacation days
+    List {
+        /// Filter by year
+        #[arg(short, long)]
+        year: Option<i32>,
+    },
+    /// Remove a vacation day
+    Remove {
+        #[arg(required = true)]
+        date: NaiveDate,
+    },
+}
+
 pub fn run(cli: &Cli) -> Result<()> {
     let config_dir = shellexpand::tilde(&cli.config_dir.to_string_lossy()).to_string();
     let config_path = PathBuf::from(config_dir);
@@ -116,5 +155,6 @@ pub fn run(cli: &Cli) -> Result<()> {
     match &cli.command {
         Holiday(args) => commands::holiday::run_holiday(args, &config_path),
         Sickday(args) => commands::sickday::run_sickday(args, &config_path),
+        Vacation(args) => commands::vacation::run_vacation(args, &config_path),
     }
 }
