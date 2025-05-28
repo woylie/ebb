@@ -1,7 +1,8 @@
 use crate::Commands::Sickday;
-use anyhow::Result;
+use anyhow::{Result};
 use chrono::NaiveDate;
 use clap::{Args, Parser, Subcommand};
+use std::{collections::BTreeMap, fs, path::PathBuf};
 
 #[derive(Debug, Parser)]
 #[command(name = "Ebb")]
@@ -54,9 +55,43 @@ enum SickdayCommands {
     },
 }
 
+type Sickdays = BTreeMap<NaiveDate, String>;
+
+fn load_sickdays(path: &PathBuf) -> Result<Sickdays> {
+    if !path.exists() {
+        return Ok(BTreeMap::new());
+    }
+    let contents = fs::read_to_string(path)?;
+    Ok(toml::from_str(&contents)?)
+}
+
+fn save_sickdays(path: &PathBuf, sickdays: &Sickdays) -> Result<()> {
+    let toml = toml::to_string(&sickdays)?;
+    fs::write(path, toml)?;
+    Ok(())
+}
+
 pub fn run(cli: &Cli) -> Result<()> {
+    let config_dir = shellexpand::tilde(&cli.config_dir.to_string_lossy()).to_string();
+    let config_path = PathBuf::from(config_dir);
+    let sickdays_file = config_path.join("sickdays.toml");
+
     match &cli.command {
-        Sickday(SickdayArgs { command }) => {
+        Sickday(SickdayArgs { command }) => match command {
+            SickdayCommands::Add { date, description } => {
+                fs::create_dir_all(&config_path)?;
+                let mut sickdays = load_sickdays(&sickdays_file)?;
+
+                if sickdays.contains_key(date) {
+                    anyhow::bail!("A sick day already exists for {}", date);
+                }
+
+                sickdays.insert(*date, description.clone());
+                save_sickdays(&sickdays_file, &sickdays)?;
+                println!("Added sick day: {} - {}", date, description);
+            }
+
+            _ =>
             println!("Subcommand: {:?}", command)
         }
     }
