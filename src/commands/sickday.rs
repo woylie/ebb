@@ -55,7 +55,7 @@ pub fn run_sickday(args: &SickdayArgs, config_path: &Path) -> anyhow::Result<()>
         SickdayCommands::List { year } => {
             let filtered: Vec<_> = sickdays
                 .iter()
-                .filter(|(date, _)| year.map_or(true, |y| date.year() == y))
+                .filter(|(date, _)| year.is_none_or(|y| date.year() == y))
                 .collect();
 
             if filtered.is_empty() {

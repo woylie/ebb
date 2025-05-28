@@ -55,7 +55,7 @@ pub fn run_vacation(args: &VacationArgs, config_path: &Path) -> anyhow::Result<(
         VacationCommands::List { year } => {
             let filtered: Vec<_> = vacations
                 .iter()
-                .filter(|(date, _)| year.map_or(true, |y| date.year() == y))
+                .filter(|(date, _)| year.is_none_or(|y| date.year() == y))
                 .collect();
 
             if filtered.is_empty() {
