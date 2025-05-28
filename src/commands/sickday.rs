@@ -12,38 +12,44 @@ pub fn run_sickday(args: &SickdayArgs, config_path: &Path) -> anyhow::Result<()>
     let mut sickdays = load_sickdays(&sickdays_file)?;
 
     match &args.command {
-        SickdayCommands::Add { date, description, portion } => {
+        SickdayCommands::Add {
+            date,
+            description,
+            portion,
+        } => {
             if sickdays.contains_key(date) {
                 anyhow::bail!("A sick day already exists for {}", date);
             }
 
-            sickdays.insert(
-                *date,
-                SickdayEntry {
-                    description: description.clone(),
-                    portion: portion.clone().unwrap_or(DayPortion::Full),
-                },
-            );
+            let entry = SickdayEntry {
+                description: description.clone(),
+                portion: portion.clone().unwrap_or(DayPortion::Full),
+            };
+
+            sickdays.insert(*date, entry.clone());
 
             save_sickdays(&sickdays_file, &sickdays)?;
-            println!("Added sick day: {} - {}", date, description);
+            println!("Added sick day: {}", fmt_entry(date, &entry));
         }
 
-        SickdayCommands::Edit { date, description, portion } => {
+        SickdayCommands::Edit {
+            date,
+            description,
+            portion,
+        } => {
             if !sickdays.contains_key(date) {
                 anyhow::bail!("No sick day exists on {}", date);
             }
 
-            sickdays.insert(
-                *date,
-                SickdayEntry {
-                    description: description.clone(),
-                    portion: portion.clone().unwrap_or(DayPortion::Full),
-                },
-            );
+            let entry = SickdayEntry {
+                description: description.clone(),
+                portion: portion.clone().unwrap_or(DayPortion::Full),
+            };
+
+            sickdays.insert(*date, entry.clone());
 
             save_sickdays(&sickdays_file, &sickdays)?;
-            println!("Edited sick day: {} - {}", date, description);
+            println!("Edited sick day: {}", fmt_entry(date, &entry));
         }
 
         SickdayCommands::List { year } => {
@@ -63,7 +69,7 @@ pub fn run_sickday(args: &SickdayArgs, config_path: &Path) -> anyhow::Result<()>
                     year.map_or(String::new(), |y| format!(" in {}", y))
                 );
                 for (date, entry) in filtered {
-                    println!("• {} — {}", fmt_date(date), entry.description);
+                    println!("{}", fmt_entry(date, entry));
                 }
             }
         }
@@ -98,4 +104,17 @@ fn save_sickdays(path: &Path, sickdays: &Sickdays) -> Result<()> {
 
 fn fmt_date(date: &NaiveDate) -> String {
     date.format("%Y-%m-%d").to_string()
+}
+
+fn fmt_entry(date: &NaiveDate, entry: &SickdayEntry) -> String {
+    if entry.portion == DayPortion::Full {
+        format!("{} — {}", fmt_date(date), entry.description)
+    } else {
+        format!(
+            "{} — {} ({})",
+            fmt_date(date),
+            entry.description,
+            entry.portion
+        )
+    }
 }
