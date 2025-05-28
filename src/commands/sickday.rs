@@ -3,8 +3,9 @@ use crate::SickdayArgs;
 use crate::SickdayCommands;
 use anyhow::Result;
 use chrono::Datelike;
+use chrono::NaiveDate;
 use std::path::Path;
-use std::{collections::BTreeMap, fs, path::PathBuf};
+use std::{collections::BTreeMap, fs};
 
 pub fn run_sickday(args: &SickdayArgs, config_path: &Path) -> anyhow::Result<()> {
     let sickdays_file = config_path.join("sickdays.toml");
@@ -32,12 +33,10 @@ pub fn run_sickday(args: &SickdayArgs, config_path: &Path) -> anyhow::Result<()>
         }
 
         SickdayCommands::List { year } => {
-            let mut filtered: Vec<_> = sickdays
+            let filtered: Vec<_> = sickdays
                 .iter()
                 .filter(|(date, _)| year.map_or(true, |y| date.year() == y))
                 .collect();
-
-            filtered.sort_by_key(|(date, _)| *date);
 
             if filtered.is_empty() {
                 match year {
@@ -50,7 +49,7 @@ pub fn run_sickday(args: &SickdayArgs, config_path: &Path) -> anyhow::Result<()>
                     year.map_or(String::new(), |y| format!(" in {}", y))
                 );
                 for (date, description) in filtered {
-                    println!("• {} — {}", date.format("%Y-%m-%d"), description);
+                    println!("• {} — {}", fmt_date(date), description);
                 }
             }
         }
@@ -69,7 +68,7 @@ pub fn run_sickday(args: &SickdayArgs, config_path: &Path) -> anyhow::Result<()>
     Ok(())
 }
 
-fn load_sickdays(path: &PathBuf) -> Result<Sickdays> {
+fn load_sickdays(path: &Path) -> Result<Sickdays> {
     if !path.exists() {
         return Ok(BTreeMap::new());
     }
@@ -77,8 +76,12 @@ fn load_sickdays(path: &PathBuf) -> Result<Sickdays> {
     Ok(toml::from_str(&contents)?)
 }
 
-fn save_sickdays(path: &PathBuf, sickdays: &Sickdays) -> Result<()> {
+fn save_sickdays(path: &Path, sickdays: &Sickdays) -> Result<()> {
     let toml = toml::to_string(&sickdays)?;
     fs::write(path, toml)?;
     Ok(())
+}
+
+fn fmt_date(date: &NaiveDate) -> String {
+    date.format("%Y-%m-%d").to_string()
 }
