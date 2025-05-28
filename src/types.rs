@@ -30,6 +30,19 @@ fn is_default_portion(p: &DayPortion) -> bool {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct HolidayEntry {
+    pub description: String,
+
+    #[serde(
+        default = "default_portion",
+        skip_serializing_if = "is_default_portion"
+    )]
+    pub portion: DayPortion,
+}
+
+pub type Holidays = BTreeMap<NaiveDate, HolidayEntry>;
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SickdayEntry {
     pub description: String,
 

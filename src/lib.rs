@@ -1,5 +1,5 @@
 use crate::types::DayPortion;
-use crate::Commands::Sickday;
+use crate::Commands::{Holiday, Sickday};
 use anyhow::Result;
 use chrono::NaiveDate;
 use clap::{Args, Parser, Subcommand};
@@ -28,7 +28,17 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {
+    /// Manage holidays
+    Holiday(HolidayArgs),
+    /// Manage sick days
     Sickday(SickdayArgs),
+}
+
+#[derive(Debug, Args)]
+#[command(args_conflicts_with_subcommands = true)]
+pub struct HolidayArgs {
+    #[command(subcommand)]
+    command: HolidayCommands,
 }
 
 #[derive(Debug, Args)]
@@ -39,11 +49,41 @@ pub struct SickdayArgs {
 }
 
 #[derive(Debug, Subcommand)]
+pub enum HolidayCommands {
+    /// Add a new holiday
+    Add {
+        date: NaiveDate,
+        #[arg(default_value = "Holiday")]
+        description: String,
+        #[arg(short, long, default_value = "full")]
+        portion: Option<DayPortion>,
+    },
+    /// Edit the description of an existing holiday
+    Edit {
+        date: NaiveDate,
+        description: String,
+        #[arg(short, long)]
+        portion: Option<DayPortion>,
+    },
+    /// List all holidays
+    List {
+        /// Filter by year
+        #[arg(short, long)]
+        year: Option<i32>,
+    },
+    /// Remove a holiday
+    Remove {
+        #[arg(required = true)]
+        date: NaiveDate,
+    },
+}
+
+#[derive(Debug, Subcommand)]
 pub enum SickdayCommands {
     /// Add a new sick day
     Add {
         date: NaiveDate,
-        #[arg(default_value = "sick")]
+        #[arg(default_value = "Sick")]
         description: String,
         #[arg(short, long, default_value = "full")]
         portion: Option<DayPortion>,
@@ -74,6 +114,7 @@ pub fn run(cli: &Cli) -> Result<()> {
     fs::create_dir_all(&config_path)?;
 
     match &cli.command {
+        Holiday(args) => commands::holiday::run_holiday(args, &config_path),
         Sickday(args) => commands::sickday::run_sickday(args, &config_path),
     }
 }
