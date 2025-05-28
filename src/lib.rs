@@ -92,6 +92,18 @@ pub fn run(cli: &Cli) -> Result<()> {
                 println!("Added sick day: {} - {}", date, description);
             }
 
+            SickdayCommands::Edit { date, description } => {
+                let mut sickdays = load_sickdays(&sickdays_file)?;
+
+                if !sickdays.contains_key(date) {
+                    anyhow::bail!("No sick day exists on {}", date);
+                }
+
+                sickdays.insert(*date, description.clone());
+                save_sickdays(&sickdays_file, &sickdays)?;
+                println!("Edited sick day: {} - {}", date, description);
+            }
+
             SickdayCommands::Remove { date } => {
                 let mut sickdays = load_sickdays(&sickdays_file)?;
 
