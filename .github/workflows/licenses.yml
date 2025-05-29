@@ -20,10 +20,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Install Cargo Deny
-        run: cargo install --locked cargo-deny
-      - name: Run Cargo Deny
-        run: cargo deny check licenses
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check licenses
       - name: Install Cargo License
         run: cargo install --locked cargo-license
       - name: Check THIRD_PARTY
