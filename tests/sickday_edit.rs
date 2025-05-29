@@ -25,14 +25,14 @@ fn edit_sickday_updates_entry() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("sickday")
-       .arg("edit")
-       .arg("2025-05-29")
-       .arg("hayfever")
-       .arg("-p")
-       .arg("full")
-       .env("EBB_CONFIG_DIR", tmp.path())
-       .assert()
-       .success();
+        .arg("edit")
+        .arg("2025-05-29")
+        .arg("hayfever")
+        .arg("-p")
+        .arg("full")
+        .env("EBB_CONFIG_DIR", tmp.path())
+        .assert()
+        .success();
 
     let file = tmp.path().join("sickdays.toml");
     let contents = fs::read_to_string(file)?;
@@ -59,12 +59,12 @@ fn edit_sickday_fails_if_not_exists() -> Result<(), Box<dyn std::error::Error>> 
 
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("sickday")
-       .arg("edit")
-       .arg("2025-05-28")
-       .arg("hayfever")
-       .arg("-p")
-       .arg("full")
-       .env("EBB_CONFIG_DIR", tmp.path());
+        .arg("edit")
+        .arg("2025-05-28")
+        .arg("hayfever")
+        .arg("-p")
+        .arg("full")
+        .env("EBB_CONFIG_DIR", tmp.path());
 
     cmd.assert()
         .failure()

@@ -1,5 +1,5 @@
 use assert_cmd::Command;
-use ebb::types::{HolidayEntry};
+use ebb::types::HolidayEntry;
 use predicates::str::contains;
 use std::collections::BTreeMap;
 use std::fs;
@@ -25,17 +25,20 @@ fn remove_holiday_removes_entry() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("holiday")
-       .arg("remove")
-       .arg("2025-05-28")
-       .env("EBB_CONFIG_DIR", tmp.path())
-       .assert()
-       .success();
+        .arg("remove")
+        .arg("2025-05-28")
+        .env("EBB_CONFIG_DIR", tmp.path())
+        .assert()
+        .success();
 
     let file = tmp.path().join("holidays.toml");
     let contents = fs::read_to_string(file)?;
     let parsed: BTreeMap<String, HolidayEntry> = toml::from_str(&contents)?;
 
-    assert!(!parsed.contains_key("2025-05-28"), "Unexpected entry found for 2025-05-28");
+    assert!(
+        !parsed.contains_key("2025-05-28"),
+        "Unexpected entry found for 2025-05-28"
+    );
     assert_eq!(parsed.get("2025-05-29").unwrap().description, "Ocean Day");
 
     Ok(())
@@ -56,9 +59,9 @@ fn add_holiday_fails_if_date_exists() -> Result<(), Box<dyn std::error::Error>> 
 
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("holiday")
-       .arg("remove")
-       .arg("2025-05-28")
-       .env("EBB_CONFIG_DIR", tmp.path());
+        .arg("remove")
+        .arg("2025-05-28")
+        .env("EBB_CONFIG_DIR", tmp.path());
 
     cmd.assert()
         .failure()

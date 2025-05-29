@@ -28,11 +28,11 @@ Sick days:
 
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("sickday")
-       .arg("list")
-       .env("EBB_CONFIG_DIR", tmp.path())
-       .assert()
-       .success()
-       .stdout(expected_output);
+        .arg("list")
+        .env("EBB_CONFIG_DIR", tmp.path())
+        .assert()
+        .success()
+        .stdout(expected_output);
 
     Ok(())
 }
@@ -62,13 +62,13 @@ Sick days in 2024:
 
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("sickday")
-       .arg("list")
-       .arg("-y")
-       .arg("2024")
-       .env("EBB_CONFIG_DIR", tmp.path())
-       .assert()
-       .success()
-       .stdout(expected_output);
+        .arg("list")
+        .arg("-y")
+        .arg("2024")
+        .env("EBB_CONFIG_DIR", tmp.path())
+        .assert()
+        .success()
+        .stdout(expected_output);
 
     Ok(())
 }
