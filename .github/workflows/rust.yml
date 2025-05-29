@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Check Format
-        run: rustfmt --check
+        run: rustfmt **/*.rs --check
       - name: Run Clippy
         run: cargo clippy --all-targets --all-features --no-deps
       - name: Build
