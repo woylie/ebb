@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 Mathias Polligkeit
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 use assert_cmd::Command;
 use ebb::types::{DayPortion, VacationEntry};
 use predicates::str::contains;

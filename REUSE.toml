@@ -1,0 +1,12 @@
+version = 1
+
+[[annotations]]
+path = [
+  ".gitignore",
+  "Cargo.lock",
+  "deny.toml",
+  "renovate.json",
+  "THIRD_PARTY"
+]
+SPDX-FileCopyrightText = "NONE"
+SPDX-License-Identifier = "CC0-1.0"

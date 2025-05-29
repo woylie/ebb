@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: NONE
+#
+# SPDX-License-Identifier: CC0-1.0
+
+name: Reuse
+
+on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - Cargo.lock
+      - Cargo.toml
+      - gen-third-party.sh
+      - THIRD_PARTY
+
+jobs:
+  license-audit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Run Reuse
+        run: pipx run reuse lint
