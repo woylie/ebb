@@ -24,3 +24,12 @@ jobs:
         run: cargo install --locked cargo-deny
       - name: Run Cargo Deny
         run: cargo deny check licenses
+      - name: Install Cargo License
+        run: cargo install --locked cargo-license
+      - name: Check THIRD_PARTY
+        run: |
+          ./gen-third-party.sh
+          git diff --exit-code THIRD_PARTY || {
+            echo "::error file=THIRD_PARTY::File is out of date. Run ./gen-third-party.sh"
+            exit 1
+          }
