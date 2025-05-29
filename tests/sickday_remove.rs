@@ -1,5 +1,9 @@
+// SPDX-FileCopyrightText: 2025 Mathias Polligkeit
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 use assert_cmd::Command;
-use ebb::types::{SickdayEntry};
+use ebb::types::SickdayEntry;
 use predicates::str::contains;
 use std::collections::BTreeMap;
 use std::fs;
@@ -25,17 +29,20 @@ fn remove_sickday_removes_entry() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("sickday")
-       .arg("remove")
-       .arg("2025-05-28")
-       .env("EBB_CONFIG_DIR", tmp.path())
-       .assert()
-       .success();
+        .arg("remove")
+        .arg("2025-05-28")
+        .env("EBB_CONFIG_DIR", tmp.path())
+        .assert()
+        .success();
 
     let file = tmp.path().join("sickdays.toml");
     let contents = fs::read_to_string(file)?;
     let parsed: BTreeMap<String, SickdayEntry> = toml::from_str(&contents)?;
 
-    assert!(!parsed.contains_key("2025-05-28"), "Unexpected entry found for 2025-05-28");
+    assert!(
+        !parsed.contains_key("2025-05-28"),
+        "Unexpected entry found for 2025-05-28"
+    );
     assert_eq!(parsed.get("2025-05-29").unwrap().description, "fever");
 
     Ok(())
@@ -56,9 +63,9 @@ fn add_sickday_fails_if_date_exists() -> Result<(), Box<dyn std::error::Error>> 
 
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("sickday")
-       .arg("remove")
-       .arg("2025-05-28")
-       .env("EBB_CONFIG_DIR", tmp.path());
+        .arg("remove")
+        .arg("2025-05-28")
+        .env("EBB_CONFIG_DIR", tmp.path());
 
     cmd.assert()
         .failure()

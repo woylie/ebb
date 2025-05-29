@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 Mathias Polligkeit
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 use assert_cmd::Command;
 use ebb::types::{DayPortion, HolidayEntry};
 use predicates::str::contains;
@@ -25,14 +29,14 @@ fn edit_holiday_updates_entry() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("holiday")
-       .arg("edit")
-       .arg("2025-05-29")
-       .arg("Ocean Day")
-       .arg("-p")
-       .arg("full")
-       .env("EBB_CONFIG_DIR", tmp.path())
-       .assert()
-       .success();
+        .arg("edit")
+        .arg("2025-05-29")
+        .arg("Ocean Day")
+        .arg("-p")
+        .arg("full")
+        .env("EBB_CONFIG_DIR", tmp.path())
+        .assert()
+        .success();
 
     let file = tmp.path().join("holidays.toml");
     let contents = fs::read_to_string(file)?;
@@ -59,12 +63,12 @@ fn edit_holiday_fails_if_not_exists() -> Result<(), Box<dyn std::error::Error>> 
 
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("holiday")
-       .arg("edit")
-       .arg("2025-05-28")
-       .arg("Ocean Day")
-       .arg("-p")
-       .arg("full")
-       .env("EBB_CONFIG_DIR", tmp.path());
+        .arg("edit")
+        .arg("2025-05-28")
+        .arg("Ocean Day")
+        .arg("-p")
+        .arg("full")
+        .env("EBB_CONFIG_DIR", tmp.path());
 
     cmd.assert()
         .failure()

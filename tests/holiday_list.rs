@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2025 Mathias Polligkeit
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 use assert_cmd::Command;
 use std::fs;
 use tempfile::tempdir;
@@ -28,11 +32,11 @@ Holidays:
 
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("holiday")
-       .arg("list")
-       .env("EBB_CONFIG_DIR", tmp.path())
-       .assert()
-       .success()
-       .stdout(expected_output);
+        .arg("list")
+        .env("EBB_CONFIG_DIR", tmp.path())
+        .assert()
+        .success()
+        .stdout(expected_output);
 
     Ok(())
 }
@@ -62,13 +66,13 @@ Holidays in 2024:
 
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("holiday")
-       .arg("list")
-       .arg("-y")
-       .arg("2024")
-       .env("EBB_CONFIG_DIR", tmp.path())
-       .assert()
-       .success()
-       .stdout(expected_output);
+        .arg("list")
+        .arg("-y")
+        .arg("2024")
+        .env("EBB_CONFIG_DIR", tmp.path())
+        .assert()
+        .success()
+        .stdout(expected_output);
 
     Ok(())
 }
