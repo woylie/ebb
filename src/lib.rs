@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 use crate::types::DayPortion;
-use crate::Commands::{Holiday, Sickday, Vacation};
-use anyhow::Result;
-use chrono::NaiveDate;
+use crate::Commands::{Holiday, Sickday, Start, Vacation};
+use anyhow::{anyhow, Result};
+use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use clap::{Args, Parser, Subcommand};
 use std::{fs, path::PathBuf};
 
@@ -36,6 +36,8 @@ pub enum Commands {
     Holiday(HolidayArgs),
     /// Manage sick days
     Sickday(SickdayArgs),
+    /// Start time tracking
+    Start(StartArgs),
     /// Manage vacation days
     Vacation(VacationArgs),
 }
@@ -52,6 +54,15 @@ pub struct HolidayArgs {
 pub struct SickdayArgs {
     #[command(subcommand)]
     command: SickdayCommands,
+}
+
+#[derive(Debug, Args)]
+pub struct StartArgs {
+    project: String,
+    #[arg(long, value_parser=parse_flexible_datetime)]
+    at: Option<DateTime<Local>>,
+    #[arg(short = 'G', long)]
+    no_gap: bool,
 }
 
 #[derive(Debug, Args)]
@@ -159,6 +170,47 @@ pub fn run(cli: &Cli) -> Result<()> {
     match &cli.command {
         Holiday(args) => commands::holiday::run_holiday(args, &config_path),
         Sickday(args) => commands::sickday::run_sickday(args, &config_path),
+        Start(args) => commands::tracking::run_start(args, &config_path),
         Vacation(args) => commands::vacation::run_vacation(args, &config_path),
     }
+}
+
+fn parse_flexible_datetime(input: &str) -> Result<DateTime<Local>> {
+    if let Ok(dt_fixed) = DateTime::parse_from_rfc3339(input) {
+        return Ok(dt_fixed.with_timezone(&Local));
+    }
+
+    let dt_formats = ["%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"];
+
+    for fmt in &dt_formats {
+        if let Ok(naive_dt) = NaiveDateTime::parse_from_str(input, fmt) {
+            return Local
+                .from_local_datetime(&naive_dt)
+                .single()
+                .ok_or_else(|| anyhow!("Ambiguous local datetime"));
+        }
+    }
+
+    let time_formats = ["%H:%M:%S", "%H:%M"];
+
+    for fmt in &time_formats {
+        if let Ok(naive_time) = NaiveTime::parse_from_str(input, fmt) {
+            let today = Local::now().date_naive();
+            let naive_dt = NaiveDateTime::new(today, naive_time);
+            return Local
+                .from_local_datetime(&naive_dt)
+                .single()
+                .ok_or_else(|| anyhow!("Ambiguous local datetime"));
+        }
+    }
+
+    if let Ok(secs) = input.parse::<i64>() {
+        let naive_dt = Utc
+            .timestamp_opt(secs, 0)
+            .single()
+            .ok_or_else(|| anyhow!("Invalid timestamp"))?;
+        return Ok(naive_dt.with_timezone(&Local));
+    }
+
+    Err(anyhow!("Could not parse datetime from input: {}", input))
 }
