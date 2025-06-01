@@ -2,19 +2,15 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-use crate::types::{CurrentFrame, Frame, Frames, State};
+use crate::persistence::{load_frames, load_state, save_frames, save_state};
+use crate::types::{CurrentFrame, Frame, State};
 use crate::StartArgs;
 use anyhow::{bail, Result};
 use chrono::{DateTime, Local, TimeZone, Utc};
-use std::fs;
 use std::path::Path;
 
-const FRAMES_FILE: &str = "frames.toml";
-const STATE_FILE: &str = "state.toml";
-
 pub fn run_start(args: &StartArgs, config_path: &Path) -> anyhow::Result<()> {
-    let state_file = config_path.join(STATE_FILE);
-    let mut state = load_state(&state_file)?;
+    let mut state = load_state(config_path)?;
     let now = Utc::now();
 
     if let Some(current_frame) = &state.current_frame {
@@ -22,7 +18,7 @@ pub fn run_start(args: &StartArgs, config_path: &Path) -> anyhow::Result<()> {
     }
 
     update_current_frame(&mut state, args, now, config_path)?;
-    save_state(&state_file, &state)?;
+    save_state(config_path, &state)?;
 
     if let Some(current_frame) = &state.current_frame {
         let start_datetime = Local.timestamp_opt(current_frame.start_time, 0).unwrap();
@@ -49,8 +45,7 @@ fn update_current_frame(
     let mut last_frame_end: Option<i64> = None;
 
     if *no_gap || at.is_some() {
-        let frames_file = config_path.join(FRAMES_FILE);
-        if let Ok(frames) = load_frames(&frames_file) {
+        if let Ok(frames) = load_frames(config_path) {
             last_frame_end = frames.frames.last().map(|f| f.end_time);
         }
     }
@@ -103,9 +98,7 @@ fn stop_current_frame(
 ) -> anyhow::Result<()> {
     let start_dt_local = now.with_timezone(&Local);
     let time_str = start_dt_local.format("%H:%M:%S").to_string();
-
-    let frames_file = config_path.join(FRAMES_FILE);
-    let mut frames = load_frames(&frames_file)?;
+    let mut frames = load_frames(config_path)?;
 
     let frame = Frame {
         start_time: current_frame.start_time,
@@ -115,38 +108,8 @@ fn stop_current_frame(
     };
 
     frames.frames.push(frame);
-    save_frames(&frames_file, &frames)?;
+    save_frames(config_path, &frames)?;
     println!("Stopped project {} at {}", current_frame.project, time_str);
 
-    Ok(())
-}
-
-fn load_frames(path: &Path) -> Result<Frames> {
-    if !path.exists() {
-        return Ok(Frames { frames: Vec::new() });
-    }
-    let contents = fs::read_to_string(path)?;
-    Ok(toml::from_str(&contents)?)
-}
-
-fn save_frames(path: &Path, frames: &Frames) -> Result<()> {
-    let toml = toml::to_string(&frames)?;
-    fs::write(path, toml)?;
-    Ok(())
-}
-
-fn load_state(path: &Path) -> Result<State> {
-    if !path.exists() {
-        return Ok(State {
-            current_frame: None,
-        });
-    }
-    let contents = fs::read_to_string(path)?;
-    Ok(toml::from_str(&contents)?)
-}
-
-fn save_state(path: &Path, state: &State) -> Result<()> {
-    let toml = toml::to_string(&state)?;
-    fs::write(path, toml)?;
     Ok(())
 }

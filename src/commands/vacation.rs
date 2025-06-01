@@ -2,18 +2,16 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-use crate::types::{DayPortion, VacationEntry, Vacations};
+use crate::persistence::{load_vacations, save_vacations};
+use crate::types::{DayPortion, VacationEntry};
 use crate::VacationArgs;
 use crate::VacationCommands;
-use anyhow::Result;
 use chrono::Datelike;
 use chrono::NaiveDate;
 use std::path::Path;
-use std::{collections::BTreeMap, fs};
 
 pub fn run_vacation(args: &VacationArgs, config_path: &Path) -> anyhow::Result<()> {
-    let vacations_file = config_path.join("vacations.toml");
-    let mut vacations = load_vacations(&vacations_file)?;
+    let mut vacations = load_vacations(config_path)?;
 
     match &args.command {
         VacationCommands::Add {
@@ -32,7 +30,7 @@ pub fn run_vacation(args: &VacationArgs, config_path: &Path) -> anyhow::Result<(
 
             vacations.insert(*date, entry.clone());
 
-            save_vacations(&vacations_file, &vacations)?;
+            save_vacations(config_path, &vacations)?;
             println!("Added vacation: {}", fmt_entry(date, &entry));
         }
 
@@ -52,7 +50,7 @@ pub fn run_vacation(args: &VacationArgs, config_path: &Path) -> anyhow::Result<(
 
             vacations.insert(*date, entry.clone());
 
-            save_vacations(&vacations_file, &vacations)?;
+            save_vacations(config_path, &vacations)?;
             println!("Edited vacation: {}", fmt_entry(date, &entry));
         }
 
@@ -84,25 +82,11 @@ pub fn run_vacation(args: &VacationArgs, config_path: &Path) -> anyhow::Result<(
             }
 
             vacations.remove(date);
-            save_vacations(&vacations_file, &vacations)?;
+            save_vacations(config_path, &vacations)?;
             println!("Removed vacation: {}", date);
         }
     };
 
-    Ok(())
-}
-
-fn load_vacations(path: &Path) -> Result<Vacations> {
-    if !path.exists() {
-        return Ok(BTreeMap::new());
-    }
-    let contents = fs::read_to_string(path)?;
-    Ok(toml::from_str(&contents)?)
-}
-
-fn save_vacations(path: &Path, vacations: &Vacations) -> Result<()> {
-    let toml = toml::to_string(&vacations)?;
-    fs::write(path, toml)?;
     Ok(())
 }
 

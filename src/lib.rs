@@ -9,6 +9,7 @@ use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc
 use clap::{Args, Parser, Subcommand};
 use std::{fs, path::PathBuf};
 
+pub mod persistence;
 pub mod types;
 
 mod commands;
