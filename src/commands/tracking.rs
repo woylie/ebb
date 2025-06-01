@@ -11,6 +11,44 @@ use serde::Serialize;
 use std::path::Path;
 
 #[derive(Serialize)]
+struct StartOutput {
+    current_frame: CurrentFrame,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    stopped_frame: Option<Frame>,
+}
+
+impl StartOutput {
+    fn to_text(&self) -> String {
+        let start_datetime = Local
+            .timestamp_opt(self.current_frame.start_time, 0)
+            .unwrap();
+
+        format!(
+            "Project '{}' started at {}.",
+            self.current_frame.project,
+            start_datetime.format("%H:%M:%S"),
+        )
+    }
+}
+
+#[derive(Serialize)]
+struct StopOutput {
+    stopped_frame: Frame,
+}
+
+impl StopOutput {
+    fn to_text(&self) -> String {
+        let end_datetime = Local.timestamp_opt(self.stopped_frame.end_time, 0).unwrap();
+
+        format!(
+            "Project '{}' stopped at {}.",
+            self.stopped_frame.project,
+            end_datetime.format("%H:%M:%S"),
+        )
+    }
+}
+
+#[derive(Serialize)]
 struct CancelOutput {
     frame: CurrentFrame,
 }
@@ -24,31 +62,81 @@ impl CancelOutput {
     }
 }
 
-pub fn run_start(args: &StartArgs, config_path: &Path) -> anyhow::Result<()> {
+#[derive(Serialize)]
+struct StatusOutput {
+    current_frame: Option<CurrentFrame>,
+}
+
+impl StatusOutput {
+    fn to_text(&self) -> String {
+        if let Some(current_frame) = &self.current_frame {
+            let start = match Local.timestamp_opt(current_frame.start_time, 0).single() {
+                Some(start) => start,
+                None => {
+                    return format!(
+                        "Current project '{}' has an invalid or ambiguous start time ({}).",
+                        current_frame.project, current_frame.start_time
+                    );
+                }
+            };
+
+            let now = Local::now();
+            let duration = now.signed_duration_since(start);
+
+            let duration_str = if duration.num_seconds() < 60 {
+                "just now".to_string()
+            } else if duration.num_hours() == 0 {
+                format!("{}m ago", duration.num_minutes())
+            } else {
+                let hours = duration.num_hours();
+                let minutes = duration.num_minutes() % 60;
+                format!("{}h {:02}m ago", hours, minutes)
+            };
+
+            format!(
+                "Current project '{}' started at {} ({}).",
+                current_frame.project,
+                start.format("%Y-%m-%d %H:%M:%S"),
+                duration_str
+            )
+        } else {
+            "No project started.".to_string()
+        }
+    }
+}
+
+pub fn run_start(args: &StartArgs, config_path: &Path, format: &Format) -> anyhow::Result<()> {
     let mut state = load_state(config_path)?;
     let now = Utc::now();
 
-    if let Some(current_frame) = &state.current_frame {
-        stop_current_frame(config_path, current_frame, now)?;
-    }
+    let stopped_frame = if let Some(current_frame) = &state.current_frame {
+        let stopped = stop_current_frame(config_path, current_frame, now)?;
+        Some(stopped)
+    } else {
+        None
+    };
 
     update_current_frame(&mut state, args, now, config_path)?;
     save_state(config_path, &state)?;
 
     if let Some(current_frame) = &state.current_frame {
-        let start_datetime = Local.timestamp_opt(current_frame.start_time, 0).unwrap();
-        let time_str = start_datetime.format("%H:%M:%S").to_string();
+        let output = StartOutput {
+            current_frame: current_frame.clone(),
+            stopped_frame,
+        };
 
-        println!(
-            "Started project '{}' at {}",
-            current_frame.project, time_str
-        );
+        let output_string = match format {
+            Format::Json => serde_json::to_string_pretty(&output)?,
+            Format::Text => output.to_text(),
+        };
+
+        println!("{}", output_string);
     }
 
     Ok(())
 }
 
-pub fn run_restart(args: &RestartArgs, config_path: &Path) -> anyhow::Result<()> {
+pub fn run_restart(args: &RestartArgs, config_path: &Path, format: &Format) -> anyhow::Result<()> {
     let mut state = load_state(config_path)?;
 
     if let Some(current_frame) = &state.current_frame {
@@ -76,19 +164,23 @@ pub fn run_restart(args: &RestartArgs, config_path: &Path) -> anyhow::Result<()>
     save_state(config_path, &state)?;
 
     if let Some(current_frame) = &state.current_frame {
-        let start_datetime = Local.timestamp_opt(current_frame.start_time, 0).unwrap();
-        let time_str = start_datetime.format("%H:%M:%S").to_string();
+        let output = StartOutput {
+            current_frame: current_frame.clone(),
+            stopped_frame: None,
+        };
 
-        println!(
-            "Started project '{}' at {}",
-            current_frame.project, time_str
-        );
+        let output_string = match format {
+            Format::Json => serde_json::to_string_pretty(&output)?,
+            Format::Text => output.to_text(),
+        };
+
+        println!("{}", output_string);
     }
 
     Ok(())
 }
 
-pub fn run_stop(args: &StopArgs, config_path: &Path) -> anyhow::Result<()> {
+pub fn run_stop(args: &StopArgs, config_path: &Path, format: &Format) -> anyhow::Result<()> {
     let mut state = load_state(config_path)?;
 
     let Some(current_frame) = state.current_frame.take() else {
@@ -117,8 +209,19 @@ pub fn run_stop(args: &StopArgs, config_path: &Path) -> anyhow::Result<()> {
         Utc::now()
     };
 
-    stop_current_frame(config_path, &current_frame, end_time)?;
+    let frame = stop_current_frame(config_path, &current_frame, end_time)?;
     save_state(config_path, &state)?;
+
+    let output = StopOutput {
+        stopped_frame: frame,
+    };
+
+    let output_string = match format {
+        Format::Json => serde_json::to_string_pretty(&output)?,
+        Format::Text => output.to_text(),
+    };
+
+    println!("{}", output_string);
 
     Ok(())
 }
@@ -146,36 +249,19 @@ pub fn run_cancel(config_path: &Path, format: &Format) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn run_status(config_path: &Path) -> anyhow::Result<()> {
+pub fn run_status(config_path: &Path, format: &Format) -> anyhow::Result<()> {
     let state = load_state(config_path)?;
 
-    if let Some(current_frame) = &state.current_frame {
-        let start = Local
-            .timestamp_opt(current_frame.start_time, 0)
-            .single()
-            .ok_or_else(|| anyhow::anyhow!("Invalid or ambiguous start timestamp"))?;
-        let now = Local::now();
-        let duration = now.signed_duration_since(start);
+    let output = StatusOutput {
+        current_frame: state.current_frame.clone(),
+    };
 
-        let duration_str = if duration.num_seconds() < 60 {
-            "just now".to_string()
-        } else if duration.num_hours() == 0 {
-            format!("{}m ago", duration.num_minutes())
-        } else {
-            let hours = duration.num_hours();
-            let minutes = duration.num_minutes() % 60;
-            format!("{}h {:02}m ago", hours, minutes)
-        };
+    let output_string = match format {
+        Format::Json => serde_json::to_string_pretty(&output)?,
+        Format::Text => output.to_text(),
+    };
 
-        println!(
-            "Current project '{}' started at {} ({}).",
-            current_frame.project,
-            start.format("%Y-%m-%d %H:%M:%S"),
-            duration_str
-        );
-    } else {
-        println!("No project started.");
-    }
+    println!("{}", output_string);
 
     Ok(())
 }
@@ -245,9 +331,7 @@ fn stop_current_frame(
     config_path: &Path,
     current_frame: &CurrentFrame,
     now: DateTime<Utc>,
-) -> anyhow::Result<()> {
-    let start_dt_local = now.with_timezone(&Local);
-    let time_str = start_dt_local.format("%H:%M:%S").to_string();
+) -> anyhow::Result<Frame> {
     let mut frames = load_frames(config_path)?;
 
     let frame = Frame {
@@ -257,12 +341,8 @@ fn stop_current_frame(
         updated_at: now.timestamp(),
     };
 
-    frames.frames.push(frame);
+    frames.frames.push(frame.clone());
     save_frames(config_path, &frames)?;
-    println!(
-        "Stopped project '{}' at {}",
-        current_frame.project, time_str
-    );
 
-    Ok(())
+    Ok(frame)
 }
