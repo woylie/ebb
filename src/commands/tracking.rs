@@ -146,6 +146,40 @@ pub fn run_cancel(config_path: &Path, format: &Format) -> anyhow::Result<()> {
     Ok(())
 }
 
+pub fn run_status(config_path: &Path) -> anyhow::Result<()> {
+    let state = load_state(config_path)?;
+
+    if let Some(current_frame) = &state.current_frame {
+        let start = Local
+            .timestamp_opt(current_frame.start_time, 0)
+            .single()
+            .ok_or_else(|| anyhow::anyhow!("Invalid or ambiguous start timestamp"))?;
+        let now = Local::now();
+        let duration = now.signed_duration_since(start);
+
+        let duration_str = if duration.num_seconds() < 60 {
+            "just now".to_string()
+        } else if duration.num_hours() == 0 {
+            format!("{}m ago", duration.num_minutes())
+        } else {
+            let hours = duration.num_hours();
+            let minutes = duration.num_minutes() % 60;
+            format!("{}h {:02}m ago", hours, minutes)
+        };
+
+        println!(
+            "Current project '{}' started at {} ({}).",
+            current_frame.project,
+            start.format("%Y-%m-%d %H:%M:%S"),
+            duration_str
+        );
+    } else {
+        println!("No project started.");
+    }
+
+    Ok(())
+}
+
 fn update_current_frame(
     state: &mut State,
     args: &StartArgs,

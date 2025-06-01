@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 use crate::types::DayPortion;
-use crate::Commands::{Cancel, Holiday, Restart, Sickday, Start, Stop, Vacation};
+use crate::Commands::{Cancel, Holiday, Restart, Sickday, Start, Status, Stop, Vacation};
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use clap::{Args, Parser, Subcommand, ValueEnum};
@@ -58,6 +58,8 @@ pub enum Commands {
     Sickday(SickdayArgs),
     /// Start time tracking
     Start(StartArgs),
+    /// Show current time tracking status
+    Status,
     /// Stop time tracking
     Stop(StopArgs),
     /// Manage vacation days
@@ -210,6 +212,7 @@ pub fn run(cli: &Cli) -> Result<()> {
         Restart(args) => commands::tracking::run_restart(args, &config_path),
         Sickday(args) => commands::sickday::run_sickday(args, &config_path),
         Start(args) => commands::tracking::run_start(args, &config_path),
+        Status => commands::tracking::run_status(&config_path),
         Stop(args) => commands::tracking::run_stop(args, &config_path),
         Vacation(args) => commands::vacation::run_vacation(args, &config_path),
     }
