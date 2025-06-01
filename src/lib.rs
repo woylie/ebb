@@ -208,7 +208,7 @@ pub fn run(cli: &Cli) -> Result<()> {
 
     match &cli.command {
         Cancel => commands::tracking::run_cancel(&config_path, format),
-        Holiday(args) => commands::holiday::run_holiday(args, &config_path),
+        Holiday(args) => commands::holiday::run_holiday(args, &config_path, format),
         Restart(args) => commands::tracking::run_restart(args, &config_path, format),
         Sickday(args) => commands::sickday::run_sickday(args, &config_path),
         Start(args) => commands::tracking::run_start(args, &config_path, format),

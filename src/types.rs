@@ -53,6 +53,18 @@ pub struct Frames {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Holiday {
+    pub date: NaiveDate,
+    pub description: String,
+
+    #[serde(
+        default = "default_portion",
+        skip_serializing_if = "is_default_portion"
+    )]
+    pub portion: DayPortion,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct HolidayEntry {
     pub description: String,
 

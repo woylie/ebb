@@ -3,14 +3,103 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 use crate::persistence::{load_holidays, save_holidays};
-use crate::types::{DayPortion, HolidayEntry};
-use crate::HolidayArgs;
-use crate::HolidayCommands;
+use crate::types::{DayPortion, Holiday, HolidayEntry};
+use crate::{Format, HolidayArgs, HolidayCommands};
 use chrono::Datelike;
-use chrono::NaiveDate;
+use serde::Serialize;
 use std::path::Path;
 
-pub fn run_holiday(args: &HolidayArgs, config_path: &Path) -> anyhow::Result<()> {
+#[derive(Serialize)]
+struct AddOutput {
+    holiday: Holiday,
+}
+
+impl AddOutput {
+    fn to_text(&self) -> String {
+        format!(
+            "Holiday '{}' added on {}.",
+            self.holiday.description,
+            self.holiday.date.format("%Y-%m-%d"),
+        )
+    }
+}
+
+#[derive(Serialize)]
+struct EditOutput {
+    holiday: Holiday,
+}
+
+impl EditOutput {
+    fn to_text(&self) -> String {
+        format!(
+            "Updated holiday '{}' on {}.",
+            self.holiday.description,
+            self.holiday.date.format("%Y-%m-%d"),
+        )
+    }
+}
+
+#[derive(Serialize)]
+struct ListOutput {
+    holidays: Vec<Holiday>,
+    filters: Filters,
+}
+
+#[derive(Serialize)]
+struct Filters {
+    year: Option<i32>,
+}
+
+impl ListOutput {
+    fn to_text(&self) -> String {
+        if self.holidays.is_empty() {
+            match self.filters.year {
+                Some(y) => format!("No holidays found for {}.", y),
+                None => "No holidays found.".to_string(),
+            }
+        } else {
+            let lines: Vec<String> = self
+                .holidays
+                .iter()
+                .map(|holiday| {
+                    if holiday.portion == DayPortion::Full {
+                        format!(
+                            "{} — {}",
+                            holiday.date.format("%Y-%m-%d"),
+                            holiday.description
+                        )
+                    } else {
+                        format!(
+                            "{} — {} ({})",
+                            holiday.date.format("%Y-%m-%d"),
+                            holiday.description,
+                            holiday.portion
+                        )
+                    }
+                })
+                .collect();
+
+            lines.join("\n")
+        }
+    }
+}
+
+#[derive(Serialize)]
+struct RemoveOutput {
+    holiday: Holiday,
+}
+
+impl RemoveOutput {
+    fn to_text(&self) -> String {
+        format!(
+            "Removed holiday '{}' on {}.",
+            self.holiday.description,
+            self.holiday.date.format("%Y-%m-%d"),
+        )
+    }
+}
+
+pub fn run_holiday(args: &HolidayArgs, config_path: &Path, format: &Format) -> anyhow::Result<()> {
     let mut holidays = load_holidays(config_path)?;
 
     match &args.command {
@@ -20,7 +109,7 @@ pub fn run_holiday(args: &HolidayArgs, config_path: &Path) -> anyhow::Result<()>
             portion,
         } => {
             if holidays.contains_key(date) {
-                anyhow::bail!("A holiday already exists for {}", date);
+                anyhow::bail!("A holiday already exists on {}", date);
             }
 
             let entry = HolidayEntry {
@@ -29,9 +118,22 @@ pub fn run_holiday(args: &HolidayArgs, config_path: &Path) -> anyhow::Result<()>
             };
 
             holidays.insert(*date, entry.clone());
-
             save_holidays(config_path, &holidays)?;
-            println!("Added holiday: {}", fmt_entry(date, &entry));
+
+            let output = AddOutput {
+                holiday: Holiday {
+                    date: *date,
+                    description: entry.description,
+                    portion: entry.portion,
+                },
+            };
+
+            let output_string = match format {
+                Format::Json => serde_json::to_string_pretty(&output)?,
+                Format::Text => output.to_text(),
+            };
+
+            println!("{}", output_string);
         }
 
         HolidayCommands::Edit {
@@ -49,60 +151,72 @@ pub fn run_holiday(args: &HolidayArgs, config_path: &Path) -> anyhow::Result<()>
             };
 
             holidays.insert(*date, entry.clone());
-
             save_holidays(config_path, &holidays)?;
-            println!("Edited holiday: {}", fmt_entry(date, &entry));
+
+            let output = EditOutput {
+                holiday: Holiday {
+                    date: *date,
+                    description: entry.description,
+                    portion: entry.portion,
+                },
+            };
+
+            let output_string = match format {
+                Format::Json => serde_json::to_string_pretty(&output)?,
+                Format::Text => output.to_text(),
+            };
+
+            println!("{}", output_string);
         }
 
         HolidayCommands::List { year } => {
-            let filtered: Vec<_> = holidays
+            let filtered: Vec<Holiday> = holidays
                 .iter()
-                .filter(|(date, _)| year.is_none_or(|y| date.year() == y))
+                .filter(|(date, _)| year.is_none() || date.year() == year.unwrap())
+                .map(|(date, entry)| Holiday {
+                    date: *date,
+                    description: entry.description.clone(),
+                    portion: entry.portion.clone(),
+                })
                 .collect();
 
-            if filtered.is_empty() {
-                match year {
-                    Some(y) => println!("No holidays found for {}.", y),
-                    None => println!("No holidays recorded."),
-                }
-            } else {
-                println!(
-                    "Holidays{}:",
-                    year.map_or(String::new(), |y| format!(" in {}", y))
-                );
-                for (date, entry) in filtered {
-                    println!("{}", fmt_entry(date, entry));
-                }
-            }
+            let output = ListOutput {
+                holidays: filtered,
+                filters: Filters { year: *year },
+            };
+
+            let output_string = match format {
+                Format::Json => serde_json::to_string_pretty(&output)?,
+                Format::Text => output.to_text(),
+            };
+
+            println!("{}", output_string);
         }
 
         HolidayCommands::Remove { date } => {
-            if !holidays.contains_key(date) {
-                anyhow::bail!("No holiday exists on {}", date);
-            }
+            let entry = match holidays.remove(date) {
+                Some(entry) => entry,
+                None => anyhow::bail!("No holiday found on {}.", date),
+            };
 
-            holidays.remove(date);
             save_holidays(config_path, &holidays)?;
-            println!("Removed holiday: {}", date);
+
+            let output = RemoveOutput {
+                holiday: Holiday {
+                    date: *date,
+                    description: entry.description,
+                    portion: entry.portion,
+                },
+            };
+
+            let output_string = match format {
+                Format::Json => serde_json::to_string_pretty(&output)?,
+                Format::Text => output.to_text(),
+            };
+
+            println!("{}", output_string);
         }
     };
 
     Ok(())
-}
-
-fn fmt_date(date: &NaiveDate) -> String {
-    date.format("%Y-%m-%d").to_string()
-}
-
-fn fmt_entry(date: &NaiveDate, entry: &HolidayEntry) -> String {
-    if entry.portion == DayPortion::Full {
-        format!("{} — {}", fmt_date(date), entry.description)
-    } else {
-        format!(
-            "{} — {} ({})",
-            fmt_date(date),
-            entry.description,
-            entry.portion
-        )
-    }
 }
