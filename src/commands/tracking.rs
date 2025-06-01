@@ -4,7 +4,7 @@
 
 use crate::persistence::{load_frames, load_state, save_frames, save_state};
 use crate::types::{CurrentFrame, Frame, State};
-use crate::StartArgs;
+use crate::{StartArgs, StopArgs};
 use anyhow::{bail, Result};
 use chrono::{DateTime, Local, TimeZone, Utc};
 use std::path::Path;
@@ -29,6 +29,41 @@ pub fn run_start(args: &StartArgs, config_path: &Path) -> anyhow::Result<()> {
             current_frame.project, time_str
         );
     }
+
+    Ok(())
+}
+
+pub fn run_stop(args: &StopArgs, config_path: &Path) -> anyhow::Result<()> {
+    let mut state = load_state(config_path)?;
+
+    let Some(current_frame) = state.current_frame.take() else {
+        bail!("No project started.");
+    };
+
+    let StopArgs { at } = args;
+    let end_time = if let Some(at) = at {
+        if at.timestamp() <= current_frame.start_time {
+            let at_str = at.format("%Y-%m-%d %H:%M:%S").to_string();
+            let start_time_str = chrono::Local
+                .timestamp_opt(current_frame.start_time, 0)
+                .single()
+                .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
+                .unwrap_or_else(|| format!("(invalid timestamp: {})", current_frame.start_time));
+
+            bail!(
+                "End time ({}) is before start time ({}). \
+        Please specify a later time or omit --at.",
+                at_str,
+                start_time_str
+            );
+        }
+        at.with_timezone(&Utc)
+    } else {
+        Utc::now()
+    };
+
+    stop_current_frame(config_path, &current_frame, end_time)?;
+    save_state(config_path, &state)?;
 
     Ok(())
 }
