@@ -210,7 +210,7 @@ pub fn run(cli: &Cli) -> Result<()> {
         Cancel => commands::tracking::run_cancel(&config_path, format),
         Holiday(args) => commands::holiday::run_holiday(args, &config_path, format),
         Restart(args) => commands::tracking::run_restart(args, &config_path, format),
-        Sickday(args) => commands::sickday::run_sickday(args, &config_path),
+        Sickday(args) => commands::sickday::run_sickday(args, &config_path, format),
         Start(args) => commands::tracking::run_start(args, &config_path, format),
         Status => commands::tracking::run_status(&config_path, format),
         Stop(args) => commands::tracking::run_stop(args, &config_path, format),

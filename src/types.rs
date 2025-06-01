@@ -78,6 +78,18 @@ pub struct HolidayEntry {
 pub type Holidays = BTreeMap<NaiveDate, HolidayEntry>;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Sickday {
+    pub date: NaiveDate,
+    pub description: String,
+
+    #[serde(
+        default = "default_portion",
+        skip_serializing_if = "is_default_portion"
+    )]
+    pub portion: DayPortion,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SickdayEntry {
     pub description: String,
 

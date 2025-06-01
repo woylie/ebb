@@ -25,7 +25,6 @@ fn list_sickdays_displays_all() -> Result<(), Box<dyn std::error::Error>> {
     fs::write(&file_path, toml_content.trim())?;
 
     let expected_output = "\
-Sick days:
 2025-05-28 — headache
 2025-05-29 — fever (half)
 ";
@@ -60,7 +59,6 @@ fn list_sickdays_filters_by_year() -> Result<(), Box<dyn std::error::Error>> {
     fs::write(&file_path, toml_content.trim())?;
 
     let expected_output = "\
-Sick days in 2024:
 2024-08-12 — headache
 ";
 
