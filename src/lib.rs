@@ -214,7 +214,7 @@ pub fn run(cli: &Cli) -> Result<()> {
         Start(args) => commands::tracking::run_start(args, &config_path, format),
         Status => commands::tracking::run_status(&config_path, format),
         Stop(args) => commands::tracking::run_stop(args, &config_path, format),
-        Vacation(args) => commands::vacation::run_vacation(args, &config_path),
+        Vacation(args) => commands::vacation::run_vacation(args, &config_path, format),
     }
 }
 

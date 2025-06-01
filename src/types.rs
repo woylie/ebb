@@ -108,6 +108,18 @@ pub struct State {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Vacation {
+    pub date: NaiveDate,
+    pub description: String,
+
+    #[serde(
+        default = "default_portion",
+        skip_serializing_if = "is_default_portion"
+    )]
+    pub portion: DayPortion,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct VacationEntry {
     pub description: String,
 

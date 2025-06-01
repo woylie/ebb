@@ -49,7 +49,7 @@ fn remove_vacation_removes_entry() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
-fn add_vacation_fails_if_date_exists() -> Result<(), Box<dyn std::error::Error>> {
+fn add_vacation_fails_if_date_does_not_exist() -> Result<(), Box<dyn std::error::Error>> {
     let tmp = tempdir()?;
     let config_dir = tmp.path();
 
@@ -69,7 +69,7 @@ fn add_vacation_fails_if_date_exists() -> Result<(), Box<dyn std::error::Error>>
 
     cmd.assert()
         .failure()
-        .stderr(contains("No vacation exists on 2025-05-28"));
+        .stderr(contains("No vacation found on 2025-05-28"));
 
     let contents = fs::read_to_string(&file_path)?;
     let parsed: BTreeMap<String, VacationEntry> = toml::from_str(&contents)?;

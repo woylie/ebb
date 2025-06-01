@@ -25,7 +25,6 @@ fn list_vacations_displays_all() -> Result<(), Box<dyn std::error::Error>> {
     fs::write(&file_path, toml_content.trim())?;
 
     let expected_output = "\
-Vacations:
 2025-05-28 — Mountain Day
 2025-05-29 — Ocean Day (half)
 ";
@@ -60,7 +59,6 @@ fn list_vacations_filters_by_year() -> Result<(), Box<dyn std::error::Error>> {
     fs::write(&file_path, toml_content.trim())?;
 
     let expected_output = "\
-Vacations in 2024:
 2024-08-12 — Mountain Day
 ";
 
