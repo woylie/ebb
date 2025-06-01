@@ -47,6 +47,7 @@ struct ListOutput {
 
 #[derive(Serialize)]
 struct Filters {
+    #[serde(skip_serializing_if = "Option::is_none")]
     year: Option<i32>,
 }
 
