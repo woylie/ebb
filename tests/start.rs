@@ -164,6 +164,24 @@ fn start_returns_error_if_start_time_overlaps() -> Result<(), Box<dyn std::error
     Ok(())
 }
 
+#[test]
+fn start_fails_with_both_no_gap_and_at() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let mut cmd = Command::cargo_bin("ebb")?;
+
+    cmd.arg("start")
+        .arg("project")
+        .arg("--at")
+        .arg("1748725743")
+        .arg("--no-gap")
+        .env("EBB_CONFIG_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(contains("Cannot use --at and --no-gap together."));
+
+    Ok(())
+}
+
 fn assert_start_time_at(
     time_str: &str,
     expected_dt: DateTime<Local>,

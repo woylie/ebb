@@ -2,18 +2,16 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-use crate::types::{DayPortion, HolidayEntry, Holidays};
+use crate::persistence::{load_holidays, save_holidays};
+use crate::types::{DayPortion, HolidayEntry};
 use crate::HolidayArgs;
 use crate::HolidayCommands;
-use anyhow::Result;
 use chrono::Datelike;
 use chrono::NaiveDate;
 use std::path::Path;
-use std::{collections::BTreeMap, fs};
 
 pub fn run_holiday(args: &HolidayArgs, config_path: &Path) -> anyhow::Result<()> {
-    let holidays_file = config_path.join("holidays.toml");
-    let mut holidays = load_holidays(&holidays_file)?;
+    let mut holidays = load_holidays(config_path)?;
 
     match &args.command {
         HolidayCommands::Add {
@@ -32,7 +30,7 @@ pub fn run_holiday(args: &HolidayArgs, config_path: &Path) -> anyhow::Result<()>
 
             holidays.insert(*date, entry.clone());
 
-            save_holidays(&holidays_file, &holidays)?;
+            save_holidays(config_path, &holidays)?;
             println!("Added holiday: {}", fmt_entry(date, &entry));
         }
 
@@ -52,7 +50,7 @@ pub fn run_holiday(args: &HolidayArgs, config_path: &Path) -> anyhow::Result<()>
 
             holidays.insert(*date, entry.clone());
 
-            save_holidays(&holidays_file, &holidays)?;
+            save_holidays(config_path, &holidays)?;
             println!("Edited holiday: {}", fmt_entry(date, &entry));
         }
 
@@ -84,25 +82,11 @@ pub fn run_holiday(args: &HolidayArgs, config_path: &Path) -> anyhow::Result<()>
             }
 
             holidays.remove(date);
-            save_holidays(&holidays_file, &holidays)?;
+            save_holidays(config_path, &holidays)?;
             println!("Removed holiday: {}", date);
         }
     };
 
-    Ok(())
-}
-
-fn load_holidays(path: &Path) -> Result<Holidays> {
-    if !path.exists() {
-        return Ok(BTreeMap::new());
-    }
-    let contents = fs::read_to_string(path)?;
-    Ok(toml::from_str(&contents)?)
-}
-
-fn save_holidays(path: &Path, holidays: &Holidays) -> Result<()> {
-    let toml = toml::to_string(&holidays)?;
-    fs::write(path, toml)?;
     Ok(())
 }
 

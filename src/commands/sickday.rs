@@ -2,18 +2,16 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-use crate::types::{DayPortion, SickdayEntry, Sickdays};
+use crate::persistence::{load_sickdays, save_sickdays};
+use crate::types::{DayPortion, SickdayEntry};
 use crate::SickdayArgs;
 use crate::SickdayCommands;
-use anyhow::Result;
 use chrono::Datelike;
 use chrono::NaiveDate;
 use std::path::Path;
-use std::{collections::BTreeMap, fs};
 
 pub fn run_sickday(args: &SickdayArgs, config_path: &Path) -> anyhow::Result<()> {
-    let sickdays_file = config_path.join("sickdays.toml");
-    let mut sickdays = load_sickdays(&sickdays_file)?;
+    let mut sickdays = load_sickdays(config_path)?;
 
     match &args.command {
         SickdayCommands::Add {
@@ -32,7 +30,7 @@ pub fn run_sickday(args: &SickdayArgs, config_path: &Path) -> anyhow::Result<()>
 
             sickdays.insert(*date, entry.clone());
 
-            save_sickdays(&sickdays_file, &sickdays)?;
+            save_sickdays(config_path, &sickdays)?;
             println!("Added sick day: {}", fmt_entry(date, &entry));
         }
 
@@ -52,7 +50,7 @@ pub fn run_sickday(args: &SickdayArgs, config_path: &Path) -> anyhow::Result<()>
 
             sickdays.insert(*date, entry.clone());
 
-            save_sickdays(&sickdays_file, &sickdays)?;
+            save_sickdays(config_path, &sickdays)?;
             println!("Edited sick day: {}", fmt_entry(date, &entry));
         }
 
@@ -84,25 +82,11 @@ pub fn run_sickday(args: &SickdayArgs, config_path: &Path) -> anyhow::Result<()>
             }
 
             sickdays.remove(date);
-            save_sickdays(&sickdays_file, &sickdays)?;
+            save_sickdays(config_path, &sickdays)?;
             println!("Removed sick day: {}", date);
         }
     };
 
-    Ok(())
-}
-
-fn load_sickdays(path: &Path) -> Result<Sickdays> {
-    if !path.exists() {
-        return Ok(BTreeMap::new());
-    }
-    let contents = fs::read_to_string(path)?;
-    Ok(toml::from_str(&contents)?)
-}
-
-fn save_sickdays(path: &Path, sickdays: &Sickdays) -> Result<()> {
-    let toml = toml::to_string(&sickdays)?;
-    fs::write(path, toml)?;
     Ok(())
 }
 
