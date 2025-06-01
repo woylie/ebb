@@ -6,7 +6,7 @@ use crate::types::DayPortion;
 use crate::Commands::{Cancel, Holiday, Restart, Sickday, Start, Stop, Vacation};
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
-use clap::{Args, Parser, Subcommand};
+use clap::{Args, Parser, Subcommand, ValueEnum};
 use std::{fs, path::PathBuf};
 
 pub mod persistence;
@@ -29,6 +29,21 @@ pub struct Cli {
         default_value = "~/.config/ebb"
     )]
     config_dir: std::path::PathBuf,
+    /// Set the output format
+    #[arg(
+        short = 'f',
+        long = "format",
+        global = true,
+        default_value = "text",
+        value_enum
+    )]
+    format: Format,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+enum Format {
+    Text,
+    Json,
 }
 
 #[derive(Debug, Subcommand)]
@@ -184,12 +199,13 @@ pub enum VacationCommands {
 }
 
 pub fn run(cli: &Cli) -> Result<()> {
+    let format = &cli.format;
     let config_dir = shellexpand::tilde(&cli.config_dir.to_string_lossy()).to_string();
     let config_path = PathBuf::from(config_dir);
     fs::create_dir_all(&config_path)?;
 
     match &cli.command {
-        Cancel => commands::tracking::run_cancel(&config_path),
+        Cancel => commands::tracking::run_cancel(&config_path, format),
         Holiday(args) => commands::holiday::run_holiday(args, &config_path),
         Restart(args) => commands::tracking::run_restart(args, &config_path),
         Sickday(args) => commands::sickday::run_sickday(args, &config_path),

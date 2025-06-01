@@ -4,10 +4,25 @@
 
 use crate::persistence::{load_frames, load_state, save_frames, save_state};
 use crate::types::{CurrentFrame, Frame, State};
-use crate::{RestartArgs, StartArgs, StopArgs};
+use crate::{Format, RestartArgs, StartArgs, StopArgs};
 use anyhow::{bail, Result};
 use chrono::{DateTime, Local, TimeZone, Utc};
+use serde::Serialize;
 use std::path::Path;
+
+#[derive(Serialize)]
+struct CancelOutput {
+    frame: CurrentFrame,
+}
+
+impl CancelOutput {
+    fn to_text(&self) -> String {
+        format!(
+            "Current frame of project '{}' cancelled.",
+            self.frame.project
+        )
+    }
+}
 
 pub fn run_start(args: &StartArgs, config_path: &Path) -> anyhow::Result<()> {
     let mut state = load_state(config_path)?;
@@ -108,12 +123,22 @@ pub fn run_stop(args: &StopArgs, config_path: &Path) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn run_cancel(config_path: &Path) -> anyhow::Result<()> {
+pub fn run_cancel(config_path: &Path, format: &Format) -> anyhow::Result<()> {
     let mut state = load_state(config_path)?;
 
     if let Some(current_frame) = &state.current_frame.take() {
         save_state(config_path, &state)?;
-        println!("Project '{}' cancelled.", current_frame.project);
+
+        let output = CancelOutput {
+            frame: current_frame.clone(),
+        };
+
+        let output_string = match format {
+            Format::Json => serde_json::to_string_pretty(&output)?,
+            Format::Text => output.to_text(),
+        };
+
+        println!("{}", output_string);
     } else {
         bail!("No project started.");
     }
