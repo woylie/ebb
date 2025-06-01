@@ -8,6 +8,12 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::fmt;
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CurrentFrame {
+    pub start_time: i64,
+    pub project: String,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, ValueEnum, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum DayPortion {
@@ -31,6 +37,19 @@ fn default_portion() -> DayPortion {
 
 fn is_default_portion(p: &DayPortion) -> bool {
     *p == DayPortion::Full
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Frame {
+    pub start_time: i64,
+    pub end_time: i64,
+    pub project: String,
+    pub updated_at: i64,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Frames {
+    pub frames: Vec<Frame>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -58,6 +77,11 @@ pub struct SickdayEntry {
 }
 
 pub type Sickdays = BTreeMap<NaiveDate, SickdayEntry>;
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct State {
+    pub current_frame: Option<CurrentFrame>,
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct VacationEntry {
