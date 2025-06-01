@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 use crate::types::DayPortion;
-use crate::Commands::{Cancel, Holiday, Sickday, Start, Vacation};
+use crate::Commands::{Cancel, Holiday, Sickday, Start, Stop, Vacation};
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use clap::{Args, Parser, Subcommand};
@@ -33,7 +33,7 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {
-    /// Cancel the current frame
+    /// Cancel the current time tracking frame
     Cancel,
     /// Manage holidays
     Holiday(HolidayArgs),
@@ -41,6 +41,8 @@ pub enum Commands {
     Sickday(SickdayArgs),
     /// Start time tracking
     Start(StartArgs),
+    /// Stop time tracking
+    Stop(StopArgs),
     /// Manage vacation days
     Vacation(VacationArgs),
 }
@@ -66,6 +68,12 @@ pub struct StartArgs {
     at: Option<DateTime<Local>>,
     #[arg(short = 'G', long)]
     no_gap: bool,
+}
+
+#[derive(Debug, Args)]
+pub struct StopArgs {
+    #[arg(long, value_parser=parse_flexible_datetime)]
+    at: Option<DateTime<Local>>,
 }
 
 #[derive(Debug, Args)]
@@ -175,6 +183,7 @@ pub fn run(cli: &Cli) -> Result<()> {
         Holiday(args) => commands::holiday::run_holiday(args, &config_path),
         Sickday(args) => commands::sickday::run_sickday(args, &config_path),
         Start(args) => commands::tracking::run_start(args, &config_path),
+        Stop(args) => commands::tracking::run_stop(args, &config_path),
         Vacation(args) => commands::vacation::run_vacation(args, &config_path),
     }
 }
