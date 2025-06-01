@@ -7,11 +7,6 @@ name: Reuse
 on:
   pull_request:
     branches: ["main"]
-    paths:
-      - Cargo.lock
-      - Cargo.toml
-      - gen-third-party.sh
-      - THIRD_PARTY
 
 jobs:
   license-audit:
