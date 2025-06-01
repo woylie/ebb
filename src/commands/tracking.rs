@@ -4,7 +4,7 @@
 
 use crate::persistence::{load_frames, load_state, save_frames, save_state};
 use crate::types::{CurrentFrame, Frame, State};
-use crate::{StartArgs, StopArgs};
+use crate::{RestartArgs, StartArgs, StopArgs};
 use anyhow::{bail, Result};
 use chrono::{DateTime, Local, TimeZone, Utc};
 use std::path::Path;
@@ -18,6 +18,46 @@ pub fn run_start(args: &StartArgs, config_path: &Path) -> anyhow::Result<()> {
     }
 
     update_current_frame(&mut state, args, now, config_path)?;
+    save_state(config_path, &state)?;
+
+    if let Some(current_frame) = &state.current_frame {
+        let start_datetime = Local.timestamp_opt(current_frame.start_time, 0).unwrap();
+        let time_str = start_datetime.format("%H:%M:%S").to_string();
+
+        println!(
+            "Started project '{}' at {}",
+            current_frame.project, time_str
+        );
+    }
+
+    Ok(())
+}
+
+pub fn run_restart(args: &RestartArgs, config_path: &Path) -> anyhow::Result<()> {
+    let mut state = load_state(config_path)?;
+
+    if let Some(current_frame) = &state.current_frame {
+        bail!(
+            "The project '{}' is already in progress.",
+            current_frame.project
+        );
+    }
+
+    let frames = load_frames(config_path)?;
+
+    let Some(last_frame) = frames.frames.last() else {
+        bail!("No previous project found to be restarted.");
+    };
+
+    let now = Utc::now();
+
+    let start_args = StartArgs {
+        at: args.at,
+        no_gap: args.no_gap,
+        project: last_frame.project.clone(),
+    };
+
+    update_current_frame(&mut state, &start_args, now, config_path)?;
     save_state(config_path, &state)?;
 
     if let Some(current_frame) = &state.current_frame {
