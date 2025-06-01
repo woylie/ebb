@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 use crate::types::DayPortion;
-use crate::Commands::{Holiday, Sickday, Start, Vacation};
+use crate::Commands::{Cancel, Holiday, Sickday, Start, Vacation};
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use clap::{Args, Parser, Subcommand};
@@ -33,6 +33,8 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {
+    /// Cancel the current frame
+    Cancel,
     /// Manage holidays
     Holiday(HolidayArgs),
     /// Manage sick days
@@ -169,6 +171,7 @@ pub fn run(cli: &Cli) -> Result<()> {
     fs::create_dir_all(&config_path)?;
 
     match &cli.command {
+        Cancel => commands::tracking::run_cancel(&config_path),
         Holiday(args) => commands::holiday::run_holiday(args, &config_path),
         Sickday(args) => commands::sickday::run_sickday(args, &config_path),
         Start(args) => commands::tracking::run_start(args, &config_path),

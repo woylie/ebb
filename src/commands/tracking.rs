@@ -24,7 +24,23 @@ pub fn run_start(args: &StartArgs, config_path: &Path) -> anyhow::Result<()> {
         let start_datetime = Local.timestamp_opt(current_frame.start_time, 0).unwrap();
         let time_str = start_datetime.format("%H:%M:%S").to_string();
 
-        println!("Started project {} at {}", current_frame.project, time_str);
+        println!(
+            "Started project '{}' at {}",
+            current_frame.project, time_str
+        );
+    }
+
+    Ok(())
+}
+
+pub fn run_cancel(config_path: &Path) -> anyhow::Result<()> {
+    let mut state = load_state(config_path)?;
+
+    if let Some(current_frame) = &state.current_frame.take() {
+        save_state(config_path, &state)?;
+        println!("Project '{}' cancelled.", current_frame.project);
+    } else {
+        bail!("No project started.");
     }
 
     Ok(())
@@ -109,7 +125,10 @@ fn stop_current_frame(
 
     frames.frames.push(frame);
     save_frames(config_path, &frames)?;
-    println!("Stopped project {} at {}", current_frame.project, time_str);
+    println!(
+        "Stopped project '{}' at {}",
+        current_frame.project, time_str
+    );
 
     Ok(())
 }
