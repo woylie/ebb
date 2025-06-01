@@ -53,6 +53,18 @@ pub struct Frames {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Holiday {
+    pub date: NaiveDate,
+    pub description: String,
+
+    #[serde(
+        default = "default_portion",
+        skip_serializing_if = "is_default_portion"
+    )]
+    pub portion: DayPortion,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct HolidayEntry {
     pub description: String,
 
@@ -64,6 +76,18 @@ pub struct HolidayEntry {
 }
 
 pub type Holidays = BTreeMap<NaiveDate, HolidayEntry>;
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Sickday {
+    pub date: NaiveDate,
+    pub description: String,
+
+    #[serde(
+        default = "default_portion",
+        skip_serializing_if = "is_default_portion"
+    )]
+    pub portion: DayPortion,
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct SickdayEntry {
@@ -81,6 +105,18 @@ pub type Sickdays = BTreeMap<NaiveDate, SickdayEntry>;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct State {
     pub current_frame: Option<CurrentFrame>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Vacation {
+    pub date: NaiveDate,
+    pub description: String,
+
+    #[serde(
+        default = "default_portion",
+        skip_serializing_if = "is_default_portion"
+    )]
+    pub portion: DayPortion,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

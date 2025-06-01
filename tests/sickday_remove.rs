@@ -69,7 +69,7 @@ fn add_sickday_fails_if_date_exists() -> Result<(), Box<dyn std::error::Error>> 
 
     cmd.assert()
         .failure()
-        .stderr(contains("No sick day exists on 2025-05-28"));
+        .stderr(contains("No sick day found on 2025-05-28"));
 
     let contents = fs::read_to_string(&file_path)?;
     let parsed: BTreeMap<String, SickdayEntry> = toml::from_str(&contents)?;

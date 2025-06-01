@@ -3,14 +3,107 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 use crate::persistence::{load_vacations, save_vacations};
-use crate::types::{DayPortion, VacationEntry};
-use crate::VacationArgs;
-use crate::VacationCommands;
+use crate::types::{DayPortion, Vacation, VacationEntry};
+use crate::{Format, VacationArgs, VacationCommands};
 use chrono::Datelike;
-use chrono::NaiveDate;
+use serde::Serialize;
 use std::path::Path;
 
-pub fn run_vacation(args: &VacationArgs, config_path: &Path) -> anyhow::Result<()> {
+#[derive(Serialize)]
+struct AddOutput {
+    vacation: Vacation,
+}
+
+impl AddOutput {
+    fn to_text(&self) -> String {
+        format!(
+            "Vacation '{}' added on {}.",
+            self.vacation.description,
+            self.vacation.date.format("%Y-%m-%d"),
+        )
+    }
+}
+
+#[derive(Serialize)]
+struct EditOutput {
+    vacation: Vacation,
+}
+
+impl EditOutput {
+    fn to_text(&self) -> String {
+        format!(
+            "Updated vacation '{}' on {}.",
+            self.vacation.description,
+            self.vacation.date.format("%Y-%m-%d"),
+        )
+    }
+}
+
+#[derive(Serialize)]
+struct ListOutput {
+    vacations: Vec<Vacation>,
+    filters: Filters,
+}
+
+#[derive(Serialize)]
+struct Filters {
+    year: Option<i32>,
+}
+
+impl ListOutput {
+    fn to_text(&self) -> String {
+        if self.vacations.is_empty() {
+            match self.filters.year {
+                Some(y) => format!("No vacations found for {}.", y),
+                None => "No vacations found.".to_string(),
+            }
+        } else {
+            let lines: Vec<String> = self
+                .vacations
+                .iter()
+                .map(|vacation| {
+                    if vacation.portion == DayPortion::Full {
+                        format!(
+                            "{} — {}",
+                            vacation.date.format("%Y-%m-%d"),
+                            vacation.description
+                        )
+                    } else {
+                        format!(
+                            "{} — {} ({})",
+                            vacation.date.format("%Y-%m-%d"),
+                            vacation.description,
+                            vacation.portion
+                        )
+                    }
+                })
+                .collect();
+
+            lines.join("\n")
+        }
+    }
+}
+
+#[derive(Serialize)]
+struct RemoveOutput {
+    vacation: Vacation,
+}
+
+impl RemoveOutput {
+    fn to_text(&self) -> String {
+        format!(
+            "Removed vacation '{}' on {}.",
+            self.vacation.description,
+            self.vacation.date.format("%Y-%m-%d"),
+        )
+    }
+}
+
+pub fn run_vacation(
+    args: &VacationArgs,
+    config_path: &Path,
+    format: &Format,
+) -> anyhow::Result<()> {
     let mut vacations = load_vacations(config_path)?;
 
     match &args.command {
@@ -20,7 +113,7 @@ pub fn run_vacation(args: &VacationArgs, config_path: &Path) -> anyhow::Result<(
             portion,
         } => {
             if vacations.contains_key(date) {
-                anyhow::bail!("A vacation already exists for {}", date);
+                anyhow::bail!("A vacation already exists on {}", date);
             }
 
             let entry = VacationEntry {
@@ -29,9 +122,22 @@ pub fn run_vacation(args: &VacationArgs, config_path: &Path) -> anyhow::Result<(
             };
 
             vacations.insert(*date, entry.clone());
-
             save_vacations(config_path, &vacations)?;
-            println!("Added vacation: {}", fmt_entry(date, &entry));
+
+            let output = AddOutput {
+                vacation: Vacation {
+                    date: *date,
+                    description: entry.description,
+                    portion: entry.portion,
+                },
+            };
+
+            let output_string = match format {
+                Format::Json => serde_json::to_string_pretty(&output)?,
+                Format::Text => output.to_text(),
+            };
+
+            println!("{}", output_string);
         }
 
         VacationCommands::Edit {
@@ -49,60 +155,72 @@ pub fn run_vacation(args: &VacationArgs, config_path: &Path) -> anyhow::Result<(
             };
 
             vacations.insert(*date, entry.clone());
-
             save_vacations(config_path, &vacations)?;
-            println!("Edited vacation: {}", fmt_entry(date, &entry));
+
+            let output = EditOutput {
+                vacation: Vacation {
+                    date: *date,
+                    description: entry.description,
+                    portion: entry.portion,
+                },
+            };
+
+            let output_string = match format {
+                Format::Json => serde_json::to_string_pretty(&output)?,
+                Format::Text => output.to_text(),
+            };
+
+            println!("{}", output_string);
         }
 
         VacationCommands::List { year } => {
-            let filtered: Vec<_> = vacations
+            let filtered: Vec<Vacation> = vacations
                 .iter()
-                .filter(|(date, _)| year.is_none_or(|y| date.year() == y))
+                .filter(|(date, _)| year.is_none() || date.year() == year.unwrap())
+                .map(|(date, entry)| Vacation {
+                    date: *date,
+                    description: entry.description.clone(),
+                    portion: entry.portion.clone(),
+                })
                 .collect();
 
-            if filtered.is_empty() {
-                match year {
-                    Some(y) => println!("No vacations found for {}.", y),
-                    None => println!("No vacations recorded."),
-                }
-            } else {
-                println!(
-                    "Vacations{}:",
-                    year.map_or(String::new(), |y| format!(" in {}", y))
-                );
-                for (date, entry) in filtered {
-                    println!("{}", fmt_entry(date, entry));
-                }
-            }
+            let output = ListOutput {
+                vacations: filtered,
+                filters: Filters { year: *year },
+            };
+
+            let output_string = match format {
+                Format::Json => serde_json::to_string_pretty(&output)?,
+                Format::Text => output.to_text(),
+            };
+
+            println!("{}", output_string);
         }
 
         VacationCommands::Remove { date } => {
-            if !vacations.contains_key(date) {
-                anyhow::bail!("No vacation exists on {}", date);
-            }
+            let entry = match vacations.remove(date) {
+                Some(entry) => entry,
+                None => anyhow::bail!("No vacation found on {}.", date),
+            };
 
-            vacations.remove(date);
             save_vacations(config_path, &vacations)?;
-            println!("Removed vacation: {}", date);
+
+            let output = RemoveOutput {
+                vacation: Vacation {
+                    date: *date,
+                    description: entry.description,
+                    portion: entry.portion,
+                },
+            };
+
+            let output_string = match format {
+                Format::Json => serde_json::to_string_pretty(&output)?,
+                Format::Text => output.to_text(),
+            };
+
+            println!("{}", output_string);
         }
     };
 
     Ok(())
-}
-
-fn fmt_date(date: &NaiveDate) -> String {
-    date.format("%Y-%m-%d").to_string()
-}
-
-fn fmt_entry(date: &NaiveDate, entry: &VacationEntry) -> String {
-    if entry.portion == DayPortion::Full {
-        format!("{} — {}", fmt_date(date), entry.description)
-    } else {
-        format!(
-            "{} — {} ({})",
-            fmt_date(date),
-            entry.description,
-            entry.portion
-        )
-    }
 }

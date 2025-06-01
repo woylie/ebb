@@ -50,14 +50,14 @@ impl StopOutput {
 
 #[derive(Serialize)]
 struct CancelOutput {
-    frame: CurrentFrame,
+    cancelled_frame: CurrentFrame,
 }
 
 impl CancelOutput {
     fn to_text(&self) -> String {
         format!(
             "Current frame of project '{}' cancelled.",
-            self.frame.project
+            self.cancelled_frame.project
         )
     }
 }
@@ -233,7 +233,7 @@ pub fn run_cancel(config_path: &Path, format: &Format) -> anyhow::Result<()> {
         save_state(config_path, &state)?;
 
         let output = CancelOutput {
-            frame: current_frame.clone(),
+            cancelled_frame: current_frame.clone(),
         };
 
         let output_string = match format {

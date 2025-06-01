@@ -3,14 +3,103 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 use crate::persistence::{load_sickdays, save_sickdays};
-use crate::types::{DayPortion, SickdayEntry};
-use crate::SickdayArgs;
-use crate::SickdayCommands;
+use crate::types::{DayPortion, Sickday, SickdayEntry};
+use crate::{Format, SickdayArgs, SickdayCommands};
 use chrono::Datelike;
-use chrono::NaiveDate;
+use serde::Serialize;
 use std::path::Path;
 
-pub fn run_sickday(args: &SickdayArgs, config_path: &Path) -> anyhow::Result<()> {
+#[derive(Serialize)]
+struct AddOutput {
+    sickday: Sickday,
+}
+
+impl AddOutput {
+    fn to_text(&self) -> String {
+        format!(
+            "Sick day '{}' added on {}.",
+            self.sickday.description,
+            self.sickday.date.format("%Y-%m-%d"),
+        )
+    }
+}
+
+#[derive(Serialize)]
+struct EditOutput {
+    sickday: Sickday,
+}
+
+impl EditOutput {
+    fn to_text(&self) -> String {
+        format!(
+            "Updated sick day '{}' on {}.",
+            self.sickday.description,
+            self.sickday.date.format("%Y-%m-%d"),
+        )
+    }
+}
+
+#[derive(Serialize)]
+struct ListOutput {
+    sickdays: Vec<Sickday>,
+    filters: Filters,
+}
+
+#[derive(Serialize)]
+struct Filters {
+    year: Option<i32>,
+}
+
+impl ListOutput {
+    fn to_text(&self) -> String {
+        if self.sickdays.is_empty() {
+            match self.filters.year {
+                Some(y) => format!("No sick days found for {}.", y),
+                None => "No sick days found.".to_string(),
+            }
+        } else {
+            let lines: Vec<String> = self
+                .sickdays
+                .iter()
+                .map(|sickday| {
+                    if sickday.portion == DayPortion::Full {
+                        format!(
+                            "{} — {}",
+                            sickday.date.format("%Y-%m-%d"),
+                            sickday.description
+                        )
+                    } else {
+                        format!(
+                            "{} — {} ({})",
+                            sickday.date.format("%Y-%m-%d"),
+                            sickday.description,
+                            sickday.portion
+                        )
+                    }
+                })
+                .collect();
+
+            lines.join("\n")
+        }
+    }
+}
+
+#[derive(Serialize)]
+struct RemoveOutput {
+    sickday: Sickday,
+}
+
+impl RemoveOutput {
+    fn to_text(&self) -> String {
+        format!(
+            "Removed sick day '{}' on {}.",
+            self.sickday.description,
+            self.sickday.date.format("%Y-%m-%d"),
+        )
+    }
+}
+
+pub fn run_sickday(args: &SickdayArgs, config_path: &Path, format: &Format) -> anyhow::Result<()> {
     let mut sickdays = load_sickdays(config_path)?;
 
     match &args.command {
@@ -20,7 +109,7 @@ pub fn run_sickday(args: &SickdayArgs, config_path: &Path) -> anyhow::Result<()>
             portion,
         } => {
             if sickdays.contains_key(date) {
-                anyhow::bail!("A sick day already exists for {}", date);
+                anyhow::bail!("A sick day already exists on {}", date);
             }
 
             let entry = SickdayEntry {
@@ -29,9 +118,22 @@ pub fn run_sickday(args: &SickdayArgs, config_path: &Path) -> anyhow::Result<()>
             };
 
             sickdays.insert(*date, entry.clone());
-
             save_sickdays(config_path, &sickdays)?;
-            println!("Added sick day: {}", fmt_entry(date, &entry));
+
+            let output = AddOutput {
+                sickday: Sickday {
+                    date: *date,
+                    description: entry.description,
+                    portion: entry.portion,
+                },
+            };
+
+            let output_string = match format {
+                Format::Json => serde_json::to_string_pretty(&output)?,
+                Format::Text => output.to_text(),
+            };
+
+            println!("{}", output_string);
         }
 
         SickdayCommands::Edit {
@@ -40,7 +142,7 @@ pub fn run_sickday(args: &SickdayArgs, config_path: &Path) -> anyhow::Result<()>
             portion,
         } => {
             if !sickdays.contains_key(date) {
-                anyhow::bail!("No sick day exists on {}", date);
+                anyhow::bail!("No sick day found on {}", date);
             }
 
             let entry = SickdayEntry {
@@ -49,60 +151,72 @@ pub fn run_sickday(args: &SickdayArgs, config_path: &Path) -> anyhow::Result<()>
             };
 
             sickdays.insert(*date, entry.clone());
-
             save_sickdays(config_path, &sickdays)?;
-            println!("Edited sick day: {}", fmt_entry(date, &entry));
+
+            let output = EditOutput {
+                sickday: Sickday {
+                    date: *date,
+                    description: entry.description,
+                    portion: entry.portion,
+                },
+            };
+
+            let output_string = match format {
+                Format::Json => serde_json::to_string_pretty(&output)?,
+                Format::Text => output.to_text(),
+            };
+
+            println!("{}", output_string);
         }
 
         SickdayCommands::List { year } => {
-            let filtered: Vec<_> = sickdays
+            let filtered: Vec<Sickday> = sickdays
                 .iter()
-                .filter(|(date, _)| year.is_none_or(|y| date.year() == y))
+                .filter(|(date, _)| year.is_none() || date.year() == year.unwrap())
+                .map(|(date, entry)| Sickday {
+                    date: *date,
+                    description: entry.description.clone(),
+                    portion: entry.portion.clone(),
+                })
                 .collect();
 
-            if filtered.is_empty() {
-                match year {
-                    Some(y) => println!("No sick days found for {}.", y),
-                    None => println!("No sick days recorded."),
-                }
-            } else {
-                println!(
-                    "Sick days{}:",
-                    year.map_or(String::new(), |y| format!(" in {}", y))
-                );
-                for (date, entry) in filtered {
-                    println!("{}", fmt_entry(date, entry));
-                }
-            }
+            let output = ListOutput {
+                sickdays: filtered,
+                filters: Filters { year: *year },
+            };
+
+            let output_string = match format {
+                Format::Json => serde_json::to_string_pretty(&output)?,
+                Format::Text => output.to_text(),
+            };
+
+            println!("{}", output_string);
         }
 
         SickdayCommands::Remove { date } => {
-            if !sickdays.contains_key(date) {
-                anyhow::bail!("No sick day exists on {}", date);
-            }
+            let entry = match sickdays.remove(date) {
+                Some(entry) => entry,
+                None => anyhow::bail!("No sick day found on {}.", date),
+            };
 
-            sickdays.remove(date);
             save_sickdays(config_path, &sickdays)?;
-            println!("Removed sick day: {}", date);
+
+            let output = RemoveOutput {
+                sickday: Sickday {
+                    date: *date,
+                    description: entry.description,
+                    portion: entry.portion,
+                },
+            };
+
+            let output_string = match format {
+                Format::Json => serde_json::to_string_pretty(&output)?,
+                Format::Text => output.to_text(),
+            };
+
+            println!("{}", output_string);
         }
     };
 
     Ok(())
-}
-
-fn fmt_date(date: &NaiveDate) -> String {
-    date.format("%Y-%m-%d").to_string()
-}
-
-fn fmt_entry(date: &NaiveDate, entry: &SickdayEntry) -> String {
-    if entry.portion == DayPortion::Full {
-        format!("{} — {}", fmt_date(date), entry.description)
-    } else {
-        format!(
-            "{} — {} ({})",
-            fmt_date(date),
-            entry.description,
-            entry.portion
-        )
-    }
 }
