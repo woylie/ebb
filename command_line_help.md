@@ -1,34 +1,34 @@
-# Command-Line Help for `Ebb`
+# Command-Line Help for `ebb`
 
-This document contains the help content for the `Ebb` command-line program.
+This document contains the help content for the `ebb` command-line program.
 
 **Command Overview:**
 
-- [`Ebb`↴](#Ebb)
-- [`Ebb cancel`↴](#Ebb-cancel)
-- [`Ebb holiday`↴](#Ebb-holiday)
-- [`Ebb holiday add`↴](#Ebb-holiday-add)
-- [`Ebb holiday edit`↴](#Ebb-holiday-edit)
-- [`Ebb holiday list`↴](#Ebb-holiday-list)
-- [`Ebb holiday remove`↴](#Ebb-holiday-remove)
-- [`Ebb restart`↴](#Ebb-restart)
-- [`Ebb sickday`↴](#Ebb-sickday)
-- [`Ebb sickday add`↴](#Ebb-sickday-add)
-- [`Ebb sickday edit`↴](#Ebb-sickday-edit)
-- [`Ebb sickday list`↴](#Ebb-sickday-list)
-- [`Ebb sickday remove`↴](#Ebb-sickday-remove)
-- [`Ebb start`↴](#Ebb-start)
-- [`Ebb status`↴](#Ebb-status)
-- [`Ebb stop`↴](#Ebb-stop)
-- [`Ebb vacation`↴](#Ebb-vacation)
-- [`Ebb vacation add`↴](#Ebb-vacation-add)
-- [`Ebb vacation edit`↴](#Ebb-vacation-edit)
-- [`Ebb vacation list`↴](#Ebb-vacation-list)
-- [`Ebb vacation remove`↴](#Ebb-vacation-remove)
+- [`ebb`↴](#ebb)
+- [`ebb cancel`↴](#ebb-cancel)
+- [`ebb holiday`↴](#ebb-holiday)
+- [`ebb holiday add`↴](#ebb-holiday-add)
+- [`ebb holiday edit`↴](#ebb-holiday-edit)
+- [`ebb holiday list`↴](#ebb-holiday-list)
+- [`ebb holiday remove`↴](#ebb-holiday-remove)
+- [`ebb restart`↴](#ebb-restart)
+- [`ebb sickday`↴](#ebb-sickday)
+- [`ebb sickday add`↴](#ebb-sickday-add)
+- [`ebb sickday edit`↴](#ebb-sickday-edit)
+- [`ebb sickday list`↴](#ebb-sickday-list)
+- [`ebb sickday remove`↴](#ebb-sickday-remove)
+- [`ebb start`↴](#ebb-start)
+- [`ebb status`↴](#ebb-status)
+- [`ebb stop`↴](#ebb-stop)
+- [`ebb vacation`↴](#ebb-vacation)
+- [`ebb vacation add`↴](#ebb-vacation-add)
+- [`ebb vacation edit`↴](#ebb-vacation-edit)
+- [`ebb vacation list`↴](#ebb-vacation-list)
+- [`ebb vacation remove`↴](#ebb-vacation-remove)
 
-## `Ebb`
+## `ebb`
 
-**Usage:** `Ebb [OPTIONS] <COMMAND>`
+**Usage:** `ebb [OPTIONS] <COMMAND>`
 
 ###### **Subcommands:**
 
@@ -53,17 +53,17 @@ This document contains the help content for the `Ebb` command-line program.
 
   Possible values: `text`, `json`
 
-## `Ebb cancel`
+## `ebb cancel`
 
 Cancel the current time tracking frame
 
-**Usage:** `Ebb cancel`
+**Usage:** `ebb cancel`
 
-## `Ebb holiday`
+## `ebb holiday`
 
 Manage holidays
 
-**Usage:** `Ebb holiday
+**Usage:** `ebb holiday
        holiday <COMMAND>`
 
 ###### **Subcommands:**
@@ -73,11 +73,11 @@ Manage holidays
 - `list` — List all holidays
 - `remove` — Remove a holiday
 
-## `Ebb holiday add`
+## `ebb holiday add`
 
 Add a new holiday
 
-**Usage:** `Ebb holiday add [OPTIONS] <DATE> [DESCRIPTION]`
+**Usage:** `ebb holiday add [OPTIONS] <DATE> [DESCRIPTION]`
 
 ###### **Arguments:**
 
@@ -94,11 +94,11 @@ Add a new holiday
 
   Possible values: `full`, `half`
 
-## `Ebb holiday edit`
+## `ebb holiday edit`
 
 Edit the description of an existing holiday
 
-**Usage:** `Ebb holiday edit [OPTIONS] <DATE> <DESCRIPTION>`
+**Usage:** `ebb holiday edit [OPTIONS] <DATE> <DESCRIPTION>`
 
 ###### **Arguments:**
 
@@ -111,42 +111,42 @@ Edit the description of an existing holiday
 
   Possible values: `full`, `half`
 
-## `Ebb holiday list`
+## `ebb holiday list`
 
 List all holidays
 
-**Usage:** `Ebb holiday list [OPTIONS]`
+**Usage:** `ebb holiday list [OPTIONS]`
 
 ###### **Options:**
 
 - `-y`, `--year <YEAR>` — Filter by year
 
-## `Ebb holiday remove`
+## `ebb holiday remove`
 
 Remove a holiday
 
-**Usage:** `Ebb holiday remove <DATE>`
+**Usage:** `ebb holiday remove <DATE>`
 
 ###### **Arguments:**
 
 - `<DATE>` — Date of the holiday to remove
 
-## `Ebb restart`
+## `ebb restart`
 
 Restart the last project
 
-**Usage:** `Ebb restart [OPTIONS]`
+**Usage:** `ebb restart [OPTIONS]`
 
 ###### **Options:**
 
 - `--at <AT>` — Time at which the project is restarted (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); if omitted, the current time is used
 - `-G`, `--no-gap` — Set the start time to the end time of the last saved frame
 
-## `Ebb sickday`
+## `ebb sickday`
 
 Manage sick days
 
-**Usage:** `Ebb sickday
+**Usage:** `ebb sickday
        sickday <COMMAND>`
 
 ###### **Subcommands:**
@@ -156,11 +156,11 @@ Manage sick days
 - `list` — List all sick days
 - `remove` — Remove a sick day
 
-## `Ebb sickday add`
+## `ebb sickday add`
 
 Add a new sick day
 
-**Usage:** `Ebb sickday add [OPTIONS] <DATE> [DESCRIPTION]`
+**Usage:** `ebb sickday add [OPTIONS] <DATE> [DESCRIPTION]`
 
 ###### **Arguments:**
 
@@ -177,11 +177,11 @@ Add a new sick day
 
   Possible values: `full`, `half`
 
-## `Ebb sickday edit`
+## `ebb sickday edit`
 
 Edit the description of an existing sick day
 
-**Usage:** `Ebb sickday edit [OPTIONS] <DATE> <DESCRIPTION>`
+**Usage:** `ebb sickday edit [OPTIONS] <DATE> <DESCRIPTION>`
 
 ###### **Arguments:**
 
@@ -194,31 +194,31 @@ Edit the description of an existing sick day
 
   Possible values: `full`, `half`
 
-## `Ebb sickday list`
+## `ebb sickday list`
 
 List all sick days
 
-**Usage:** `Ebb sickday list [OPTIONS]`
+**Usage:** `ebb sickday list [OPTIONS]`
 
 ###### **Options:**
 
 - `-y`, `--year <YEAR>` — Filter by year
 
-## `Ebb sickday remove`
+## `ebb sickday remove`
 
 Remove a sick day
 
-**Usage:** `Ebb sickday remove <DATE>`
+**Usage:** `ebb sickday remove <DATE>`
 
 ###### **Arguments:**
 
 - `<DATE>` — Date of the sick day to remove
 
-## `Ebb start`
+## `ebb start`
 
 Start time tracking
 
-**Usage:** `Ebb start [OPTIONS] <PROJECT>`
+**Usage:** `ebb start [OPTIONS] <PROJECT>`
 
 ###### **Arguments:**
 
@@ -229,27 +229,27 @@ Start time tracking
 - `--at <AT>` — Time at which the project is started (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); if omitted, the current time is used
 - `-G`, `--no-gap` — Set the start time to the end time of the last saved frame
 
-## `Ebb status`
+## `ebb status`
 
 Show current time tracking status
 
-**Usage:** `Ebb status`
+**Usage:** `ebb status`
 
-## `Ebb stop`
+## `ebb stop`
 
 Stop time tracking
 
-**Usage:** `Ebb stop [OPTIONS]`
+**Usage:** `ebb stop [OPTIONS]`
 
 ###### **Options:**
 
 - `--at <AT>` — Time at which the project is stopped (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); if omitted, the current time is used
 
-## `Ebb vacation`
+## `ebb vacation`
 
 Manage vacation days
 
-**Usage:** `Ebb vacation
+**Usage:** `ebb vacation
        vacation <COMMAND>`
 
 ###### **Subcommands:**
@@ -259,11 +259,11 @@ Manage vacation days
 - `list` — List all vacation days
 - `remove` — Remove a vacation day
 
-## `Ebb vacation add`
+## `ebb vacation add`
 
 Add a new vacation day
 
-**Usage:** `Ebb vacation add [OPTIONS] <DATE> [DESCRIPTION]`
+**Usage:** `ebb vacation add [OPTIONS] <DATE> [DESCRIPTION]`
 
 ###### **Arguments:**
 
@@ -280,11 +280,11 @@ Add a new vacation day
 
   Possible values: `full`, `half`
 
-## `Ebb vacation edit`
+## `ebb vacation edit`
 
 Edit the description of an existing vacation day
 
-**Usage:** `Ebb vacation edit [OPTIONS] <DATE> <DESCRIPTION>`
+**Usage:** `ebb vacation edit [OPTIONS] <DATE> <DESCRIPTION>`
 
 ###### **Arguments:**
 
@@ -297,21 +297,21 @@ Edit the description of an existing vacation day
 
   Possible values: `full`, `half`
 
-## `Ebb vacation list`
+## `ebb vacation list`
 
 List all vacation days
 
-**Usage:** `Ebb vacation list [OPTIONS]`
+**Usage:** `ebb vacation list [OPTIONS]`
 
 ###### **Options:**
 
 - `-y`, `--year <YEAR>` — Filter by year
 
-## `Ebb vacation remove`
+## `ebb vacation remove`
 
 Remove a vacation day
 
-**Usage:** `Ebb vacation remove <DATE>`
+**Usage:** `ebb vacation remove <DATE>`
 
 ###### **Arguments:**
 

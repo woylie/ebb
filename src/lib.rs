@@ -17,7 +17,7 @@ pub mod types;
 mod commands;
 
 #[derive(Debug, Parser)]
-#[command(name = "Ebb")]
+#[command(name = "ebb")]
 #[command(version, about, long_about = None)]
 pub struct Cli {
     #[command(subcommand)]
