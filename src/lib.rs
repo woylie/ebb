@@ -3,7 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 use crate::types::DayPortion;
-use crate::Commands::{Cancel, Holiday, Restart, Sickday, Start, Status, Stop, Vacation};
+use crate::Commands::{
+    Cancel, GenerateDocs, Holiday, Restart, Sickday, Start, Status, Stop, Vacation,
+};
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use clap::{Args, Parser, Subcommand, ValueEnum};
@@ -64,6 +66,9 @@ pub enum Commands {
     Stop(StopArgs),
     /// Manage vacation days
     Vacation(VacationArgs),
+    /// Generate the Markdown documentation
+    #[command(hide = true)]
+    GenerateDocs,
 }
 
 #[derive(Debug, Args)]
@@ -242,6 +247,10 @@ pub fn run(cli: &Cli) -> Result<()> {
         Status => commands::tracking::run_status(&config_path, format),
         Stop(args) => commands::tracking::run_stop(args, &config_path, format),
         Vacation(args) => commands::vacation::run_vacation(args, &config_path, format),
+        GenerateDocs => {
+            clap_markdown::print_help_markdown::<Cli>();
+            Ok(())
+        }
     }
 }
 
