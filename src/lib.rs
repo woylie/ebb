@@ -3,7 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 use crate::types::DayPortion;
-use crate::Commands::{Cancel, Holiday, Restart, Sickday, Start, Status, Stop, Vacation};
+use crate::Commands::{
+    Cancel, GenerateDocs, Holiday, Restart, Sickday, Start, Status, Stop, Vacation,
+};
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use clap::{Args, Parser, Subcommand, ValueEnum};
@@ -64,6 +66,9 @@ pub enum Commands {
     Stop(StopArgs),
     /// Manage vacation days
     Vacation(VacationArgs),
+    /// Generate the Markdown documentation
+    #[command(hide = true)]
+    GenerateDocs,
 }
 
 #[derive(Debug, Args)]
@@ -75,8 +80,10 @@ pub struct HolidayArgs {
 
 #[derive(Debug, Args)]
 pub struct RestartArgs {
+    /// Time at which the project is restarted (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); if omitted, the current time is used
     #[arg(long, value_parser=parse_flexible_datetime)]
     at: Option<DateTime<Local>>,
+    /// Set the start time to the end time of the last saved frame
     #[arg(short = 'G', long)]
     no_gap: bool,
 }
@@ -90,15 +97,19 @@ pub struct SickdayArgs {
 
 #[derive(Debug, Args)]
 pub struct StartArgs {
+    /// Name of the project
     project: String,
+    /// Time at which the project is started (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); if omitted, the current time is used
     #[arg(long, value_parser=parse_flexible_datetime)]
     at: Option<DateTime<Local>>,
+    /// Set the start time to the end time of the last saved frame
     #[arg(short = 'G', long)]
     no_gap: bool,
 }
 
 #[derive(Debug, Args)]
 pub struct StopArgs {
+    /// Time at which the project is stopped (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); if omitted, the current time is used
     #[arg(long, value_parser=parse_flexible_datetime)]
     at: Option<DateTime<Local>>,
 }
@@ -114,16 +125,22 @@ pub struct VacationArgs {
 pub enum HolidayCommands {
     /// Add a new holiday
     Add {
+        /// Date of the holiday (yyyy-mm-dd, e.g. 2025-08-11)
         date: NaiveDate,
+        /// Name of the holiday (e.g. Mountain Day)
         #[arg(default_value = "Holiday")]
         description: String,
+        /// Switch between full-day and half-day holiday
         #[arg(short, long, default_value = "full")]
         portion: Option<DayPortion>,
     },
     /// Edit the description of an existing holiday
     Edit {
+        /// Date of the holiday to edit
         date: NaiveDate,
+        /// New name for the holiday
         description: String,
+        /// Switch between full-day and half-day holiday
         #[arg(short, long)]
         portion: Option<DayPortion>,
     },
@@ -135,6 +152,7 @@ pub enum HolidayCommands {
     },
     /// Remove a holiday
     Remove {
+        /// Date of the holiday to remove
         #[arg(required = true)]
         date: NaiveDate,
     },
@@ -144,16 +162,22 @@ pub enum HolidayCommands {
 pub enum SickdayCommands {
     /// Add a new sick day
     Add {
+        /// Day of the sick day
         date: NaiveDate,
+        /// Description for the sick day
         #[arg(default_value = "Sick")]
         description: String,
+        /// Switch between full-day and half-day holiday
         #[arg(short, long, default_value = "full")]
         portion: Option<DayPortion>,
     },
     /// Edit the description of an existing sick day
     Edit {
+        /// Date of the sick day to edit
         date: NaiveDate,
+        /// New description for the sick day
         description: String,
+        /// Switch between full-day and half-day holiday
         #[arg(short, long)]
         portion: Option<DayPortion>,
     },
@@ -165,6 +189,7 @@ pub enum SickdayCommands {
     },
     /// Remove a sick day
     Remove {
+        /// Date of the sick day to remove
         #[arg(required = true)]
         date: NaiveDate,
     },
@@ -174,16 +199,22 @@ pub enum SickdayCommands {
 pub enum VacationCommands {
     /// Add a new vacation day
     Add {
+        /// Date of the vacation day
         date: NaiveDate,
+        /// Name of the vacation day
         #[arg(default_value = "Vacation")]
         description: String,
+        /// Switch between full-day and half-day holiday
         #[arg(short, long, default_value = "full")]
         portion: Option<DayPortion>,
     },
     /// Edit the description of an existing vacation day
     Edit {
+        /// Date of the vacation day to edit
         date: NaiveDate,
+        /// New name for the vacation day
         description: String,
+        /// Switch between full-day and half-day holiday
         #[arg(short, long)]
         portion: Option<DayPortion>,
     },
@@ -195,6 +226,7 @@ pub enum VacationCommands {
     },
     /// Remove a vacation day
     Remove {
+        /// Date of the vacation day to remove
         #[arg(required = true)]
         date: NaiveDate,
     },
@@ -215,6 +247,10 @@ pub fn run(cli: &Cli) -> Result<()> {
         Status => commands::tracking::run_status(&config_path, format),
         Stop(args) => commands::tracking::run_stop(args, &config_path, format),
         Vacation(args) => commands::vacation::run_vacation(args, &config_path, format),
+        GenerateDocs => {
+            clap_markdown::print_help_markdown::<Cli>();
+            Ok(())
+        }
     }
 }
 
