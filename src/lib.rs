@@ -4,7 +4,7 @@
 
 use crate::types::DayPortion;
 use crate::Commands::{
-    Cancel, GenerateDocs, Holiday, Report, Restart, Sickday, Start, Status, Stop, Vacation,
+    Cancel, Config, GenerateDocs, Holiday, Report, Restart, Sickday, Start, Status, Stop, Vacation,
 };
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
@@ -51,6 +51,8 @@ pub enum Format {
 pub enum Commands {
     /// Cancel the current time tracking frame
     Cancel,
+    /// Manage the configuration
+    Config(ConfigArgs),
     /// Manage holidays
     Holiday(HolidayArgs),
     /// Return the total time and time spent per project
@@ -70,6 +72,13 @@ pub enum Commands {
     /// Generate the Markdown documentation
     #[command(hide = true)]
     GenerateDocs,
+}
+
+#[derive(Debug, Args)]
+#[command(args_conflicts_with_subcommands = true)]
+pub struct ConfigArgs {
+    #[command(subcommand)]
+    command: ConfigCommands,
 }
 
 #[derive(Debug, Args)]
@@ -157,6 +166,12 @@ pub struct StopArgs {
 pub struct VacationArgs {
     #[command(subcommand)]
     command: VacationCommands,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum ConfigCommands {
+    /// List all configuration values
+    List,
 }
 
 #[derive(Debug, Subcommand)]
@@ -278,6 +293,7 @@ pub fn run(cli: &Cli) -> Result<()> {
 
     match &cli.command {
         Cancel => cli::tracking::run_cancel(&config_path, format),
+        Config(args) => cli::config::run_config(args, &config_path, format),
         Holiday(args) => cli::holiday::run_holiday(args, &config_path, format),
         Report(args) => cli::report::run_report(args, &config_path, format),
         Restart(args) => cli::tracking::run_restart(args, &config_path, format),

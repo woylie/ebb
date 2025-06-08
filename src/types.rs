@@ -56,7 +56,7 @@ pub struct WorkingHours {
     pub sunday: Duration,
 }
 
-fn default_working_hours() -> WorkingHours {
+pub fn default_working_hours() -> WorkingHours {
     let eight_hours = Duration::from_secs(60 * 60 * 8);
     let zero_hours = Duration::from_secs(0);
 
