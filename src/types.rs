@@ -107,6 +107,12 @@ pub struct State {
     pub current_frame: Option<CurrentFrame>,
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Timespan {
+    pub from: i64,
+    pub to: i64,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Vacation {
     pub date: NaiveDate,

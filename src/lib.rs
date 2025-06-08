@@ -4,17 +4,16 @@
 
 use crate::types::DayPortion;
 use crate::Commands::{
-    Cancel, GenerateDocs, Holiday, Restart, Sickday, Start, Status, Stop, Vacation,
+    Cancel, GenerateDocs, Holiday, Report, Restart, Sickday, Start, Status, Stop, Vacation,
 };
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
-use clap::{Args, Parser, Subcommand, ValueEnum};
+use clap::{ArgGroup, Args, Parser, Subcommand, ValueEnum};
 use std::{fs, path::PathBuf};
 
+pub mod cli;
 pub mod persistence;
 pub mod types;
-
-mod commands;
 
 #[derive(Debug, Parser)]
 #[command(name = "ebb")]
@@ -43,7 +42,7 @@ pub struct Cli {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
-enum Format {
+pub enum Format {
     Text,
     Json,
 }
@@ -54,6 +53,8 @@ pub enum Commands {
     Cancel,
     /// Manage holidays
     Holiday(HolidayArgs),
+    /// Return the total time and time spent per project
+    Report(ReportArgs),
     /// Restart the last project
     Restart(RestartArgs),
     /// Manage sick days
@@ -76,6 +77,43 @@ pub enum Commands {
 pub struct HolidayArgs {
     #[command(subcommand)]
     command: HolidayCommands,
+}
+
+#[derive(Debug, Args)]
+#[command(group(
+    ArgGroup::new("time_filter_from")
+        .args(&["from", "day", "week", "month", "year"])
+        .required(false)
+        .multiple(false),
+))]
+#[command(group(
+    ArgGroup::new("time_filter_to")
+        .args(&["to", "day", "week", "month", "year"])
+        .required(false)
+        .multiple(false),
+))]
+pub struct ReportArgs {
+    /// Start time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601)
+    #[arg(long, value_parser=parse_flexible_datetime)]
+    from: Option<DateTime<Local>>,
+    /// End time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601)
+    #[arg(long, value_parser=parse_flexible_datetime)]
+    to: Option<DateTime<Local>>,
+    /// Report time spent in the current year
+    #[arg(short, long)]
+    year: bool,
+    /// Report time spent in the current month
+    #[arg(short, long)]
+    month: bool,
+    /// Report time spent in the current week
+    #[arg(short, long)]
+    week: bool,
+    /// Report time spent on the current day
+    #[arg(short, long)]
+    day: bool,
+    /// Filter by project
+    #[arg(short, long)]
+    project: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -239,14 +277,15 @@ pub fn run(cli: &Cli) -> Result<()> {
     fs::create_dir_all(&config_path)?;
 
     match &cli.command {
-        Cancel => commands::tracking::run_cancel(&config_path, format),
-        Holiday(args) => commands::holiday::run_holiday(args, &config_path, format),
-        Restart(args) => commands::tracking::run_restart(args, &config_path, format),
-        Sickday(args) => commands::sickday::run_sickday(args, &config_path, format),
-        Start(args) => commands::tracking::run_start(args, &config_path, format),
-        Status => commands::tracking::run_status(&config_path, format),
-        Stop(args) => commands::tracking::run_stop(args, &config_path, format),
-        Vacation(args) => commands::vacation::run_vacation(args, &config_path, format),
+        Cancel => cli::tracking::run_cancel(&config_path, format),
+        Holiday(args) => cli::holiday::run_holiday(args, &config_path, format),
+        Report(args) => cli::report::run_report(args, &config_path, format),
+        Restart(args) => cli::tracking::run_restart(args, &config_path, format),
+        Sickday(args) => cli::sickday::run_sickday(args, &config_path, format),
+        Start(args) => cli::tracking::run_start(args, &config_path, format),
+        Status => cli::tracking::run_status(&config_path, format),
+        Stop(args) => cli::tracking::run_stop(args, &config_path, format),
+        Vacation(args) => cli::vacation::run_vacation(args, &config_path, format),
         GenerateDocs => {
             clap_markdown::print_help_markdown::<Cli>();
             Ok(())
