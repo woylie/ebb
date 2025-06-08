@@ -14,6 +14,21 @@ use tabled::Tabled;
 use tabled::{settings::Style, Table};
 
 #[derive(Serialize)]
+struct GetOutput<'a> {
+    key: &'a String,
+    value: Value,
+}
+
+impl GetOutput<'_> {
+    fn to_text(&self) -> String {
+        match &self.value {
+            serde_json::Value::String(s) => s.clone(),
+            other => other.to_string(),
+        }
+    }
+}
+
+#[derive(Serialize)]
 struct ListOutput {
     config: Config,
 }
@@ -93,6 +108,18 @@ pub fn run_config(args: &ConfigArgs, config_path: &Path, format: &Format) -> any
     let mut config = load_config(config_path)?;
 
     match &args.command {
+        ConfigCommands::Get { key } => {
+            let value = get_config_value(&config, key)?;
+            let output = GetOutput { key, value };
+
+            let output_string = match format {
+                Format::Json => serde_json::to_string_pretty(&output)?,
+                Format::Text => output.to_text(),
+            };
+
+            println!("{}", output_string);
+        }
+
         ConfigCommands::List => {
             let output = ListOutput { config };
 
@@ -124,6 +151,40 @@ pub fn run_config(args: &ConfigArgs, config_path: &Path, format: &Format) -> any
     };
 
     Ok(())
+}
+
+fn get_config_value(config: &Config, key: &str) -> anyhow::Result<Value> {
+    match key {
+        "working_hours.monday" => {
+            let value = Value::String(format_duration(config.working_hours.monday).to_string());
+            Ok(value)
+        }
+        "working_hours.tuesday" => {
+            let value = Value::String(format_duration(config.working_hours.tuesday).to_string());
+            Ok(value)
+        }
+        "working_hours.wednesday" => {
+            let value = Value::String(format_duration(config.working_hours.wednesday).to_string());
+            Ok(value)
+        }
+        "working_hours.thursday" => {
+            let value = Value::String(format_duration(config.working_hours.thursday).to_string());
+            Ok(value)
+        }
+        "working_hours.friday" => {
+            let value = Value::String(format_duration(config.working_hours.friday).to_string());
+            Ok(value)
+        }
+        "working_hours.saturday" => {
+            let value = Value::String(format_duration(config.working_hours.saturday).to_string());
+            Ok(value)
+        }
+        "working_hours.sunday" => {
+            let value = Value::String(format_duration(config.working_hours.sunday).to_string());
+            Ok(value)
+        }
+        _ => bail!("Unknown config key: {}", key),
+    }
 }
 
 fn set_config_value(
