@@ -78,6 +78,7 @@ pub fn run_report(args: &ReportArgs, config_path: &Path, format: &Format) -> any
             start_time: current_frame.start_time,
             end_time: now,
             project: current_frame.project.clone(),
+            tags: current_frame.tags.clone(),
             updated_at: now,
         });
     }

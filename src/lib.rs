@@ -146,6 +146,9 @@ pub struct SickdayArgs {
 pub struct StartArgs {
     /// Name of the project
     project: String,
+    /// Any number of additional tags
+    #[arg(num_args = 0.., trailing_var_arg = true)]
+    tags: Vec<String>,
     /// Time at which the project is started (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); if omitted, the current time is used
     #[arg(long, value_parser=parse_flexible_datetime)]
     at: Option<DateTime<Local>>,
