@@ -8,6 +8,7 @@ use crate::{Format, HolidayArgs, HolidayCommands};
 use chrono::Datelike;
 use serde::Serialize;
 use std::path::Path;
+use tabled::{settings::Style, Table};
 
 #[derive(Serialize)]
 struct AddOutput {
@@ -59,28 +60,8 @@ impl ListOutput {
                 None => "No holidays found.".to_string(),
             }
         } else {
-            let lines: Vec<String> = self
-                .holidays
-                .iter()
-                .map(|holiday| {
-                    if holiday.portion == DayPortion::Full {
-                        format!(
-                            "{} — {}",
-                            holiday.date.format("%Y-%m-%d"),
-                            holiday.description
-                        )
-                    } else {
-                        format!(
-                            "{} — {} ({})",
-                            holiday.date.format("%Y-%m-%d"),
-                            holiday.description,
-                            holiday.portion
-                        )
-                    }
-                })
-                .collect();
-
-            lines.join("\n")
+            let mut table = Table::new(self.holidays.clone());
+            table.with(Style::sharp()).to_string()
         }
     }
 }

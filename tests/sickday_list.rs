@@ -25,8 +25,12 @@ fn list_sickdays_displays_all() -> Result<(), Box<dyn std::error::Error>> {
     fs::write(&file_path, toml_content.trim())?;
 
     let expected_output = "\
-2025-05-28 — headache
-2025-05-29 — fever (half)
+┌────────────┬─────────────┬─────────┐
+│ date       │ description │ portion │
+├────────────┼─────────────┼─────────┤
+│ 2025-05-28 │ headache    │ full    │
+│ 2025-05-29 │ fever       │ half    │
+└────────────┴─────────────┴─────────┘
 ";
 
     let mut cmd = Command::cargo_bin("ebb")?;
@@ -59,7 +63,11 @@ fn list_sickdays_filters_by_year() -> Result<(), Box<dyn std::error::Error>> {
     fs::write(&file_path, toml_content.trim())?;
 
     let expected_output = "\
-2024-08-12 — headache
+┌────────────┬─────────────┬─────────┐
+│ date       │ description │ portion │
+├────────────┼─────────────┼─────────┤
+│ 2024-08-12 │ headache    │ full    │
+└────────────┴─────────────┴─────────┘
 ";
 
     let mut cmd = Command::cargo_bin("ebb")?;

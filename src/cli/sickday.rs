@@ -8,6 +8,7 @@ use crate::{Format, SickdayArgs, SickdayCommands};
 use chrono::Datelike;
 use serde::Serialize;
 use std::path::Path;
+use tabled::{settings::Style, Table};
 
 #[derive(Serialize)]
 struct AddOutput {
@@ -59,28 +60,8 @@ impl ListOutput {
                 None => "No sick days found.".to_string(),
             }
         } else {
-            let lines: Vec<String> = self
-                .sickdays
-                .iter()
-                .map(|sickday| {
-                    if sickday.portion == DayPortion::Full {
-                        format!(
-                            "{} — {}",
-                            sickday.date.format("%Y-%m-%d"),
-                            sickday.description
-                        )
-                    } else {
-                        format!(
-                            "{} — {} ({})",
-                            sickday.date.format("%Y-%m-%d"),
-                            sickday.description,
-                            sickday.portion
-                        )
-                    }
-                })
-                .collect();
-
-            lines.join("\n")
+            let mut table = Table::new(self.sickdays.clone());
+            table.with(Style::sharp()).to_string()
         }
     }
 }

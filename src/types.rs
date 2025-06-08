@@ -7,6 +7,7 @@ use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::fmt;
+use tabled::Tabled;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct CurrentFrame {
@@ -52,7 +53,7 @@ pub struct Frames {
     pub frames: Vec<Frame>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Tabled)]
 pub struct Holiday {
     pub date: NaiveDate,
     pub description: String,
@@ -77,7 +78,7 @@ pub struct HolidayEntry {
 
 pub type Holidays = BTreeMap<NaiveDate, HolidayEntry>;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Tabled)]
 pub struct Sickday {
     pub date: NaiveDate,
     pub description: String,
@@ -113,7 +114,7 @@ pub struct Timespan {
     pub to: i64,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Tabled)]
 pub struct Vacation {
     pub date: NaiveDate,
     pub description: String,
