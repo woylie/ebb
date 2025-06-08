@@ -4,10 +4,88 @@
 
 use chrono::NaiveDate;
 use clap::ValueEnum;
-use serde::{Deserialize, Serialize};
+use humantime::format_duration;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::BTreeMap;
 use std::fmt;
+use std::time::Duration;
 use tabled::Tabled;
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Config {
+    #[serde(default = "default_working_hours")]
+    pub working_hours: WorkingHours,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct WorkingHours {
+    #[serde(
+        deserialize_with = "deserialize_duration_human",
+        serialize_with = "serialize_duration_human"
+    )]
+    pub monday: Duration,
+    #[serde(
+        deserialize_with = "deserialize_duration_human",
+        serialize_with = "serialize_duration_human"
+    )]
+    pub tuesday: Duration,
+    #[serde(
+        deserialize_with = "deserialize_duration_human",
+        serialize_with = "serialize_duration_human"
+    )]
+    pub wednesday: Duration,
+    #[serde(
+        deserialize_with = "deserialize_duration_human",
+        serialize_with = "serialize_duration_human"
+    )]
+    pub thursday: Duration,
+    #[serde(
+        deserialize_with = "deserialize_duration_human",
+        serialize_with = "serialize_duration_human"
+    )]
+    pub friday: Duration,
+    #[serde(
+        deserialize_with = "deserialize_duration_human",
+        serialize_with = "serialize_duration_human"
+    )]
+    pub saturday: Duration,
+    #[serde(
+        deserialize_with = "deserialize_duration_human",
+        serialize_with = "serialize_duration_human"
+    )]
+    pub sunday: Duration,
+}
+
+fn default_working_hours() -> WorkingHours {
+    let eight_hours = Duration::from_secs(60 * 60 * 8);
+    let zero_hours = Duration::from_secs(0);
+
+    WorkingHours {
+        monday: eight_hours,
+        tuesday: eight_hours,
+        wednesday: eight_hours,
+        thursday: eight_hours,
+        friday: eight_hours,
+        saturday: zero_hours,
+        sunday: zero_hours,
+    }
+}
+
+fn serialize_duration_human<S>(duration: &Duration, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let s = format_duration(*duration).to_string();
+    serializer.serialize_str(&s)
+}
+
+fn deserialize_duration_human<'de, D>(deserializer: D) -> Result<Duration, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s = String::deserialize(deserializer)?;
+    humantime::parse_duration(&s).map_err(serde::de::Error::custom)
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct CurrentFrame {
