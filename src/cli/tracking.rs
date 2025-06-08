@@ -288,10 +288,6 @@ fn update_current_frame(
         }
     }
 
-    if at.is_some() && *no_gap {
-        bail!("Cannot use --at and --no-gap together.");
-    }
-
     let start_time = if let Some(at_dt) = at {
         let at_ts = at_dt.with_timezone(&Utc).timestamp();
 

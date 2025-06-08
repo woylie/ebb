@@ -126,6 +126,12 @@ pub struct ReportArgs {
 }
 
 #[derive(Debug, Args)]
+#[command(group(
+    ArgGroup::new("start")
+        .args(&["at", "no_gap"])
+        .required(false)
+        .multiple(false),
+))]
 pub struct RestartArgs {
     /// Time at which the project is restarted (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); if omitted, the current time is used
     #[arg(long, value_parser=parse_flexible_datetime)]
@@ -143,6 +149,12 @@ pub struct SickdayArgs {
 }
 
 #[derive(Debug, Args)]
+#[command(group(
+    ArgGroup::new("start")
+        .args(&["at", "no_gap"])
+        .required(false)
+        .multiple(false),
+))]
 pub struct StartArgs {
     /// Name of the project
     project: String,

@@ -169,7 +169,9 @@ fn restart_fails_with_no_gap_and_at() -> Result<(), Box<dyn std::error::Error>> 
         .env("EBB_CONFIG_DIR", tmp.path())
         .assert()
         .failure()
-        .stderr(contains("Cannot use --at and --no-gap together."));
+        .stderr(contains(
+            "the argument '--at <AT>' cannot be used with '--no-gap'",
+        ));
 
     Ok(())
 }
