@@ -14,8 +14,8 @@ fn config_set_sets_working_hour() -> Result<(), Box<dyn std::error::Error>> {
 
     let expected_output = "\
 Key: working_hours.wednesday
-Old value: \"8h\"
-New value: \"4h\"
+Old value: 8h
+New value: 4h
 ";
 
     let mut cmd = Command::cargo_bin("ebb")?;

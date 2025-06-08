@@ -185,6 +185,8 @@ pub struct VacationArgs {
 
 #[derive(Debug, Subcommand)]
 pub enum ConfigCommands {
+    /// Get a single configuration value
+    Get { key: String },
     /// List all configuration values
     List,
     /// Set a configuration value
