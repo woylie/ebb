@@ -25,7 +25,9 @@ pub struct ProjectDuration {
 
 #[derive(Tabled)]
 struct ProjectRow {
+    #[tabled(rename = "Project")]
     project: String,
+    #[tabled(rename = "Duration")]
     duration: String,
 }
 
