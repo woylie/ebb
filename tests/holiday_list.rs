@@ -25,8 +25,12 @@ fn list_holidays_displays_all() -> Result<(), Box<dyn std::error::Error>> {
     fs::write(&file_path, toml_content.trim())?;
 
     let expected_output = "\
-2025-05-28 — Mountain Day
-2025-05-29 — Ocean Day (half)
+┌────────────┬──────────────┬─────────┐
+│ date       │ description  │ portion │
+├────────────┼──────────────┼─────────┤
+│ 2025-05-28 │ Mountain Day │ full    │
+│ 2025-05-29 │ Ocean Day    │ half    │
+└────────────┴──────────────┴─────────┘
 ";
 
     let mut cmd = Command::cargo_bin("ebb")?;
@@ -59,7 +63,11 @@ fn list_holidays_filters_by_year() -> Result<(), Box<dyn std::error::Error>> {
     fs::write(&file_path, toml_content.trim())?;
 
     let expected_output = "\
-2024-08-12 — Mountain Day
+┌────────────┬──────────────┬─────────┐
+│ date       │ description  │ portion │
+├────────────┼──────────────┼─────────┤
+│ 2024-08-12 │ Mountain Day │ full    │
+└────────────┴──────────────┴─────────┘
 ";
 
     let mut cmd = Command::cargo_bin("ebb")?;
