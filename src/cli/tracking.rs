@@ -158,6 +158,7 @@ pub fn run_restart(args: &RestartArgs, config_path: &Path, format: &Format) -> a
         at: args.at,
         no_gap: args.no_gap,
         project: last_frame.project.clone(),
+        tags: last_frame.tags.clone(),
     };
 
     update_current_frame(&mut state, &start_args, now, config_path)?;
@@ -274,6 +275,7 @@ fn update_current_frame(
 ) -> Result<()> {
     let StartArgs {
         project,
+        tags,
         at,
         no_gap,
     } = args;
@@ -284,10 +286,6 @@ fn update_current_frame(
         if let Ok(frames) = load_frames(config_path) {
             last_frame_end = frames.frames.last().map(|f| f.end_time);
         }
-    }
-
-    if at.is_some() && *no_gap {
-        bail!("Cannot use --at and --no-gap together.");
     }
 
     let start_time = if let Some(at_dt) = at {
@@ -318,8 +316,15 @@ fn update_current_frame(
         now.timestamp()
     };
 
+    let tags_cleaned: Vec<String> = tags
+        .iter()
+        .filter_map(|t| t.strip_prefix('+'))
+        .map(|s| s.to_string())
+        .collect();
+
     let current_frame = CurrentFrame {
         project: project.to_string(),
+        tags: tags_cleaned,
         start_time,
     };
 
@@ -338,6 +343,7 @@ fn stop_current_frame(
         start_time: current_frame.start_time,
         end_time: now.timestamp(),
         project: current_frame.project.clone(),
+        tags: current_frame.tags.clone(),
         updated_at: now.timestamp(),
     };
 

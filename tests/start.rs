@@ -58,6 +58,30 @@ fn start_updates_empty_state_file() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
+fn start_saves_tags() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("start")
+        .arg("myproject")
+        .arg("+tag1")
+        .arg("+tag2")
+        .env("EBB_CONFIG_DIR", tmp.path())
+        .assert()
+        .success();
+
+    let file = tmp.path().join("state.toml");
+    assert!(file.exists());
+
+    let contents = fs::read_to_string(file)?;
+    let state: State = toml::from_str(&contents)?;
+
+    assert_eq!(state.current_frame.unwrap().tags, vec!["tag1", "tag2"]);
+
+    Ok(())
+}
+
+#[test]
 fn start_stops_current_frame_and_updates_state_file() -> Result<(), Box<dyn std::error::Error>> {
     let tmp = tempdir()?;
     let config_dir = tmp.path();
@@ -177,7 +201,9 @@ fn start_fails_with_both_no_gap_and_at() -> Result<(), Box<dyn std::error::Error
         .env("EBB_CONFIG_DIR", tmp.path())
         .assert()
         .failure()
-        .stderr(contains("Cannot use --at and --no-gap together."));
+        .stderr(contains(
+            "the argument '--at <AT>' cannot be used with '--no-gap'",
+        ));
 
     Ok(())
 }

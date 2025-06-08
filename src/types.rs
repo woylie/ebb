@@ -91,6 +91,8 @@ where
 pub struct CurrentFrame {
     pub start_time: i64,
     pub project: String,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub tags: Vec<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, ValueEnum, PartialEq, Eq)]
@@ -123,6 +125,8 @@ pub struct Frame {
     pub start_time: i64,
     pub end_time: i64,
     pub project: String,
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub tags: Vec<String>,
     pub updated_at: i64,
 }
 
