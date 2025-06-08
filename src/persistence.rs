@@ -8,8 +8,9 @@ use std::{collections::BTreeMap, fs};
 use anyhow::Result;
 use serde::{de::DeserializeOwned, Serialize};
 
-use crate::types::{Frames, Holidays, Sickdays, State, Vacations};
+use crate::types::{default_working_hours, Config, Frames, Holidays, Sickdays, State, Vacations};
 
+pub const CONFIG_FILE: &str = "config.toml";
 pub const FRAME_FILE: &str = "frames.toml";
 pub const HOLIDAY_FILE: &str = "holidays.toml";
 pub const SICKDAY_FILE: &str = "sickdays.toml";
@@ -30,6 +31,20 @@ pub fn save_toml<T: Serialize>(config_path: &Path, filename: &str, value: &T) ->
     let toml = toml::to_string(value)?;
     fs::write(path, toml)?;
     Ok(())
+}
+
+pub fn load_config(config_path: &Path) -> Result<Config> {
+    load_toml(
+        config_path,
+        CONFIG_FILE,
+        Config {
+            working_hours: default_working_hours(),
+        },
+    )
+}
+
+pub fn save_config(config_path: &Path, config: &Config) -> Result<()> {
+    save_toml(config_path, CONFIG_FILE, config)
 }
 
 pub fn load_frames(config_path: &Path) -> Result<Frames> {
