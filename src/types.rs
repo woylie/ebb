@@ -148,9 +148,14 @@ where
     S: Serializer,
     V: Serialize,
 {
+    let mut keys: Vec<_> = map.keys().cloned().collect();
+    keys.sort();
+
     let mut ser_map = serializer.serialize_map(Some(map.len()))?;
-    for (k, v) in map {
-        ser_map.serialize_entry(&k.to_string(), v)?;
+    for key in keys {
+        if let Some(value) = map.get(&key) {
+            ser_map.serialize_entry(&key.to_string(), value)?;
+        }
     }
     ser_map.end()
 }
