@@ -57,8 +57,7 @@ pipx reuse annotate --copyright="YOUR NAME" --license="AGPL-3.0-or-later" <filen
 Generate markdown documentation:
 
 ```bash
-cargo run generate-docs > command_line_help.md
-prettier ./command_line_help.md --write
+./gen-docs.sh
 ```
 
 Generate `THIRD_PARTY` file:
