@@ -280,21 +280,18 @@ impl Frames {
 
     pub fn rename_tag(&mut self, old_name: &str, new_name: &str) {
         for frame in &mut self.frames {
-            if frame.tags.contains(&old_name.to_string()) {
-                frame.tags = frame
-                    .tags
-                    .iter()
-                    .map(|tag| {
-                        if tag == old_name {
-                            new_name.to_string()
-                        } else {
-                            tag.clone()
-                        }
-                    })
-                    .collect::<HashSet<_>>()
-                    .into_iter()
-                    .collect::<Vec<_>>();
+            let mut changed = false;
+
+            for tag in &mut frame.tags {
+                if tag == old_name {
+                    *tag = new_name.to_string();
+                    changed = true;
+                }
+            }
+
+            if changed {
                 frame.tags.sort();
+                frame.tags.dedup(); // Remove duplicates after sort
             }
         }
     }
