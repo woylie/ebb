@@ -8,7 +8,10 @@ use std::{collections::BTreeMap, fs};
 use anyhow::Result;
 use serde::{de::DeserializeOwned, Serialize};
 
-use crate::types::{default_working_hours, Config, Frames, Holidays, Sickdays, State, Vacations};
+use crate::types::{
+    default_sick_days_per_year, default_vacation_days_per_year, default_working_hours, Config,
+    Frames, Holidays, Sickdays, State, Vacations,
+};
 
 pub const CONFIG_FILE: &str = "config.toml";
 pub const FRAME_FILE: &str = "frames.toml";
@@ -38,6 +41,8 @@ pub fn load_config(config_path: &Path) -> Result<Config> {
         config_path,
         CONFIG_FILE,
         Config {
+            sick_days_per_year: default_sick_days_per_year(),
+            vacation_days_per_year: default_vacation_days_per_year(),
             working_hours: default_working_hours(),
         },
     )

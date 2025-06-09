@@ -5,14 +5,28 @@
 use chrono::NaiveDate;
 use clap::ValueEnum;
 use humantime::format_duration;
+use serde::de::{self, MapAccess, Visitor};
+use serde::ser::SerializeMap;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fmt;
 use std::time::Duration;
 use tabled::Tabled;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Config {
+    #[serde(
+        default = "default_vacation_days_per_year",
+        serialize_with = "serialize_map_keys_as_strings",
+        deserialize_with = "deserialize_map_keys_as_i32"
+    )]
+    pub vacation_days_per_year: HashMap<i32, i32>,
+    #[serde(
+        default = "default_sick_days_per_year",
+        serialize_with = "serialize_map_keys_as_strings",
+        deserialize_with = "deserialize_map_keys_as_i32"
+    )]
+    pub sick_days_per_year: HashMap<i32, i32>,
     #[serde(default = "default_working_hours")]
     pub working_hours: WorkingHours,
 }
@@ -56,6 +70,14 @@ pub struct WorkingHours {
     pub sunday: Duration,
 }
 
+pub fn default_vacation_days_per_year() -> HashMap<i32, i32> {
+    HashMap::from([(2000, 30)])
+}
+
+pub fn default_sick_days_per_year() -> HashMap<i32, i32> {
+    HashMap::from([(2000, 30)])
+}
+
 pub fn default_working_hours() -> WorkingHours {
     let eight_hours = Duration::from_secs(60 * 60 * 8);
     let zero_hours = Duration::from_secs(0);
@@ -85,6 +107,52 @@ where
 {
     let s = String::deserialize(deserializer)?;
     humantime::parse_duration(&s).map_err(serde::de::Error::custom)
+}
+
+fn deserialize_map_keys_as_i32<'de, D>(deserializer: D) -> Result<HashMap<i32, i32>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    struct MapVisitor;
+
+    impl<'de> Visitor<'de> for MapVisitor {
+        type Value = HashMap<i32, i32>;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("a map with string keys that can be parsed as integers")
+        }
+
+        fn visit_map<M>(self, mut access: M) -> Result<HashMap<i32, i32>, M::Error>
+        where
+            M: MapAccess<'de>,
+        {
+            let mut map = HashMap::new();
+            while let Some((key, value)) = access.next_entry::<String, i32>()? {
+                let parsed_key = key
+                    .parse::<i32>()
+                    .map_err(|_| de::Error::custom(format!("Invalid integer key: {}", key)))?;
+                map.insert(parsed_key, value);
+            }
+            Ok(map)
+        }
+    }
+
+    deserializer.deserialize_map(MapVisitor)
+}
+
+pub fn serialize_map_keys_as_strings<S, V>(
+    map: &HashMap<i32, V>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+    V: Serialize,
+{
+    let mut ser_map = serializer.serialize_map(Some(map.len()))?;
+    for (k, v) in map {
+        ser_map.serialize_entry(&k.to_string(), v)?;
+    }
+    ser_map.end()
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]

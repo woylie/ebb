@@ -5,13 +5,10 @@
 use crate::persistence::{load_config, save_config};
 use crate::types::Config;
 use crate::{ConfigArgs, ConfigCommands, Format};
-use anyhow::bail;
-use humantime::{format_duration, parse_duration, FormattedDuration};
 use serde::Serialize;
-use serde_json::Value;
+use serde_json::{Map, Value};
 use std::path::Path;
-use tabled::Tabled;
-use tabled::{settings::Style, Table};
+use tabled::{settings::Style, Table, Tabled};
 
 #[derive(Serialize)]
 struct GetOutput<'a> {
@@ -34,58 +31,36 @@ struct ListOutput {
 }
 
 #[derive(Tabled)]
-struct ConfigRow<'a> {
-    #[tabled(rename = "Config Key")]
-    key: &'a str,
+struct ConfigRow {
+    #[tabled(rename = "Key")]
+    key: String,
     #[tabled(rename = "Value")]
-    value: FormattedDuration,
+    value: String,
 }
 
 impl ListOutput {
     fn to_text(&self) -> String {
-        let rows = vec![
-            ConfigRow {
-                key: "working_hours.monday",
-                value: format_duration(self.config.working_hours.monday),
-            },
-            ConfigRow {
-                key: "working_hours.tuesday",
-                value: format_duration(self.config.working_hours.tuesday),
-            },
-            ConfigRow {
-                key: "working_hours.wednesday",
-                value: format_duration(self.config.working_hours.wednesday),
-            },
-            ConfigRow {
-                key: "working_hours.thursday",
-                value: format_duration(self.config.working_hours.thursday),
-            },
-            ConfigRow {
-                key: "working_hours.friday",
-                value: format_duration(self.config.working_hours.friday),
-            },
-            ConfigRow {
-                key: "working_hours.saturday",
-                value: format_duration(self.config.working_hours.saturday),
-            },
-            ConfigRow {
-                key: "working_hours.sunday",
-                value: format_duration(self.config.working_hours.sunday),
-            },
-        ];
+        let json_value = serde_json::to_value(&self.config).expect("Serialization should succeed");
+        let mut flat = vec![];
+        flatten_value("".to_string(), &json_value, &mut flat);
+
+        let rows: Vec<ConfigRow> = flat
+            .into_iter()
+            .map(|(key, value)| ConfigRow { key, value })
+            .collect();
 
         Table::new(rows).with(Style::sharp()).to_string()
     }
 }
 
 #[derive(Serialize)]
-struct SetOutput<'a> {
-    key: &'a String,
+struct SetOutput {
+    key: String,
     old_value: Value,
     new_value: Value,
 }
 
-impl SetOutput<'_> {
+impl SetOutput {
     fn to_text(&self) -> String {
         let old_value = match &self.old_value {
             serde_json::Value::String(s) => s.clone(),
@@ -136,7 +111,7 @@ pub fn run_config(args: &ConfigArgs, config_path: &Path, format: &Format) -> any
             save_config(config_path, &config)?;
 
             let output = SetOutput {
-                key,
+                key: key.to_string(),
                 old_value,
                 new_value,
             };
@@ -153,38 +128,84 @@ pub fn run_config(args: &ConfigArgs, config_path: &Path, format: &Format) -> any
     Ok(())
 }
 
-fn get_config_value(config: &Config, key: &str) -> anyhow::Result<Value> {
-    match key {
-        "working_hours.monday" => {
-            let value = Value::String(format_duration(config.working_hours.monday).to_string());
-            Ok(value)
+fn flatten_value(prefix: String, value: &Value, output: &mut Vec<(String, String)>) {
+    if prefix == "vacation_days_per_year" || prefix == "sick_days_per_year" {
+        if let Value::Object(map) = value {
+            let mut sorted: Vec<_> = map.iter().collect();
+            sorted.sort_by_key(|(k, _)| k.parse::<i32>().unwrap_or_default());
+            for (year, days) in sorted {
+                let key = format!("{}.{}", prefix, year);
+                flatten_value(key, days, output);
+            }
         }
-        "working_hours.tuesday" => {
-            let value = Value::String(format_duration(config.working_hours.tuesday).to_string());
-            Ok(value)
-        }
-        "working_hours.wednesday" => {
-            let value = Value::String(format_duration(config.working_hours.wednesday).to_string());
-            Ok(value)
-        }
-        "working_hours.thursday" => {
-            let value = Value::String(format_duration(config.working_hours.thursday).to_string());
-            Ok(value)
-        }
-        "working_hours.friday" => {
-            let value = Value::String(format_duration(config.working_hours.friday).to_string());
-            Ok(value)
-        }
-        "working_hours.saturday" => {
-            let value = Value::String(format_duration(config.working_hours.saturday).to_string());
-            Ok(value)
-        }
-        "working_hours.sunday" => {
-            let value = Value::String(format_duration(config.working_hours.sunday).to_string());
-            Ok(value)
-        }
-        _ => bail!("Unknown config key: {}", key),
+        return;
     }
+
+    if prefix == "working_hours" {
+        if let Value::Object(map) = value {
+            let ordered_days = [
+                "monday",
+                "tuesday",
+                "wednesday",
+                "thursday",
+                "friday",
+                "saturday",
+                "sunday",
+            ];
+            for day in &ordered_days {
+                if let Some(v) = map.get(*day) {
+                    let key = format!("{}.{}", prefix, day);
+                    flatten_value(key, v, output);
+                }
+            }
+        }
+        return;
+    }
+
+    match value {
+        Value::Object(map) => {
+            for (k, v) in map {
+                let new_prefix = if prefix.is_empty() {
+                    k.to_string()
+                } else {
+                    format!("{}.{}", prefix, k)
+                };
+                flatten_value(new_prefix, v, output);
+            }
+        }
+        Value::Array(arr) => {
+            for (i, v) in arr.iter().enumerate() {
+                flatten_value(format!("{}[{}]", prefix, i), v, output);
+            }
+        }
+        _ => {
+            let val = match value {
+                Value::String(s) => s.clone(),
+                _ => value.to_string(),
+            };
+            output.push((prefix, val));
+        }
+    }
+}
+
+fn get_config_value(config: &Config, key: &str) -> anyhow::Result<Value> {
+    let json_value = serde_json::to_value(config)?;
+    let mut current = &json_value;
+
+    for part in key.split('.') {
+        match current {
+            Value::Object(map) => {
+                if let Some(next) = map.get(part) {
+                    current = next;
+                } else {
+                    anyhow::bail!("Key '{}' not found", key);
+                }
+            }
+            _ => anyhow::bail!("Key '{}' not found", key),
+        }
+    }
+
+    Ok(current.clone())
 }
 
 fn set_config_value(
@@ -192,67 +213,43 @@ fn set_config_value(
     key: &str,
     value_str: &str,
 ) -> anyhow::Result<(Value, Value)> {
-    match key {
-        "working_hours.monday" => {
-            let old_value = Value::String(format_duration(config.working_hours.monday).to_string());
-            let new_duration = parse_duration(value_str)
-                .map_err(|e| anyhow::anyhow!("Invalid duration for {}: {}", key, e))?;
-            config.working_hours.monday = new_duration;
-            let new_value = Value::String(format_duration(new_duration).to_string());
-            Ok((old_value, new_value))
-        }
-        "working_hours.tuesday" => {
-            let old_value =
-                Value::String(format_duration(config.working_hours.tuesday).to_string());
-            let new_duration = parse_duration(value_str)
-                .map_err(|e| anyhow::anyhow!("Invalid duration for {}: {}", key, e))?;
-            config.working_hours.tuesday = new_duration;
-            let new_value = Value::String(format_duration(new_duration).to_string());
-            Ok((old_value, new_value))
-        }
-        "working_hours.wednesday" => {
-            let old_value =
-                Value::String(format_duration(config.working_hours.wednesday).to_string());
-            let new_duration = parse_duration(value_str)
-                .map_err(|e| anyhow::anyhow!("Invalid duration for {}: {}", key, e))?;
-            config.working_hours.wednesday = new_duration;
-            let new_value = Value::String(format_duration(new_duration).to_string());
-            Ok((old_value, new_value))
-        }
-        "working_hours.thursday" => {
-            let old_value =
-                Value::String(format_duration(config.working_hours.thursday).to_string());
-            let new_duration = parse_duration(value_str)
-                .map_err(|e| anyhow::anyhow!("Invalid duration for {}: {}", key, e))?;
-            config.working_hours.thursday = new_duration;
-            let new_value = Value::String(format_duration(new_duration).to_string());
-            Ok((old_value, new_value))
-        }
-        "working_hours.friday" => {
-            let old_value = Value::String(format_duration(config.working_hours.friday).to_string());
-            let new_duration = parse_duration(value_str)
-                .map_err(|e| anyhow::anyhow!("Invalid duration for {}: {}", key, e))?;
-            config.working_hours.friday = new_duration;
-            let new_value = Value::String(format_duration(new_duration).to_string());
-            Ok((old_value, new_value))
-        }
-        "working_hours.saturday" => {
-            let old_value =
-                Value::String(format_duration(config.working_hours.saturday).to_string());
-            let new_duration = parse_duration(value_str)
-                .map_err(|e| anyhow::anyhow!("Invalid duration for {}: {}", key, e))?;
-            config.working_hours.monday = new_duration;
-            let new_value = Value::String(format_duration(new_duration).to_string());
-            Ok((old_value, new_value))
-        }
-        "working_hours.sunday" => {
-            let old_value = Value::String(format_duration(config.working_hours.sunday).to_string());
-            let new_duration = parse_duration(value_str)
-                .map_err(|e| anyhow::anyhow!("Invalid duration for {}: {}", key, e))?;
-            config.working_hours.sunday = new_duration;
-            let new_value = Value::String(format_duration(new_duration).to_string());
-            Ok((old_value, new_value))
-        }
-        _ => bail!("Unknown config key: {}", key),
+    let mut json_value = serde_json::to_value(&config)?;
+    let parts: Vec<&str> = key.split('.').collect();
+    let parent = get_mut_parent(&mut json_value, &parts)?;
+    let last_key = parts.last().unwrap();
+    let old_value = parent.get(*last_key).cloned().unwrap_or(Value::Null);
+    let json_val =
+        if key.starts_with("vacation_days_per_year.") || key.starts_with("sick_days_per_year.") {
+            let n = value_str
+                .parse::<i32>()
+                .map_err(|e| anyhow::anyhow!("Invalid integer for {}: {}", key, e))?;
+            serde_json::Value::Number(n.into())
+        } else {
+            serde_json::Value::String(value_str.to_string())
+        };
+
+    parent.insert(last_key.to_string(), json_val);
+    *config = serde_json::from_value(json_value)?;
+    Ok((old_value, Value::String(value_str.to_string())))
+}
+
+fn get_mut_parent<'a>(
+    root: &'a mut Value,
+    parts: &[&str],
+) -> anyhow::Result<&'a mut Map<String, Value>> {
+    let mut current = root;
+
+    for part in &parts[..parts.len() - 1] {
+        let obj = current
+            .as_object_mut()
+            .ok_or_else(|| anyhow::anyhow!("Expected object while traversing key path"))?;
+
+        current = obj
+            .get_mut(*part)
+            .ok_or_else(|| anyhow::anyhow!("Key part '{}' not found", part))?;
     }
+
+    current
+        .as_object_mut()
+        .ok_or_else(|| anyhow::anyhow!("Expected object at key path parent"))
 }
