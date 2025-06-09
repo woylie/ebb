@@ -136,6 +136,18 @@ pub struct Frames {
 }
 
 impl Frames {
+    pub fn all_projects(&self) -> Vec<String> {
+        let mut project_set: HashSet<String> = HashSet::new();
+
+        for frame in &self.frames {
+            project_set.insert(frame.project.clone());
+        }
+
+        let mut projects: Vec<String> = project_set.into_iter().collect();
+        projects.sort();
+        projects
+    }
+
     pub fn all_tags(&self) -> Vec<String> {
         let mut tag_set: HashSet<String> = HashSet::new();
 

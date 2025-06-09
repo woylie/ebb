@@ -4,8 +4,8 @@
 
 use crate::types::DayPortion;
 use crate::Commands::{
-    Cancel, Config, GenerateDocs, Holiday, Report, Restart, Sickday, Start, Status, Stop, Tag,
-    Vacation,
+    Cancel, Config, GenerateDocs, Holiday, Project, Report, Restart, Sickday, Start, Status, Stop,
+    Tag, Vacation,
 };
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
@@ -56,6 +56,8 @@ pub enum Commands {
     Config(ConfigArgs),
     /// Manage holidays
     Holiday(HolidayArgs),
+    /// Manage projects
+    Project(ProjectArgs),
     /// Return the total time and time spent per project
     Report(ReportArgs),
     /// Restart the last project
@@ -89,6 +91,13 @@ pub struct ConfigArgs {
 pub struct HolidayArgs {
     #[command(subcommand)]
     command: HolidayCommands,
+}
+
+#[derive(Debug, Args)]
+#[command(args_conflicts_with_subcommands = true)]
+pub struct ProjectArgs {
+    #[command(subcommand)]
+    command: ProjectCommands,
 }
 
 #[derive(Debug, Args)]
@@ -246,6 +255,12 @@ pub enum HolidayCommands {
 }
 
 #[derive(Debug, Subcommand)]
+pub enum ProjectCommands {
+    /// List all projects
+    List,
+}
+
+#[derive(Debug, Subcommand)]
 pub enum SickdayCommands {
     /// Add a new sick day
     Add {
@@ -335,6 +350,7 @@ pub fn run(cli: &Cli) -> Result<()> {
         Cancel => cli::tracking::run_cancel(&config_path, format),
         Config(args) => cli::config::run_config(args, &config_path, format),
         Holiday(args) => cli::holiday::run_holiday(args, &config_path, format),
+        Project(args) => cli::project::run_project(args, &config_path, format),
         Report(args) => cli::report::run_report(args, &config_path, format),
         Restart(args) => cli::tracking::run_restart(args, &config_path, format),
         Sickday(args) => cli::sickday::run_sickday(args, &config_path, format),
