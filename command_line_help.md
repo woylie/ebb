@@ -17,6 +17,7 @@ This document contains the help content for the `ebb` command-line program.
 - [`ebb holiday remove`↴](#ebb-holiday-remove)
 - [`ebb project`↴](#ebb-project)
 - [`ebb project list`↴](#ebb-project-list)
+- [`ebb project rename`↴](#ebb-project-rename)
 - [`ebb report`↴](#ebb-report)
 - [`ebb restart`↴](#ebb-restart)
 - [`ebb sickday`↴](#ebb-sickday)
@@ -29,6 +30,7 @@ This document contains the help content for the `ebb` command-line program.
 - [`ebb stop`↴](#ebb-stop)
 - [`ebb tag`↴](#ebb-tag)
 - [`ebb tag list`↴](#ebb-tag-list)
+- [`ebb tag rename`↴](#ebb-tag-rename)
 - [`ebb vacation`↴](#ebb-vacation)
 - [`ebb vacation add`↴](#ebb-vacation-add)
 - [`ebb vacation edit`↴](#ebb-vacation-edit)
@@ -194,12 +196,24 @@ Manage projects
 ###### **Subcommands:**
 
 - `list` — List all projects
+- `rename` — Renames a project
 
 ## `ebb project list`
 
 List all projects
 
 **Usage:** `ebb project list`
+
+## `ebb project rename`
+
+Renames a project
+
+**Usage:** `ebb project rename <OLD_NAME> <NEW_NAME>`
+
+###### **Arguments:**
+
+- `<OLD_NAME>` — Current project name
+- `<NEW_NAME>` — New project name
 
 ## `ebb report`
 
@@ -342,12 +356,24 @@ Manage tags
 ###### **Subcommands:**
 
 - `list` — List all tags
+- `rename` — Renames a tag
 
 ## `ebb tag list`
 
 List all tags
 
 **Usage:** `ebb tag list`
+
+## `ebb tag rename`
+
+Renames a tag
+
+**Usage:** `ebb tag rename <OLD_NAME> <NEW_NAME>`
+
+###### **Arguments:**
+
+- `<OLD_NAME>` — Current tag name
+- `<NEW_NAME>` — New tag name
 
 ## `ebb vacation`
 

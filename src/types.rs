@@ -169,6 +169,27 @@ impl Frames {
             }
         }
     }
+
+    pub fn rename_tag(&mut self, old_name: &str, new_name: &str) {
+        for frame in &mut self.frames {
+            if frame.tags.contains(&old_name.to_string()) {
+                frame.tags = frame
+                    .tags
+                    .iter()
+                    .map(|tag| {
+                        if tag == old_name {
+                            new_name.to_string()
+                        } else {
+                            tag.clone()
+                        }
+                    })
+                    .collect::<HashSet<_>>()
+                    .into_iter()
+                    .collect::<Vec<_>>();
+                frame.tags.sort();
+            }
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Tabled)]

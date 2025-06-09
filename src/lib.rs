@@ -310,6 +310,15 @@ pub enum SickdayCommands {
 pub enum TagCommands {
     /// List all tags
     List,
+    /// Renames a tag
+    Rename {
+        /// Current tag name
+        #[arg(required = true)]
+        old_name: String,
+        /// New tag name
+        #[arg(required = true)]
+        new_name: String,
+    },
 }
 
 #[derive(Debug, Subcommand)]
