@@ -4,7 +4,8 @@
 
 use crate::types::DayPortion;
 use crate::Commands::{
-    Cancel, Config, GenerateDocs, Holiday, Report, Restart, Sickday, Start, Status, Stop, Vacation,
+    Cancel, Config, GenerateDocs, Holiday, Report, Restart, Sickday, Start, Status, Stop, Tag,
+    Vacation,
 };
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
@@ -67,6 +68,8 @@ pub enum Commands {
     Status,
     /// Stop time tracking
     Stop(StopArgs),
+    /// Manage tags
+    Tag(TagArgs),
     /// Manage vacation days
     Vacation(VacationArgs),
     /// Generate the Markdown documentation
@@ -178,6 +181,13 @@ pub struct StopArgs {
 
 #[derive(Debug, Args)]
 #[command(args_conflicts_with_subcommands = true)]
+pub struct TagArgs {
+    #[command(subcommand)]
+    command: TagCommands,
+}
+
+#[derive(Debug, Args)]
+#[command(args_conflicts_with_subcommands = true)]
 pub struct VacationArgs {
     #[command(subcommand)]
     command: VacationCommands,
@@ -273,6 +283,12 @@ pub enum SickdayCommands {
 }
 
 #[derive(Debug, Subcommand)]
+pub enum TagCommands {
+    /// List all tags
+    List,
+}
+
+#[derive(Debug, Subcommand)]
 pub enum VacationCommands {
     /// Add a new vacation day
     Add {
@@ -325,6 +341,7 @@ pub fn run(cli: &Cli) -> Result<()> {
         Start(args) => cli::tracking::run_start(args, &config_path, format),
         Status => cli::tracking::run_status(&config_path, format),
         Stop(args) => cli::tracking::run_stop(args, &config_path, format),
+        Tag(args) => cli::tag::run_tag(args, &config_path, format),
         Vacation(args) => cli::vacation::run_vacation(args, &config_path, format),
         GenerateDocs => {
             clap_markdown::print_help_markdown::<Cli>();

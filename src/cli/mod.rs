@@ -6,5 +6,6 @@ pub mod config;
 pub mod holiday;
 pub mod report;
 pub mod sickday;
+pub mod tag;
 pub mod tracking;
 pub mod vacation;

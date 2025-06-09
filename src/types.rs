@@ -6,7 +6,7 @@ use chrono::NaiveDate;
 use clap::ValueEnum;
 use humantime::format_duration;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 use std::fmt;
 use std::time::Duration;
 use tabled::Tabled;
@@ -133,6 +133,22 @@ pub struct Frame {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Frames {
     pub frames: Vec<Frame>,
+}
+
+impl Frames {
+    pub fn all_tags(&self) -> Vec<String> {
+        let mut tag_set: HashSet<String> = HashSet::new();
+
+        for frame in &self.frames {
+            for tag in &frame.tags {
+                tag_set.insert(tag.clone());
+            }
+        }
+
+        let mut tags: Vec<String> = tag_set.into_iter().collect();
+        tags.sort();
+        tags
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Tabled)]
