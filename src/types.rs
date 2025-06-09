@@ -291,9 +291,16 @@ impl Frames {
 
             if changed {
                 frame.tags.sort();
-                frame.tags.dedup(); // Remove duplicates after sort
+                frame.tags.dedup();
             }
         }
+    }
+
+    pub fn remove_tag(&mut self, tag_to_remove: &str) -> &mut Self {
+        for frame in &mut self.frames {
+            frame.tags.retain(|tag| tag != tag_to_remove);
+        }
+        self
     }
 }
 

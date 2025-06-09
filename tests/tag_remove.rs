@@ -8,7 +8,7 @@ use std::fs;
 use tempfile::tempdir;
 
 #[test]
-fn tag_renames_a_tag() -> Result<(), Box<dyn std::error::Error>> {
+fn tag_removes_a_tag() -> Result<(), Box<dyn std::error::Error>> {
     let tmp = tempdir()?;
     let config_dir = tmp.path();
 
@@ -39,14 +39,13 @@ fn tag_renames_a_tag() -> Result<(), Box<dyn std::error::Error>> {
     fs::write(&file_path, toml_content.trim())?;
 
     let expected_output = "\
-Tag renamed from 'tag1' to 'tag6'.
+Tag 'tag1' removed from all frames.
 ";
 
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("tag")
-        .arg("rename")
+        .arg("remove")
         .arg("tag1")
-        .arg("tag6")
         .env("EBB_CONFIG_DIR", tmp.path())
         .assert()
         .success()
@@ -55,9 +54,9 @@ Tag renamed from 'tag1' to 'tag6'.
     let contents = fs::read_to_string(file_path)?;
     let parsed: Frames = toml::from_str(&contents)?;
 
-    assert_eq!(&parsed.frames[0].tags, &vec!["tag3", "tag6"]);
+    assert_eq!(&parsed.frames[0].tags, &vec!["tag3"]);
     assert_eq!(&parsed.frames[1].tags, &vec!["tag3", "tag4"]);
-    assert_eq!(&parsed.frames[2].tags, &vec!["tag2", "tag5", "tag6"]);
+    assert_eq!(&parsed.frames[2].tags, &vec!["tag5", "tag2"]);
 
     Ok(())
 }

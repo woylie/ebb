@@ -19,6 +19,17 @@ impl ListOutput {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+pub struct RemoveOutput {
+    pub tag: String,
+}
+
+impl RemoveOutput {
+    fn to_text(&self) -> String {
+        format!("Tag '{}' removed from all frames.", self.tag)
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 pub struct RenameOutput {
     pub old_name: String,
     pub new_name: String,
@@ -40,6 +51,21 @@ pub fn run_tag(args: &TagArgs, config_path: &Path, format: &Format) -> anyhow::R
         TagCommands::List => {
             let tags = frames.all_tags();
             let output = ListOutput { tags };
+
+            let output_string = match format {
+                Format::Json => serde_json::to_string_pretty(&output)?,
+                Format::Text => output.to_text(),
+            };
+
+            println!("{}", output_string);
+        }
+        TagCommands::Remove { tag } => {
+            frames.remove_tag(tag);
+            save_frames(config_path, &frames)?;
+
+            let output = RemoveOutput {
+                tag: tag.to_string(),
+            };
 
             let output_string = match format {
                 Format::Json => serde_json::to_string_pretty(&output)?,

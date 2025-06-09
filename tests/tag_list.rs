@@ -7,7 +7,7 @@ use std::fs;
 use tempfile::tempdir;
 
 #[test]
-fn tags_lists_all_tags() -> Result<(), Box<dyn std::error::Error>> {
+fn tag_list_lists_all_tags() -> Result<(), Box<dyn std::error::Error>> {
     let tmp = tempdir()?;
     let config_dir = tmp.path();
 
