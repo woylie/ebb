@@ -6,11 +6,16 @@ This document contains the help content for the `ebb` command-line program.
 
 - [`ebb`↴](#ebb)
 - [`ebb cancel`↴](#ebb-cancel)
+- [`ebb config`↴](#ebb-config)
+- [`ebb config get`↴](#ebb-config-get)
+- [`ebb config list`↴](#ebb-config-list)
+- [`ebb config set`↴](#ebb-config-set)
 - [`ebb holiday`↴](#ebb-holiday)
 - [`ebb holiday add`↴](#ebb-holiday-add)
 - [`ebb holiday edit`↴](#ebb-holiday-edit)
 - [`ebb holiday list`↴](#ebb-holiday-list)
 - [`ebb holiday remove`↴](#ebb-holiday-remove)
+- [`ebb report`↴](#ebb-report)
 - [`ebb restart`↴](#ebb-restart)
 - [`ebb sickday`↴](#ebb-sickday)
 - [`ebb sickday add`↴](#ebb-sickday-add)
@@ -20,6 +25,8 @@ This document contains the help content for the `ebb` command-line program.
 - [`ebb start`↴](#ebb-start)
 - [`ebb status`↴](#ebb-status)
 - [`ebb stop`↴](#ebb-stop)
+- [`ebb tag`↴](#ebb-tag)
+- [`ebb tag list`↴](#ebb-tag-list)
 - [`ebb vacation`↴](#ebb-vacation)
 - [`ebb vacation add`↴](#ebb-vacation-add)
 - [`ebb vacation edit`↴](#ebb-vacation-edit)
@@ -33,12 +40,15 @@ This document contains the help content for the `ebb` command-line program.
 ###### **Subcommands:**
 
 - `cancel` — Cancel the current time tracking frame
+- `config` — Manage the configuration
 - `holiday` — Manage holidays
+- `report` — Return the total time and time spent per project
 - `restart` — Restart the last project
 - `sickday` — Manage sick days
 - `start` — Start time tracking
 - `status` — Show current time tracking status
 - `stop` — Stop time tracking
+- `tag` — Manage tags
 - `vacation` — Manage vacation days
 
 ###### **Options:**
@@ -58,6 +68,46 @@ This document contains the help content for the `ebb` command-line program.
 Cancel the current time tracking frame
 
 **Usage:** `ebb cancel`
+
+## `ebb config`
+
+Manage the configuration
+
+**Usage:** `ebb config
+       config <COMMAND>`
+
+###### **Subcommands:**
+
+- `get` — Get a single configuration value
+- `list` — List all configuration values
+- `set` — Set a configuration value
+
+## `ebb config get`
+
+Get a single configuration value
+
+**Usage:** `ebb config get <KEY>`
+
+###### **Arguments:**
+
+- `<KEY>`
+
+## `ebb config list`
+
+List all configuration values
+
+**Usage:** `ebb config list`
+
+## `ebb config set`
+
+Set a configuration value
+
+**Usage:** `ebb config set <KEY> <VALUE>`
+
+###### **Arguments:**
+
+- `<KEY>` — Configuration key
+- `<VALUE>` — Configuration value
 
 ## `ebb holiday`
 
@@ -130,6 +180,22 @@ Remove a holiday
 ###### **Arguments:**
 
 - `<DATE>` — Date of the holiday to remove
+
+## `ebb report`
+
+Return the total time and time spent per project
+
+**Usage:** `ebb report [OPTIONS]`
+
+###### **Options:**
+
+- `--from <FROM>` — Start time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601)
+- `--to <TO>` — End time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601)
+- `-y`, `--year` — Report time spent in the current year
+- `-m`, `--month` — Report time spent in the current month
+- `-w`, `--week` — Report time spent in the current week
+- `-d`, `--day` — Report time spent on the current day
+- `-p`, `--project <PROJECT>` — Filter by project
 
 ## `ebb restart`
 
@@ -218,11 +284,12 @@ Remove a sick day
 
 Start time tracking
 
-**Usage:** `ebb start [OPTIONS] <PROJECT>`
+**Usage:** `ebb start [OPTIONS] <PROJECT> [TAGS]...`
 
 ###### **Arguments:**
 
 - `<PROJECT>` — Name of the project
+- `<TAGS>` — Any number of additional tags
 
 ###### **Options:**
 
@@ -244,6 +311,23 @@ Stop time tracking
 ###### **Options:**
 
 - `--at <AT>` — Time at which the project is stopped (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); if omitted, the current time is used
+
+## `ebb tag`
+
+Manage tags
+
+**Usage:** `ebb tag
+       tag <COMMAND>`
+
+###### **Subcommands:**
+
+- `list` — List all tags
+
+## `ebb tag list`
+
+List all tags
+
+**Usage:** `ebb tag list`
 
 ## `ebb vacation`
 
