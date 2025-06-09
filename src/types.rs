@@ -161,6 +161,14 @@ impl Frames {
         tags.sort();
         tags
     }
+
+    pub fn rename_project(&mut self, old_name: &str, new_name: &str) {
+        for frame in &mut self.frames {
+            if frame.project == old_name {
+                frame.project = new_name.to_string();
+            }
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Tabled)]
