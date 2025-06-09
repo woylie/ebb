@@ -238,6 +238,12 @@ impl Frames {
         self
     }
 
+    pub fn filter_by_tag(&mut self, tag: &str) -> &mut Self {
+        self.frames
+            .retain(|frame| frame.tags.contains(&tag.to_string()));
+        self
+    }
+
     pub fn all_projects(&self) -> Vec<String> {
         let mut project_set: HashSet<String> = HashSet::new();
 

@@ -95,6 +95,9 @@ pub fn run_report(args: &ReportArgs, config_path: &Path, format: &Format) -> any
         if let Some(ref project) = args.project {
             frames.filter_by_project(project);
         }
+        if let Some(ref tag) = args.tag {
+            frames.filter_by_tag(tag);
+        }
     }
 
     let (project_durations, total_duration) = total_duration_by_project(&frames);
