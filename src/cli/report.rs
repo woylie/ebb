@@ -21,6 +21,7 @@ pub struct ReportOutput {
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct ProjectDuration {
     pub duration: i64,
+    pub tags: HashMap<String, i64>,
 }
 
 #[derive(Tabled)]
@@ -41,23 +42,34 @@ impl ReportOutput {
             return format!("From: {from_str}\nTo: {to_str}\n\nTotal: {duration_str}");
         }
 
-        let mut rows: Vec<ProjectRow> = self
-            .projects
-            .iter()
-            .map(|(proj, info)| ProjectRow {
-                project: proj.clone(),
+        let mut rows: Vec<ProjectRow> = Vec::new();
+        let mut project_names: Vec<_> = self.projects.keys().collect();
+        project_names.sort();
+
+        for project in project_names {
+            let info = &self.projects[project];
+            rows.push(ProjectRow {
+                project: project.clone(),
                 duration: format_duration(info.duration),
-            })
-            .collect();
+            });
 
-        rows.sort_by(|a, b| a.project.cmp(&b.project));
+            let mut tags: Vec<_> = info.tags.iter().collect();
+            tags.sort_by_key(|(tag, _)| *tag);
 
-        let mut projects_table = Table::new(rows);
-        projects_table
+            for (tag, &duration) in tags {
+                rows.push(ProjectRow {
+                    project: format!("  +{}", tag),
+                    duration: format_duration(duration),
+                });
+            }
+        }
+
+        let mut table = Table::new(rows);
+        table
             .with(Style::sharp())
             .modify(Columns::new(1..2), Alignment::right());
 
-        format!("From: {from_str}\nTo: {to_str}\n\n{projects_table}\n\nTotal: {duration_str}")
+        format!("From: {from_str}\nTo: {to_str}\n\n{table}\n\nTotal: {duration_str}")
     }
 }
 
@@ -179,9 +191,16 @@ fn total_duration_by_project(frames: &Frames) -> (HashMap<String, ProjectDuratio
 
         let entry = project_durations
             .entry(frame.project.clone())
-            .or_insert(ProjectDuration { duration: 0 });
+            .or_insert(ProjectDuration {
+                duration: 0,
+                tags: HashMap::new(),
+            });
 
         entry.duration += duration;
+
+        for tag in &frame.tags {
+            *entry.tags.entry(tag.clone()).or_insert(0) += duration;
+        }
     }
 
     (project_durations, total_time)
