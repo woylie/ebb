@@ -313,6 +313,12 @@ pub enum SickdayCommands {
 pub enum TagCommands {
     /// List all tags
     List,
+    /// Remove a tag
+    Remove {
+        /// Name of the tag
+        #[arg(required = true)]
+        tag: String,
+    },
     /// Renames a tag
     Rename {
         /// Current tag name
