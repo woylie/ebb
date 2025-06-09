@@ -258,6 +258,15 @@ pub enum HolidayCommands {
 pub enum ProjectCommands {
     /// List all projects
     List,
+    /// Renames a project
+    Rename {
+        /// Current project name
+        #[arg(required = true)]
+        old_name: String,
+        /// New project name
+        #[arg(required = true)]
+        new_name: String,
+    },
 }
 
 #[derive(Debug, Subcommand)]
