@@ -11,17 +11,19 @@ fn config_list_prints_default_config() -> Result<(), Box<dyn std::error::Error>>
     let tmp = tempdir()?;
 
     let expected_output = "\
-┌─────────────────────────┬───────┐
-│ Config Key              │ Value │
-├─────────────────────────┼───────┤
-│ working_hours.monday    │ 8h    │
-│ working_hours.tuesday   │ 8h    │
-│ working_hours.wednesday │ 8h    │
-│ working_hours.thursday  │ 8h    │
-│ working_hours.friday    │ 8h    │
-│ working_hours.saturday  │ 0s    │
-│ working_hours.sunday    │ 0s    │
-└─────────────────────────┴───────┘
+┌─────────────────────────────┬───────┐
+│ Key                         │ Value │
+├─────────────────────────────┼───────┤
+│ sick_days_per_year.2000     │ 30    │
+│ vacation_days_per_year.2000 │ 30    │
+│ working_hours.monday        │ 8h    │
+│ working_hours.tuesday       │ 8h    │
+│ working_hours.wednesday     │ 8h    │
+│ working_hours.thursday      │ 8h    │
+│ working_hours.friday        │ 8h    │
+│ working_hours.saturday      │ 0s    │
+│ working_hours.sunday        │ 0s    │
+└─────────────────────────────┴───────┘
 ";
 
     let mut cmd = Command::cargo_bin("ebb")?;
@@ -43,6 +45,14 @@ fn config_list_prints_custom_config() -> Result<(), Box<dyn std::error::Error>> 
 
     let file_path = config_dir.join("config.toml");
     let toml_content = r#"
+        [sick_days_per_year]
+        2005 = 30
+        2004 = 28
+
+        [vacation_days_per_year]
+        2005 = 38
+        2000 = 30
+
         [working_hours]
         monday = "4h"
         tuesday = "5h"
@@ -56,17 +66,21 @@ fn config_list_prints_custom_config() -> Result<(), Box<dyn std::error::Error>> 
     fs::write(&file_path, toml_content.trim())?;
 
     let expected_output = "\
-┌─────────────────────────┬────────┐
-│ Config Key              │ Value  │
-├─────────────────────────┼────────┤
-│ working_hours.monday    │ 4h     │
-│ working_hours.tuesday   │ 5h     │
-│ working_hours.wednesday │ 6h 44m │
-│ working_hours.thursday  │ 3h 2m  │
-│ working_hours.friday    │ 7s     │
-│ working_hours.saturday  │ 0s     │
-│ working_hours.sunday    │ 0s     │
-└─────────────────────────┴────────┘
+┌─────────────────────────────┬────────┐
+│ Key                         │ Value  │
+├─────────────────────────────┼────────┤
+│ sick_days_per_year.2004     │ 28     │
+│ sick_days_per_year.2005     │ 30     │
+│ vacation_days_per_year.2000 │ 30     │
+│ vacation_days_per_year.2005 │ 38     │
+│ working_hours.monday        │ 4h     │
+│ working_hours.tuesday       │ 5h     │
+│ working_hours.wednesday     │ 6h 44m │
+│ working_hours.thursday      │ 3h 2m  │
+│ working_hours.friday        │ 7s     │
+│ working_hours.saturday      │ 0s     │
+│ working_hours.sunday        │ 0s     │
+└─────────────────────────────┴────────┘
 ";
 
     let mut cmd = Command::cargo_bin("ebb")?;
