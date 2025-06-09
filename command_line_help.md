@@ -15,6 +15,8 @@ This document contains the help content for the `ebb` command-line program.
 - [`ebb holiday edit`↴](#ebb-holiday-edit)
 - [`ebb holiday list`↴](#ebb-holiday-list)
 - [`ebb holiday remove`↴](#ebb-holiday-remove)
+- [`ebb project`↴](#ebb-project)
+- [`ebb project list`↴](#ebb-project-list)
 - [`ebb report`↴](#ebb-report)
 - [`ebb restart`↴](#ebb-restart)
 - [`ebb sickday`↴](#ebb-sickday)
@@ -42,6 +44,7 @@ This document contains the help content for the `ebb` command-line program.
 - `cancel` — Cancel the current time tracking frame
 - `config` — Manage the configuration
 - `holiday` — Manage holidays
+- `project` — Manage projects
 - `report` — Return the total time and time spent per project
 - `restart` — Restart the last project
 - `sickday` — Manage sick days
@@ -180,6 +183,23 @@ Remove a holiday
 ###### **Arguments:**
 
 - `<DATE>` — Date of the holiday to remove
+
+## `ebb project`
+
+Manage projects
+
+**Usage:** `ebb project
+       project <COMMAND>`
+
+###### **Subcommands:**
+
+- `list` — List all projects
+
+## `ebb project list`
+
+List all projects
+
+**Usage:** `ebb project list`
 
 ## `ebb report`
 

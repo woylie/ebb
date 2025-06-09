@@ -4,6 +4,7 @@
 
 pub mod config;
 pub mod holiday;
+pub mod project;
 pub mod report;
 pub mod sickday;
 pub mod tag;
