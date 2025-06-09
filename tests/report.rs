@@ -463,6 +463,67 @@ fn report_filters_by_project() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
+fn report_filters_by_tag() -> Result<(), Box<dyn std::error::Error>> {
+    let now = Utc::now().timestamp();
+
+    let frame1_start = now - Duration::days(6).num_seconds();
+    let frame1_end = frame1_start + 3820;
+
+    let frame2_start = now - Duration::days(3).num_seconds();
+    let frame2_end = frame2_start + 3940;
+
+    let tmp = tempdir()?;
+    let config_dir = tmp.path();
+
+    let file_path = config_dir.join("frames.toml");
+    let toml_content = format!(
+        r#"
+        [[frames]]
+        start_time = {frame1_start}
+        end_time = {frame1_end}
+        project = "project1"
+        tags = ["tag1"]
+        updated_at = {frame1_end}
+
+        [[frames]]
+        start_time = {frame2_start}
+        end_time = {frame2_end}
+        project = "project2"
+        tags = ["tag2"]
+        updated_at = {frame2_end}
+        "#
+    );
+
+    fs::write(&file_path, toml_content.trim())?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    let assert = cmd
+        .arg("report")
+        .arg("--tag")
+        .arg("tag1")
+        .arg("--format")
+        .arg("json")
+        .env("EBB_CONFIG_DIR", tmp.path())
+        .assert()
+        .success();
+
+    let stdout = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
+    let output: ReportOutput = serde_json::from_str(&stdout).expect("Expected valid JSON output");
+
+    assert_eq!(output.total_duration, 3820);
+
+    let expected_projects = {
+        let mut m = std::collections::HashMap::new();
+        m.insert("project1".to_string(), ProjectDuration { duration: 3820 });
+        m
+    };
+
+    assert_eq!(output.projects, expected_projects);
+
+    Ok(())
+}
+
+#[test]
 fn report_applies_day_option() -> Result<(), Box<dyn std::error::Error>> {
     let tmp = tempdir()?;
     let config_dir = tmp.path();

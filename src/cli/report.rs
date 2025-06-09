@@ -88,9 +88,16 @@ pub fn run_report(args: &ReportArgs, config_path: &Path, format: &Format) -> any
     if timespan.from > timespan.to {
         frames.frames.clear();
     } else {
-        filter_frames_by_timespan_from(&mut frames.frames, timespan.from);
-        filter_frames_by_timespan_to(&mut frames.frames, timespan.to);
-        filter_frames_by_project(&mut frames.frames, &args.project);
+        frames
+            .filter_by_start_time(timespan.from)
+            .filter_by_end_time(timespan.to);
+
+        if let Some(ref project) = args.project {
+            frames.filter_by_project(project);
+        }
+        if let Some(ref tag) = args.tag {
+            frames.filter_by_tag(tag);
+        }
     }
 
     let (project_durations, total_duration) = total_duration_by_project(&frames);
@@ -159,34 +166,6 @@ pub fn resolve_timespan(args: &ReportArgs, now: i64, frames: &[Frame]) -> Timesp
             .with_timezone(&Utc)
             .timestamp(),
         to: now,
-    }
-}
-
-fn filter_frames_by_timespan_from(frames: &mut Vec<Frame>, from: i64) {
-    frames.retain_mut(|frame| {
-        if frame.start_time < from && frame.end_time > from {
-            frame.start_time = from;
-            true
-        } else {
-            frame.start_time >= from
-        }
-    });
-}
-
-fn filter_frames_by_timespan_to(frames: &mut Vec<Frame>, to: i64) {
-    frames.retain_mut(|frame| {
-        if frame.start_time < to && frame.end_time > to {
-            frame.end_time = to;
-            true
-        } else {
-            frame.end_time <= to
-        }
-    });
-}
-
-fn filter_frames_by_project(frames: &mut Vec<Frame>, project: &Option<String>) {
-    if let Some(project) = project {
-        frames.retain(|frame| frame.project == *project)
     }
 }
 

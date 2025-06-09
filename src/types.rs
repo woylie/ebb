@@ -148,9 +148,14 @@ where
     S: Serializer,
     V: Serialize,
 {
+    let mut keys: Vec<_> = map.keys().cloned().collect();
+    keys.sort();
+
     let mut ser_map = serializer.serialize_map(Some(map.len()))?;
-    for (k, v) in map {
-        ser_map.serialize_entry(&k.to_string(), v)?;
+    for key in keys {
+        if let Some(value) = map.get(&key) {
+            ser_map.serialize_entry(&key.to_string(), value)?;
+        }
     }
     ser_map.end()
 }
@@ -204,6 +209,41 @@ pub struct Frames {
 }
 
 impl Frames {
+    pub fn filter_by_start_time(&mut self, from: i64) -> &mut Self {
+        self.frames.retain_mut(|frame| {
+            if frame.start_time < from && frame.end_time > from {
+                frame.start_time = from;
+                true
+            } else {
+                frame.start_time >= from
+            }
+        });
+        self
+    }
+
+    pub fn filter_by_end_time(&mut self, to: i64) -> &mut Self {
+        self.frames.retain_mut(|frame| {
+            if frame.start_time < to && frame.end_time > to {
+                frame.end_time = to;
+                true
+            } else {
+                frame.end_time <= to
+            }
+        });
+        self
+    }
+
+    pub fn filter_by_project(&mut self, project: &str) -> &mut Self {
+        self.frames.retain(|frame| frame.project == *project);
+        self
+    }
+
+    pub fn filter_by_tag(&mut self, tag: &str) -> &mut Self {
+        self.frames
+            .retain(|frame| frame.tags.contains(&tag.to_string()));
+        self
+    }
+
     pub fn all_projects(&self) -> Vec<String> {
         let mut project_set: HashSet<String> = HashSet::new();
 

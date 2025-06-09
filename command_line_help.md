@@ -230,6 +230,7 @@ Return the total time and time spent per project
 - `-w`, `--week` — Report time spent in the current week
 - `-d`, `--day` — Report time spent on the current day
 - `-p`, `--project <PROJECT>` — Filter by project
+- `-t`, `--tag <TAG>` — Filter by tag
 
 ## `ebb restart`
 

@@ -135,6 +135,9 @@ pub struct ReportArgs {
     /// Filter by project
     #[arg(short, long)]
     project: Option<String>,
+    /// Filter by tag
+    #[arg(short, long)]
+    tag: Option<String>,
 }
 
 #[derive(Debug, Args)]
