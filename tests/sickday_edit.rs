@@ -3,18 +3,18 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 use assert_cmd::Command;
-use ebb::types::{DayPortion, SickdayEntry};
+use ebb::types::{DayPortion, SickDayEntry};
 use predicates::str::contains;
 use std::collections::BTreeMap;
 use std::fs;
 use tempfile::tempdir;
 
 #[test]
-fn edit_sickday_updates_entry() -> Result<(), Box<dyn std::error::Error>> {
+fn edit_sick_day_updates_entry() -> Result<(), Box<dyn std::error::Error>> {
     let tmp = tempdir()?;
     let config_dir = tmp.path();
 
-    let file_path = config_dir.join("sickdays.toml");
+    let file_path = config_dir.join("sick_days.toml");
     let toml_content = r#"
         [2025-05-28]
         description = "headache"
@@ -38,9 +38,9 @@ fn edit_sickday_updates_entry() -> Result<(), Box<dyn std::error::Error>> {
         .assert()
         .success();
 
-    let file = tmp.path().join("sickdays.toml");
+    let file = tmp.path().join("sick_days.toml");
     let contents = fs::read_to_string(file)?;
-    let parsed: BTreeMap<String, SickdayEntry> = toml::from_str(&contents)?;
+    let parsed: BTreeMap<String, SickDayEntry> = toml::from_str(&contents)?;
 
     assert_eq!(parsed.get("2025-05-29").unwrap().description, "hayfever");
     assert_eq!(parsed.get("2025-05-29").unwrap().portion, DayPortion::Full);
@@ -49,11 +49,11 @@ fn edit_sickday_updates_entry() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
-fn edit_sickday_fails_if_not_exists() -> Result<(), Box<dyn std::error::Error>> {
+fn edit_sick_day_fails_if_not_exists() -> Result<(), Box<dyn std::error::Error>> {
     let tmp = tempdir()?;
     let config_dir = tmp.path();
 
-    let file_path = config_dir.join("sickdays.toml");
+    let file_path = config_dir.join("sick_days.toml");
     let toml_content = r#"
         [2025-05-29]
         description = "fever"
@@ -75,7 +75,7 @@ fn edit_sickday_fails_if_not_exists() -> Result<(), Box<dyn std::error::Error>> 
         .stderr(contains("No sick day found on 2025-05-28"));
 
     let contents = fs::read_to_string(&file_path)?;
-    let parsed: BTreeMap<String, SickdayEntry> = toml::from_str(&contents)?;
+    let parsed: BTreeMap<String, SickDayEntry> = toml::from_str(&contents)?;
 
     assert_eq!(parsed.get("2025-05-29").unwrap().description, "fever");
 

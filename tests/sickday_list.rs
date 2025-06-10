@@ -7,11 +7,11 @@ use std::fs;
 use tempfile::tempdir;
 
 #[test]
-fn list_sickdays_displays_all() -> Result<(), Box<dyn std::error::Error>> {
+fn list_sick_days_displays_all() -> Result<(), Box<dyn std::error::Error>> {
     let tmp = tempdir()?;
     let config_dir = tmp.path();
 
-    let file_path = config_dir.join("sickdays.toml");
+    let file_path = config_dir.join("sick_days.toml");
     let toml_content = r#"
         [2025-05-28]
         description = "headache"
@@ -45,11 +45,11 @@ fn list_sickdays_displays_all() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
-fn list_sickdays_filters_by_year() -> Result<(), Box<dyn std::error::Error>> {
+fn list_sick_days_filters_by_year() -> Result<(), Box<dyn std::error::Error>> {
     let tmp = tempdir()?;
     let config_dir = tmp.path();
 
-    let file_path = config_dir.join("sickdays.toml");
+    let file_path = config_dir.join("sick_days.toml");
     let toml_content = r#"
         [2024-08-12]
         description = "headache"

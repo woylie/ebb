@@ -31,6 +31,30 @@ pub struct Config {
     pub working_hours: WorkingHours,
 }
 
+impl Config {
+    pub fn allowed_vacation_days(&self, year: i32) -> i32 {
+        find_allowed_for_year(&self.vacation_days_per_year, year)
+    }
+
+    pub fn allowed_sick_days(&self, year: i32) -> i32 {
+        find_allowed_for_year(&self.sick_days_per_year, year)
+    }
+}
+
+fn find_allowed_for_year(map: &HashMap<i32, i32>, year: i32) -> i32 {
+    map.iter()
+        .filter(|entry| {
+            let (from_year, _) = *entry;
+            *from_year <= year
+        })
+        .max_by_key(|entry| {
+            let (from_year, _) = *entry;
+            *from_year
+        })
+        .map(|(_, &days)| days)
+        .unwrap_or(0)
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct WorkingHours {
     #[serde(
@@ -330,7 +354,7 @@ pub struct HolidayEntry {
 pub type Holidays = BTreeMap<NaiveDate, HolidayEntry>;
 
 #[derive(Clone, Debug, Serialize, Deserialize, Tabled)]
-pub struct Sickday {
+pub struct SickDay {
     pub date: NaiveDate,
     pub description: String,
 
@@ -342,7 +366,7 @@ pub struct Sickday {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct SickdayEntry {
+pub struct SickDayEntry {
     pub description: String,
 
     #[serde(
@@ -352,7 +376,7 @@ pub struct SickdayEntry {
     pub portion: DayPortion,
 }
 
-pub type Sickdays = BTreeMap<NaiveDate, SickdayEntry>;
+pub type SickDays = BTreeMap<NaiveDate, SickDayEntry>;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct State {

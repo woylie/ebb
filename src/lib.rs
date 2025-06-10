@@ -4,11 +4,11 @@
 
 use crate::types::DayPortion;
 use crate::Commands::{
-    Cancel, Config, GenerateDocs, Holiday, Project, Report, Restart, Sickday, Start, Status, Stop,
-    Tag, Vacation,
+    Cancel, Config, DaysOff, GenerateDocs, Holiday, Project, Report, Restart, SickDay, Start,
+    Status, Stop, Tag, Vacation,
 };
 use anyhow::{anyhow, Result};
-use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
+use chrono::{DateTime, Datelike, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use clap::{ArgGroup, Args, Parser, Subcommand, ValueEnum};
 use std::{fs, path::PathBuf};
 
@@ -54,6 +54,9 @@ pub enum Commands {
     Cancel,
     /// Manage the configuration
     Config(ConfigArgs),
+    /// Print overview of remaining vacation and sick days
+    #[command(name = "daysoff")]
+    DaysOff(DaysOffArgs),
     /// Manage holidays
     Holiday(HolidayArgs),
     /// Manage projects
@@ -63,7 +66,8 @@ pub enum Commands {
     /// Restart the last project
     Restart(RestartArgs),
     /// Manage sick days
-    Sickday(SickdayArgs),
+    #[command(name = "sickday")]
+    SickDay(SickDayArgs),
     /// Start time tracking
     Start(StartArgs),
     /// Show current time tracking status
@@ -84,6 +88,17 @@ pub enum Commands {
 pub struct ConfigArgs {
     #[command(subcommand)]
     command: ConfigCommands,
+}
+
+#[derive(Debug, Args)]
+pub struct DaysOffArgs {
+    /// Year
+    #[arg(short, long, default_value_t = default_year())]
+    year: i32,
+}
+
+fn default_year() -> i32 {
+    Local::now().year()
 }
 
 #[derive(Debug, Args)]
@@ -158,9 +173,9 @@ pub struct RestartArgs {
 
 #[derive(Debug, Args)]
 #[command(args_conflicts_with_subcommands = true)]
-pub struct SickdayArgs {
+pub struct SickDayArgs {
     #[command(subcommand)]
-    command: SickdayCommands,
+    command: SickDayCommands,
 }
 
 #[derive(Debug, Args)]
@@ -273,7 +288,7 @@ pub enum ProjectCommands {
 }
 
 #[derive(Debug, Subcommand)]
-pub enum SickdayCommands {
+pub enum SickDayCommands {
     /// Add a new sick day
     Add {
         /// Day of the sick day
@@ -376,11 +391,12 @@ pub fn run(cli: &Cli) -> Result<()> {
     match &cli.command {
         Cancel => cli::tracking::run_cancel(&config_path, format),
         Config(args) => cli::config::run_config(args, &config_path, format),
+        DaysOff(args) => cli::days_off::run_daysoff(args, &config_path, format),
         Holiday(args) => cli::holiday::run_holiday(args, &config_path, format),
         Project(args) => cli::project::run_project(args, &config_path, format),
         Report(args) => cli::report::run_report(args, &config_path, format),
         Restart(args) => cli::tracking::run_restart(args, &config_path, format),
-        Sickday(args) => cli::sickday::run_sickday(args, &config_path, format),
+        SickDay(args) => cli::sick_day::run_sick_day(args, &config_path, format),
         Start(args) => cli::tracking::run_start(args, &config_path, format),
         Status => cli::tracking::run_status(&config_path, format),
         Stop(args) => cli::tracking::run_stop(args, &config_path, format),
