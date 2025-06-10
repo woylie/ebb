@@ -10,6 +10,7 @@ This document contains the help content for the `ebb` command-line program.
 - [`ebb config get`↴](#ebb-config-get)
 - [`ebb config list`↴](#ebb-config-list)
 - [`ebb config set`↴](#ebb-config-set)
+- [`ebb daysoff`↴](#ebb-daysoff)
 - [`ebb holiday`↴](#ebb-holiday)
 - [`ebb holiday add`↴](#ebb-holiday-add)
 - [`ebb holiday edit`↴](#ebb-holiday-edit)
@@ -30,6 +31,7 @@ This document contains the help content for the `ebb` command-line program.
 - [`ebb stop`↴](#ebb-stop)
 - [`ebb tag`↴](#ebb-tag)
 - [`ebb tag list`↴](#ebb-tag-list)
+- [`ebb tag remove`↴](#ebb-tag-remove)
 - [`ebb tag rename`↴](#ebb-tag-rename)
 - [`ebb vacation`↴](#ebb-vacation)
 - [`ebb vacation add`↴](#ebb-vacation-add)
@@ -45,6 +47,7 @@ This document contains the help content for the `ebb` command-line program.
 
 - `cancel` — Cancel the current time tracking frame
 - `config` — Manage the configuration
+- `daysoff` — Print overview of remaining vacation and sick days
 - `holiday` — Manage holidays
 - `project` — Manage projects
 - `report` — Return the total time and time spent per project
@@ -113,6 +116,18 @@ Set a configuration value
 
 - `<KEY>` — Configuration key
 - `<VALUE>` — Configuration value
+
+## `ebb daysoff`
+
+Print overview of remaining vacation and sick days
+
+**Usage:** `ebb daysoff [OPTIONS]`
+
+###### **Options:**
+
+- `-y`, `--year <YEAR>` — Year
+
+  Default value: `2025`
 
 ## `ebb holiday`
 
@@ -357,6 +372,7 @@ Manage tags
 ###### **Subcommands:**
 
 - `list` — List all tags
+- `remove` — Remove a tag
 - `rename` — Renames a tag
 
 ## `ebb tag list`
@@ -364,6 +380,16 @@ Manage tags
 List all tags
 
 **Usage:** `ebb tag list`
+
+## `ebb tag remove`
+
+Remove a tag
+
+**Usage:** `ebb tag remove <TAG>`
+
+###### **Arguments:**
+
+- `<TAG>` — Name of the tag
 
 ## `ebb tag rename`
 

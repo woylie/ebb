@@ -10,13 +10,13 @@ use serde::{de::DeserializeOwned, Serialize};
 
 use crate::types::{
     default_sick_days_per_year, default_vacation_days_per_year, default_working_hours, Config,
-    Frames, Holidays, Sickdays, State, Vacations,
+    Frames, Holidays, SickDays, State, Vacations,
 };
 
 pub const CONFIG_FILE: &str = "config.toml";
 pub const FRAME_FILE: &str = "frames.toml";
 pub const HOLIDAY_FILE: &str = "holidays.toml";
-pub const SICKDAY_FILE: &str = "sickdays.toml";
+pub const SICK_DAY_FILE: &str = "sick_days.toml";
 pub const STATE_FILE: &str = "state.toml";
 pub const VACATION_FILE: &str = "vacations.toml";
 
@@ -68,12 +68,12 @@ pub fn save_holidays(config_path: &Path, holidays: &Holidays) -> Result<()> {
     save_toml(config_path, HOLIDAY_FILE, holidays)
 }
 
-pub fn load_sickdays(config_path: &Path) -> Result<Sickdays> {
-    load_toml(config_path, SICKDAY_FILE, BTreeMap::new())
+pub fn load_sick_days(config_path: &Path) -> Result<SickDays> {
+    load_toml(config_path, SICK_DAY_FILE, BTreeMap::new())
 }
 
-pub fn save_sickdays(config_path: &Path, sickdays: &Sickdays) -> Result<()> {
-    save_toml(config_path, SICKDAY_FILE, sickdays)
+pub fn save_sick_days(config_path: &Path, sick_days: &SickDays) -> Result<()> {
+    save_toml(config_path, SICK_DAY_FILE, sick_days)
 }
 
 pub fn load_state(config_path: &Path) -> Result<State> {

@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-use crate::persistence::{load_sickdays, save_sickdays};
-use crate::types::{DayPortion, Sickday, SickdayEntry};
-use crate::{Format, SickdayArgs, SickdayCommands};
+use crate::persistence::{load_sick_days, save_sick_days};
+use crate::types::{DayPortion, SickDay, SickDayEntry};
+use crate::{Format, SickDayArgs, SickDayCommands};
 use chrono::Datelike;
 use serde::Serialize;
 use std::path::Path;
@@ -12,37 +12,37 @@ use tabled::{settings::Style, Table};
 
 #[derive(Serialize)]
 struct AddOutput {
-    sickday: Sickday,
+    sick_day: SickDay,
 }
 
 impl AddOutput {
     fn to_text(&self) -> String {
         format!(
             "Sick day '{}' added on {}.",
-            self.sickday.description,
-            self.sickday.date.format("%Y-%m-%d"),
+            self.sick_day.description,
+            self.sick_day.date.format("%Y-%m-%d"),
         )
     }
 }
 
 #[derive(Serialize)]
 struct EditOutput {
-    sickday: Sickday,
+    sick_day: SickDay,
 }
 
 impl EditOutput {
     fn to_text(&self) -> String {
         format!(
             "Updated sick day '{}' on {}.",
-            self.sickday.description,
-            self.sickday.date.format("%Y-%m-%d"),
+            self.sick_day.description,
+            self.sick_day.date.format("%Y-%m-%d"),
         )
     }
 }
 
 #[derive(Serialize)]
 struct ListOutput {
-    sickdays: Vec<Sickday>,
+    sick_days: Vec<SickDay>,
     filters: Filters,
 }
 
@@ -54,13 +54,13 @@ struct Filters {
 
 impl ListOutput {
     fn to_text(&self) -> String {
-        if self.sickdays.is_empty() {
+        if self.sick_days.is_empty() {
             match self.filters.year {
                 Some(y) => format!("No sick days found for {}.", y),
                 None => "No sick days found.".to_string(),
             }
         } else {
-            let mut table = Table::new(self.sickdays.clone());
+            let mut table = Table::new(self.sick_days.clone());
             table.with(Style::sharp()).to_string()
         }
     }
@@ -68,42 +68,42 @@ impl ListOutput {
 
 #[derive(Serialize)]
 struct RemoveOutput {
-    sickday: Sickday,
+    sick_day: SickDay,
 }
 
 impl RemoveOutput {
     fn to_text(&self) -> String {
         format!(
             "Removed sick day '{}' on {}.",
-            self.sickday.description,
-            self.sickday.date.format("%Y-%m-%d"),
+            self.sick_day.description,
+            self.sick_day.date.format("%Y-%m-%d"),
         )
     }
 }
 
-pub fn run_sickday(args: &SickdayArgs, config_path: &Path, format: &Format) -> anyhow::Result<()> {
-    let mut sickdays = load_sickdays(config_path)?;
+pub fn run_sick_day(args: &SickDayArgs, config_path: &Path, format: &Format) -> anyhow::Result<()> {
+    let mut sick_days = load_sick_days(config_path)?;
 
     match &args.command {
-        SickdayCommands::Add {
+        SickDayCommands::Add {
             date,
             description,
             portion,
         } => {
-            if sickdays.contains_key(date) {
+            if sick_days.contains_key(date) {
                 anyhow::bail!("A sick day already exists on {}", date);
             }
 
-            let entry = SickdayEntry {
+            let entry = SickDayEntry {
                 description: description.clone(),
                 portion: portion.clone().unwrap_or(DayPortion::Full),
             };
 
-            sickdays.insert(*date, entry.clone());
-            save_sickdays(config_path, &sickdays)?;
+            sick_days.insert(*date, entry.clone());
+            save_sick_days(config_path, &sick_days)?;
 
             let output = AddOutput {
-                sickday: Sickday {
+                sick_day: SickDay {
                     date: *date,
                     description: entry.description,
                     portion: entry.portion,
@@ -118,25 +118,25 @@ pub fn run_sickday(args: &SickdayArgs, config_path: &Path, format: &Format) -> a
             println!("{}", output_string);
         }
 
-        SickdayCommands::Edit {
+        SickDayCommands::Edit {
             date,
             description,
             portion,
         } => {
-            if !sickdays.contains_key(date) {
+            if !sick_days.contains_key(date) {
                 anyhow::bail!("No sick day found on {}", date);
             }
 
-            let entry = SickdayEntry {
+            let entry = SickDayEntry {
                 description: description.clone(),
                 portion: portion.clone().unwrap_or(DayPortion::Full),
             };
 
-            sickdays.insert(*date, entry.clone());
-            save_sickdays(config_path, &sickdays)?;
+            sick_days.insert(*date, entry.clone());
+            save_sick_days(config_path, &sick_days)?;
 
             let output = EditOutput {
-                sickday: Sickday {
+                sick_day: SickDay {
                     date: *date,
                     description: entry.description,
                     portion: entry.portion,
@@ -151,11 +151,11 @@ pub fn run_sickday(args: &SickdayArgs, config_path: &Path, format: &Format) -> a
             println!("{}", output_string);
         }
 
-        SickdayCommands::List { year } => {
-            let filtered: Vec<Sickday> = sickdays
+        SickDayCommands::List { year } => {
+            let filtered: Vec<SickDay> = sick_days
                 .iter()
                 .filter(|(date, _)| year.is_none() || date.year() == year.unwrap())
-                .map(|(date, entry)| Sickday {
+                .map(|(date, entry)| SickDay {
                     date: *date,
                     description: entry.description.clone(),
                     portion: entry.portion.clone(),
@@ -163,7 +163,7 @@ pub fn run_sickday(args: &SickdayArgs, config_path: &Path, format: &Format) -> a
                 .collect();
 
             let output = ListOutput {
-                sickdays: filtered,
+                sick_days: filtered,
                 filters: Filters { year: *year },
             };
 
@@ -175,16 +175,16 @@ pub fn run_sickday(args: &SickdayArgs, config_path: &Path, format: &Format) -> a
             println!("{}", output_string);
         }
 
-        SickdayCommands::Remove { date } => {
-            let entry = match sickdays.remove(date) {
+        SickDayCommands::Remove { date } => {
+            let entry = match sick_days.remove(date) {
                 Some(entry) => entry,
                 None => anyhow::bail!("No sick day found on {}.", date),
             };
 
-            save_sickdays(config_path, &sickdays)?;
+            save_sick_days(config_path, &sick_days)?;
 
             let output = RemoveOutput {
-                sickday: Sickday {
+                sick_day: SickDay {
                     date: *date,
                     description: entry.description,
                     portion: entry.portion,
