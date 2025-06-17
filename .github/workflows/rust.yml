@@ -30,7 +30,7 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       - name: Check Format
-        run: rustfmt **/*.rs --check
+        run: cargo fmt --all --check
       - name: Run Clippy
         run: cargo clippy --all-targets --all-features --no-deps
       - name: Build

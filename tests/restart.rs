@@ -8,9 +8,6 @@ use predicates::str::contains;
 use std::fs;
 use tempfile::tempdir;
 
-// todo: restart_fails_if_start_time_is_before_last_end_time
-// todo: restart_applies_no_gap_option
-
 #[test]
 fn restart_sets_state_from_last_frame() -> Result<(), Box<dyn std::error::Error>> {
     let tmp = tempdir()?;

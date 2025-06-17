@@ -8,7 +8,7 @@ use crate::{Format, SickDayArgs, SickDayCommands};
 use chrono::Datelike;
 use serde::Serialize;
 use std::path::Path;
-use tabled::{settings::Style, Table};
+use tabled::{Table, settings::Style};
 
 #[derive(Serialize)]
 struct AddOutput {

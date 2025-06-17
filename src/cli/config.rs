@@ -8,7 +8,7 @@ use crate::{ConfigArgs, ConfigCommands, Format};
 use serde::Serialize;
 use serde_json::{Map, Value};
 use std::path::Path;
-use tabled::{settings::Style, Table, Tabled};
+use tabled::{Table, Tabled, settings::Style};
 
 #[derive(Serialize)]
 struct GetOutput<'a> {

@@ -10,7 +10,38 @@ CLI for time tracking and flex time balance.
 
 [Command-Line Help](https://github.com/woylie/ebb/blob/main/command_line_help.md)
 
+## Features
+
+- Time tracking
+- Projects and tags
+- Flex time balance
+- Vacation, holiday, and sick day tracking
+
+## Building
+
+With cargo:
+
+```bash
+cargo build --release
+```
+
+With nix:
+
+```bash
+nix build
+```
+
 ## Development
+
+The repo contains a `flake.nix`. You can get into a development shell with all
+required packages with `nix develop`. If you have `direnv` installed, you can
+also run `direnv allow`.
+
+Run all checks via flake:
+
+```bash
+nix flake check
+```
 
 Run tests:
 
@@ -21,7 +52,13 @@ cargo test
 Format Rust code:
 
 ```bash
-rustfmt **/*.rs
+cargo fmt
+```
+
+Format Nix code:
+
+```bash
+nixfmt flake.nix
 ```
 
 Format anything else:
