@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+pub mod balance;
 pub mod config;
 pub mod days_off;
 pub mod holiday;

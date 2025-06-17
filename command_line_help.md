@@ -5,6 +5,7 @@ This document contains the help content for the `ebb` command-line program.
 **Command Overview:**
 
 - [`ebb`↴](#ebb)
+- [`ebb balance`↴](#ebb-balance)
 - [`ebb cancel`↴](#ebb-cancel)
 - [`ebb config`↴](#ebb-config)
 - [`ebb config get`↴](#ebb-config-get)
@@ -45,6 +46,7 @@ This document contains the help content for the `ebb` command-line program.
 
 ###### **Subcommands:**
 
+- `balance` — Show working hour balance
 - `cancel` — Cancel the current time tracking frame
 - `config` — Manage the configuration
 - `daysoff` — Print overview of remaining vacation and sick days
@@ -70,6 +72,21 @@ This document contains the help content for the `ebb` command-line program.
   Default value: `text`
 
   Possible values: `text`, `json`
+
+## `ebb balance`
+
+Show working hour balance
+
+**Usage:** `ebb balance [OPTIONS]`
+
+###### **Options:**
+
+- `--from <FROM>` — Start time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601)
+- `--to <TO>` — End time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601)
+- `-y`, `--year` — Report time spent in the current year
+- `-m`, `--month` — Report time spent in the current month
+- `-w`, `--week` — Report time spent in the current week
+- `-d`, `--day` — Report time spent on the current day
 
 ## `ebb cancel`
 
