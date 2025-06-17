@@ -49,7 +49,7 @@ fn balance_prints_overview() -> Result<(), Box<dyn std::error::Error>> {
     fs::write(&file_path, toml_content.trim())?;
 
     let expected_output = r#"
-From: 2024-01-01 13:00:00 (Mon)
+From: 2024-01-01 00:00:00 (Mon)
 To: 2024-12-12 23:59:59 (Thu)
 
 Expected: 83d 4h 22m 21s
@@ -60,6 +60,8 @@ Remaining: 83d 3h 18m 41s
 
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("balance")
+        .arg("--from")
+        .arg("2024-01-01 00:00:00")
         .arg("--to")
         .arg("2024-12-12 23:59:59")
         .env("EBB_CONFIG_DIR", tmp.path())
