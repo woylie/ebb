@@ -4,8 +4,8 @@
 
 use crate::types::DayPortion;
 use crate::Commands::{
-    Cancel, Config, DaysOff, GenerateDocs, Holiday, Project, Report, Restart, SickDay, Start,
-    Status, Stop, Tag, Vacation,
+    Balance, Cancel, Config, DaysOff, GenerateDocs, Holiday, Project, Report, Restart, SickDay,
+    Start, Status, Stop, Tag, Vacation,
 };
 use anyhow::{anyhow, Result};
 use chrono::{DateTime, Datelike, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
@@ -13,6 +13,7 @@ use clap::{ArgGroup, Args, Parser, Subcommand, ValueEnum};
 use std::{fs, path::PathBuf};
 
 pub mod cli;
+pub mod formatting;
 pub mod persistence;
 pub mod types;
 
@@ -50,6 +51,8 @@ pub enum Format {
 
 #[derive(Debug, Subcommand)]
 pub enum Commands {
+    /// Show working hour balance
+    Balance(BalanceArgs),
     /// Cancel the current time tracking frame
     Cancel,
     /// Manage the configuration
@@ -81,6 +84,40 @@ pub enum Commands {
     /// Generate the Markdown documentation
     #[command(hide = true)]
     GenerateDocs,
+}
+
+#[derive(Debug, Args)]
+#[command(group(
+    ArgGroup::new("time_filter_from")
+        .args(&["from", "day", "week", "month", "year"])
+        .required(false)
+        .multiple(false),
+))]
+#[command(group(
+    ArgGroup::new("time_filter_to")
+        .args(&["to", "day", "week", "month", "year"])
+        .required(false)
+        .multiple(false),
+))]
+pub struct BalanceArgs {
+    /// Start time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601)
+    #[arg(long, value_parser=parse_flexible_datetime)]
+    from: Option<DateTime<Local>>,
+    /// End time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601)
+    #[arg(long, value_parser=parse_flexible_datetime)]
+    to: Option<DateTime<Local>>,
+    /// Report time spent in the current year
+    #[arg(short, long)]
+    year: bool,
+    /// Report time spent in the current month
+    #[arg(short, long)]
+    month: bool,
+    /// Report time spent in the current week
+    #[arg(short, long)]
+    week: bool,
+    /// Report time spent on the current day
+    #[arg(short, long)]
+    day: bool,
 }
 
 #[derive(Debug, Args)]
@@ -389,6 +426,7 @@ pub fn run(cli: &Cli) -> Result<()> {
     fs::create_dir_all(&config_path)?;
 
     match &cli.command {
+        Balance(args) => cli::balance::run_balance(args, &config_path, format),
         Cancel => cli::tracking::run_cancel(&config_path, format),
         Config(args) => cli::config::run_config(args, &config_path, format),
         DaysOff(args) => cli::days_off::run_daysoff(args, &config_path, format),

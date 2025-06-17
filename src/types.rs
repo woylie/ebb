@@ -94,6 +94,18 @@ pub struct WorkingHours {
     pub sunday: Duration,
 }
 
+impl WorkingHours {
+    pub fn total_weekly_duration(&self) -> Duration {
+        self.monday
+            + self.tuesday
+            + self.wednesday
+            + self.thursday
+            + self.friday
+            + self.saturday
+            + self.sunday
+    }
+}
+
 pub fn default_vacation_days_per_year() -> HashMap<i32, i32> {
     HashMap::from([(2000, 30)])
 }
