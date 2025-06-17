@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-use crate::types::DayPortion;
 use crate::Commands::{
     Balance, Cancel, Config, DaysOff, GenerateDocs, Holiday, Project, Report, Restart, SickDay,
     Start, Status, Stop, Tag, Vacation,
 };
-use anyhow::{anyhow, Result};
+use crate::types::DayPortion;
+use anyhow::{Result, anyhow};
 use chrono::{DateTime, Datelike, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use clap::{ArgGroup, Args, Parser, Subcommand, ValueEnum};
 use std::{fs, path::PathBuf};

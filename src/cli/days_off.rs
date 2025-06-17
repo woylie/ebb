@@ -10,7 +10,7 @@ use chrono::NaiveDate;
 use serde::Serialize;
 use std::collections::BTreeMap;
 use std::path::Path;
-use tabled::settings::{object::Columns, Alignment, Style};
+use tabled::settings::{Alignment, Style, object::Columns};
 use tabled::{Table, Tabled};
 
 #[derive(Serialize)]
@@ -116,9 +116,5 @@ where
 }
 
 fn normalize_zero(x: f32) -> f32 {
-    if x == 0.0 {
-        0.0
-    } else {
-        x
-    }
+    if x == 0.0 { 0.0 } else { x }
 }

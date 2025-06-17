@@ -5,7 +5,7 @@
 use crate::persistence::{load_frames, load_state, save_frames, save_state};
 use crate::types::{CurrentFrame, Frame, State};
 use crate::{Format, RestartArgs, StartArgs, StopArgs};
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use chrono::{DateTime, Local, TimeZone, Utc};
 use serde::Serialize;
 use std::path::Path;

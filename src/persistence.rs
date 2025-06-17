@@ -6,11 +6,11 @@ use std::path::Path;
 use std::{collections::BTreeMap, fs};
 
 use anyhow::Result;
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 
 use crate::types::{
-    default_sick_days_per_year, default_vacation_days_per_year, default_working_hours, Config,
-    Frames, Holidays, SickDays, State, Vacations,
+    Config, Frames, Holidays, SickDays, State, Vacations, default_sick_days_per_year,
+    default_vacation_days_per_year, default_working_hours,
 };
 
 pub const CONFIG_FILE: &str = "config.toml";

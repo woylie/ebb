@@ -10,7 +10,7 @@ use chrono::{Datelike, Local, NaiveDate, TimeZone, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
-use tabled::{settings::object::Columns, settings::Alignment, settings::Style, Table, Tabled};
+use tabled::{Table, Tabled, settings::Alignment, settings::Style, settings::object::Columns};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ReportOutput {
