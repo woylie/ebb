@@ -10,6 +10,19 @@ CLI for time tracking and flex time balance.
 
 [Command-Line Help](https://github.com/woylie/ebb/blob/main/command_line_help.md)
 
+## Features
+
+- Time tracking
+- Projects and tags
+- Flex time balance
+- Vacation, holiday, and sick day tracking
+
+## Building
+
+```bash
+cargo build --release
+```
+
 ## Development
 
 Run tests:
