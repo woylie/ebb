@@ -4,6 +4,7 @@ version = 1
 path = [
   ".envrc",
   ".gitignore",
+  ".prettierignore",
   "Cargo.lock",
   "deny.toml",
   "flake.lock",
