@@ -112,17 +112,12 @@ pub struct CurrentFrame {
     pub tags: Vec<String>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, ValueEnum, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize, ValueEnum, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum DayPortion {
+    #[default]
     Full,
     Half,
-}
-
-impl Default for DayPortion {
-    fn default() -> Self {
-        DayPortion::Full
-    }
 }
 
 impl fmt::Display for DayPortion {
@@ -145,15 +140,9 @@ pub struct Frame {
     pub updated_at: i64,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Frames {
     pub frames: Vec<Frame>,
-}
-
-impl Default for Frames {
-    fn default() -> Self {
-        Frames { frames: Vec::new() }
-    }
 }
 
 impl Frames {
