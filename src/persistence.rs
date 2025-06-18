@@ -2,16 +2,11 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-use std::path::Path;
-use std::{collections::BTreeMap, fs};
-
+use crate::types::{Config, Frames, Holidays, SickDays, State, Vacations};
 use anyhow::Result;
 use serde::{Serialize, de::DeserializeOwned};
-
-use crate::types::{
-    Config, Frames, Holidays, SickDays, State, Vacations, default_sick_days_per_year,
-    default_vacation_days_per_year, default_working_hours,
-};
+use std::fs;
+use std::path::Path;
 
 const CONFIG_FILE: &str = "config.toml";
 const FRAME_FILE: &str = "frames.toml";
@@ -37,15 +32,7 @@ fn save_toml<T: Serialize>(config_path: &Path, filename: &str, value: &T) -> Res
 }
 
 pub fn load_config(config_path: &Path) -> Result<Config> {
-    load_toml(
-        config_path,
-        CONFIG_FILE,
-        Config {
-            sick_days_per_year: default_sick_days_per_year(),
-            vacation_days_per_year: default_vacation_days_per_year(),
-            working_hours: default_working_hours(),
-        },
-    )
+    load_toml(config_path, CONFIG_FILE, Config::default())
 }
 
 pub fn save_config(config_path: &Path, config: &Config) -> Result<()> {
@@ -53,7 +40,7 @@ pub fn save_config(config_path: &Path, config: &Config) -> Result<()> {
 }
 
 pub fn load_frames(config_path: &Path) -> Result<Frames> {
-    load_toml(config_path, FRAME_FILE, Frames { frames: Vec::new() })
+    load_toml(config_path, FRAME_FILE, Frames::default())
 }
 
 pub fn save_frames(config_path: &Path, frames: &Frames) -> Result<()> {
@@ -61,7 +48,7 @@ pub fn save_frames(config_path: &Path, frames: &Frames) -> Result<()> {
 }
 
 pub fn load_holidays(config_path: &Path) -> Result<Holidays> {
-    load_toml(config_path, HOLIDAY_FILE, BTreeMap::new())
+    load_toml(config_path, HOLIDAY_FILE, Holidays::default())
 }
 
 pub fn save_holidays(config_path: &Path, holidays: &Holidays) -> Result<()> {
@@ -69,7 +56,7 @@ pub fn save_holidays(config_path: &Path, holidays: &Holidays) -> Result<()> {
 }
 
 pub fn load_sick_days(config_path: &Path) -> Result<SickDays> {
-    load_toml(config_path, SICK_DAY_FILE, BTreeMap::new())
+    load_toml(config_path, SICK_DAY_FILE, SickDays::default())
 }
 
 pub fn save_sick_days(config_path: &Path, sick_days: &SickDays) -> Result<()> {
@@ -77,13 +64,7 @@ pub fn save_sick_days(config_path: &Path, sick_days: &SickDays) -> Result<()> {
 }
 
 pub fn load_state(config_path: &Path) -> Result<State> {
-    load_toml(
-        config_path,
-        STATE_FILE,
-        State {
-            current_frame: None,
-        },
-    )
+    load_toml(config_path, STATE_FILE, State::default())
 }
 
 pub fn save_state(config_path: &Path, state: &State) -> Result<()> {
@@ -91,7 +72,7 @@ pub fn save_state(config_path: &Path, state: &State) -> Result<()> {
 }
 
 pub fn load_vacations(config_path: &Path) -> Result<Vacations> {
-    load_toml(config_path, VACATION_FILE, BTreeMap::new())
+    load_toml(config_path, VACATION_FILE, Vacations::default())
 }
 
 pub fn save_vacations(config_path: &Path, vacations: &Vacations) -> Result<()> {

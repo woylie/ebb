@@ -14,21 +14,29 @@ use std::time::Duration;
 use tabled::Tabled;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Config {
     #[serde(
-        default = "default_vacation_days_per_year",
         serialize_with = "serialize_map_keys_as_strings",
         deserialize_with = "deserialize_map_keys_as_i32"
     )]
     pub vacation_days_per_year: HashMap<i32, i32>,
     #[serde(
-        default = "default_sick_days_per_year",
         serialize_with = "serialize_map_keys_as_strings",
         deserialize_with = "deserialize_map_keys_as_i32"
     )]
     pub sick_days_per_year: HashMap<i32, i32>,
-    #[serde(default = "default_working_hours")]
     pub working_hours: WorkingHours,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Config {
+            sick_days_per_year: HashMap::from([(2000, 30)]),
+            vacation_days_per_year: HashMap::from([(2000, 30)]),
+            working_hours: WorkingHours::default(),
+        }
+    }
 }
 
 impl Config {
@@ -56,6 +64,7 @@ fn find_allowed_for_year(map: &HashMap<i32, i32>, year: i32) -> i32 {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(default)]
 pub struct WorkingHours {
     #[serde(
         deserialize_with = "deserialize_duration_human",
@@ -94,6 +103,23 @@ pub struct WorkingHours {
     pub sunday: Duration,
 }
 
+impl Default for WorkingHours {
+    fn default() -> Self {
+        let eight_hours = Duration::from_secs(60 * 60 * 8);
+        let zero_hours = Duration::from_secs(0);
+
+        WorkingHours {
+            monday: eight_hours,
+            tuesday: eight_hours,
+            wednesday: eight_hours,
+            thursday: eight_hours,
+            friday: eight_hours,
+            saturday: zero_hours,
+            sunday: zero_hours,
+        }
+    }
+}
+
 impl WorkingHours {
     pub fn total_weekly_duration(&self) -> Duration {
         self.monday
@@ -103,29 +129,6 @@ impl WorkingHours {
             + self.friday
             + self.saturday
             + self.sunday
-    }
-}
-
-pub fn default_vacation_days_per_year() -> HashMap<i32, i32> {
-    HashMap::from([(2000, 30)])
-}
-
-pub fn default_sick_days_per_year() -> HashMap<i32, i32> {
-    HashMap::from([(2000, 30)])
-}
-
-pub fn default_working_hours() -> WorkingHours {
-    let eight_hours = Duration::from_secs(60 * 60 * 8);
-    let zero_hours = Duration::from_secs(0);
-
-    WorkingHours {
-        monday: eight_hours,
-        tuesday: eight_hours,
-        wednesday: eight_hours,
-        thursday: eight_hours,
-        friday: eight_hours,
-        saturday: zero_hours,
-        sunday: zero_hours,
     }
 }
 
@@ -242,6 +245,12 @@ pub struct Frame {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Frames {
     pub frames: Vec<Frame>,
+}
+
+impl Default for Frames {
+    fn default() -> Self {
+        Frames { frames: Vec::new() }
+    }
 }
 
 impl Frames {
@@ -390,7 +399,7 @@ pub struct SickDayEntry {
 
 pub type SickDays = BTreeMap<NaiveDate, SickDayEntry>;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct State {
     pub current_frame: Option<CurrentFrame>,
 }
