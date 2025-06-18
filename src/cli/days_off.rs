@@ -95,11 +95,11 @@ pub fn run_daysoff(args: &DaysOffArgs, config_path: &Path, format: &Format) -> a
     Ok(())
 }
 
-pub fn filter_by_year<T>(map: &mut BTreeMap<NaiveDate, T>, year: i32) {
+fn filter_by_year<T>(map: &mut BTreeMap<NaiveDate, T>, year: i32) {
     map.retain(|date, _| date.year() == year);
 }
 
-pub fn count_days<'a, I>(portions: I) -> f32
+fn count_days<'a, I>(portions: I) -> f32
 where
     I: Iterator<Item = &'a DayPortion>,
 {

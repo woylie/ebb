@@ -4,8 +4,7 @@
 
 use assert_cmd::Command;
 use chrono::{Duration, Local, TimeZone, Utc};
-use ebb::cli::report::{ProjectDuration, ReportOutput};
-use std::collections::HashMap;
+use serde_json::{Value, json};
 use std::fs;
 use tempfile::tempdir;
 
@@ -57,6 +56,8 @@ fn report_without_args() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("ebb")?;
     let assert = cmd
         .arg("report")
+        .arg("--to")
+        .arg("1750282303")
         .arg("--format")
         .arg("json")
         .env("EBB_CONFIG_DIR", tmp.path())
@@ -64,38 +65,32 @@ fn report_without_args() -> Result<(), Box<dyn std::error::Error>> {
         .success();
 
     let stdout = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
-    let output: ReportOutput = serde_json::from_str(&stdout).expect("Expected valid JSON output");
+    let output: Value = serde_json::from_str(&stdout).expect("Expected valid JSON output");
 
-    assert_eq!(output.total_duration, 9872);
-    assert_eq!(output.timespan.from, frame1_start);
-
-    let mut project1_tags = HashMap::new();
-    project1_tags.insert("tag1".to_string(), 3820);
-    project1_tags.insert("tag2".to_string(), 3820 + 2112);
-
-    let mut project2_tags = HashMap::new();
-    project2_tags.insert("tag3".to_string(), 3940);
-
-    let expected_projects = {
-        let mut m = std::collections::HashMap::new();
-        m.insert(
-            "project1".to_string(),
-            ProjectDuration {
-                duration: 3820 + 2112,
-                tags: project1_tags,
+    let expected_json = json!({
+        "total_duration": 9872,
+        "timespan": {
+            "from": frame1_start,
+            "to": 1750282303
+        },
+        "projects": {
+            "project1": {
+                "duration": 5932,
+                "tags": {
+                    "tag1": 3820,
+                    "tag2": 5932
+                }
             },
-        );
-        m.insert(
-            "project2".to_string(),
-            ProjectDuration {
-                duration: 3940,
-                tags: project2_tags,
-            },
-        );
-        m
-    };
+            "project2": {
+                "duration": 3940,
+                "tags": {
+                    "tag3": 3940
+                }
+            }
+        }
+    });
 
-    assert_eq!(output.projects, expected_projects);
+    assert_eq!(output, expected_json);
 
     Ok(())
 }
@@ -107,6 +102,8 @@ fn report_without_frames() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("ebb")?;
     let assert = cmd
         .arg("report")
+        .arg("--to")
+        .arg("1750282303")
         .arg("--format")
         .arg("json")
         .env("EBB_CONFIG_DIR", tmp.path())
@@ -114,14 +111,18 @@ fn report_without_frames() -> Result<(), Box<dyn std::error::Error>> {
         .success();
 
     let stdout = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
-    let output: ReportOutput = serde_json::from_str(&stdout).expect("Expected valid JSON output");
+    let json: Value = serde_json::from_str(&stdout).expect("Expected valid JSON output");
 
-    assert_eq!(output.total_duration, 0);
-    assert_eq!(output.timespan.from, 0);
+    let expected_json = json!({
+        "total_duration": 0,
+        "timespan": {
+            "from": 0,
+            "to": 1750282303
+        },
+        "projects": {}
+    });
 
-    let expected_projects = std::collections::HashMap::new();
-
-    assert_eq!(output.projects, expected_projects);
+    assert_eq!(json, expected_json);
 
     Ok(())
 }
@@ -171,10 +172,10 @@ fn report_includes_current_frame() -> Result<(), Box<dyn std::error::Error>> {
         .success();
 
     let stdout = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
-    let output: ReportOutput = serde_json::from_str(&stdout).expect("Expected valid JSON output");
+    let json: Value = serde_json::from_str(&stdout).expect("Expected valid JSON output");
 
-    assert!(output.total_duration >= 6220);
-    assert!(output.projects.get("myproject").unwrap().duration >= 6220);
+    assert!(json["total_duration"].as_u64().unwrap() >= 6220);
+    assert!(json["projects"]["myproject"]["duration"].as_u64().unwrap() >= 6220);
 
     Ok(())
 }
@@ -236,37 +237,24 @@ fn report_applies_from_option() -> Result<(), Box<dyn std::error::Error>> {
         .success();
 
     let stdout = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
-    let output: ReportOutput = serde_json::from_str(&stdout).expect("Expected valid JSON output");
+    let json: Value = serde_json::from_str(&stdout).expect("Expected valid JSON output");
 
-    assert_eq!(output.total_duration, 6052);
-    assert_eq!(output.timespan.from, from);
+    assert_eq!(json["total_duration"], 6052);
+    assert_eq!(json["timespan"]["from"], from);
 
-    let mut project1_tags = HashMap::new();
-    project1_tags.insert("tag2".to_string(), 2112);
-
-    let mut project2_tags = HashMap::new();
-    project2_tags.insert("tag3".to_string(), 3940);
-
-    let expected_projects = {
-        let mut m = std::collections::HashMap::new();
-        m.insert(
-            "project1".to_string(),
-            ProjectDuration {
-                duration: 2112,
-                tags: project1_tags,
+    assert_eq!(
+        json["projects"],
+        json!({
+            "project1": {
+                "duration": 2112,
+                "tags": {"tag2": 2112}
             },
-        );
-        m.insert(
-            "project2".to_string(),
-            ProjectDuration {
-                duration: 3940,
-                tags: project2_tags,
-            },
-        );
-        m
-    };
-
-    assert_eq!(output.projects, expected_projects);
+            "project2": {
+                "duration": 3940,
+                "tags": {"tag3": 3940}
+            }
+        })
+    );
 
     Ok(())
 }
@@ -309,28 +297,22 @@ fn report_adjusts_start_time_if_frame_starts_before_from() -> Result<(), Box<dyn
         .success();
 
     let stdout = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
-    let output: ReportOutput = serde_json::from_str(&stdout).expect("Expected valid JSON output");
+    let json: Value = serde_json::from_str(&stdout).expect("Expected valid JSON output");
 
-    assert_eq!(output.total_duration, 2100);
-    assert_eq!(output.timespan.from, from);
+    assert_eq!(json["total_duration"], 2100);
+    assert_eq!(json["timespan"]["from"], from);
 
-    let mut expected_tags = HashMap::new();
-    expected_tags.insert("tag1".to_string(), 2100);
-    expected_tags.insert("tag2".to_string(), 2100);
+    let expected_projects = json!({
+        "project": {
+            "duration": 2100,
+            "tags": {
+                "tag1": 2100,
+                "tag2": 2100
+            }
+        }
+    });
 
-    let expected_projects = {
-        let mut m = std::collections::HashMap::new();
-        m.insert(
-            "project".to_string(),
-            ProjectDuration {
-                duration: 2100,
-                tags: expected_tags,
-            },
-        );
-        m
-    };
-
-    assert_eq!(output.projects, expected_projects);
+    assert_eq!(json["projects"], expected_projects);
 
     Ok(())
 }
@@ -392,38 +374,28 @@ fn report_applies_to_option() -> Result<(), Box<dyn std::error::Error>> {
         .success();
 
     let stdout = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
-    let output: ReportOutput = serde_json::from_str(&stdout).expect("Expected valid JSON output");
+    let json: Value = serde_json::from_str(&stdout).expect("Expected valid JSON output");
 
-    assert_eq!(output.total_duration, 7760);
-    assert_eq!(output.timespan.to, to);
+    assert_eq!(json["total_duration"], 7760);
+    assert_eq!(json["timespan"]["to"], to);
 
-    let mut project1_tags = HashMap::new();
-    project1_tags.insert("tag1".to_string(), 3820);
-    project1_tags.insert("tag2".to_string(), 3820);
+    let expected_projects = json!({
+        "project1": {
+            "duration": 3820,
+            "tags": {
+                "tag1": 3820,
+                "tag2": 3820
+            }
+        },
+        "project2": {
+            "duration": 3940,
+            "tags": {
+                "tag3": 3940
+            }
+        }
+    });
 
-    let mut project2_tags = HashMap::new();
-    project2_tags.insert("tag3".to_string(), 3940);
-
-    let expected_projects = {
-        let mut m = std::collections::HashMap::new();
-        m.insert(
-            "project1".to_string(),
-            ProjectDuration {
-                duration: 3820,
-                tags: project1_tags,
-            },
-        );
-        m.insert(
-            "project2".to_string(),
-            ProjectDuration {
-                duration: 3940,
-                tags: project2_tags,
-            },
-        );
-        m
-    };
-
-    assert_eq!(output.projects, expected_projects);
+    assert_eq!(json["projects"], expected_projects);
 
     Ok(())
 }
@@ -465,28 +437,22 @@ fn report_adjusts_end_time_if_frame_ends_after_to() -> Result<(), Box<dyn std::e
         .success();
 
     let stdout = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
-    let output: ReportOutput = serde_json::from_str(&stdout).expect("Expected valid JSON output");
+    let json: Value = serde_json::from_str(&stdout).expect("Expected valid JSON output");
 
-    assert_eq!(output.total_duration, 1280);
-    assert_eq!(output.timespan.to, to);
+    assert_eq!(json["total_duration"], 1280);
+    assert_eq!(json["timespan"]["to"], to);
 
-    let mut expected_tags = HashMap::new();
-    expected_tags.insert("tag1".to_string(), 1280);
-    expected_tags.insert("tag2".to_string(), 1280);
+    let expected_projects = json!({
+        "project": {
+            "duration": 1280,
+            "tags": {
+                "tag1": 1280,
+                "tag2": 1280
+            }
+        }
+    });
 
-    let expected_projects = {
-        let mut m = std::collections::HashMap::new();
-        m.insert(
-            "project".to_string(),
-            ProjectDuration {
-                duration: 1280,
-                tags: expected_tags,
-            },
-        );
-        m
-    };
-
-    assert_eq!(output.projects, expected_projects);
+    assert_eq!(json["projects"], expected_projects);
 
     Ok(())
 }
@@ -537,27 +503,21 @@ fn report_filters_by_project() -> Result<(), Box<dyn std::error::Error>> {
         .success();
 
     let stdout = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
-    let output: ReportOutput = serde_json::from_str(&stdout).expect("Expected valid JSON output");
+    let json: Value = serde_json::from_str(&stdout).expect("Expected valid JSON output");
 
-    assert_eq!(output.total_duration, 3820);
+    assert_eq!(json["total_duration"], 3820);
 
-    let mut expected_tags = HashMap::new();
-    expected_tags.insert("tag1".to_string(), 3820);
-    expected_tags.insert("tag2".to_string(), 3820);
+    let expected_projects = json!({
+        "project1": {
+            "duration": 3820,
+            "tags": {
+                "tag1": 3820,
+                "tag2": 3820
+            }
+        }
+    });
 
-    let expected_projects = {
-        let mut m = std::collections::HashMap::new();
-        m.insert(
-            "project1".to_string(),
-            ProjectDuration {
-                duration: 3820,
-                tags: expected_tags,
-            },
-        );
-        m
-    };
-
-    assert_eq!(output.projects, expected_projects);
+    assert_eq!(json["projects"], expected_projects);
 
     Ok(())
 }
@@ -608,26 +568,20 @@ fn report_filters_by_tag() -> Result<(), Box<dyn std::error::Error>> {
         .success();
 
     let stdout = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
-    let output: ReportOutput = serde_json::from_str(&stdout).expect("Expected valid JSON output");
+    let json: Value = serde_json::from_str(&stdout).expect("Expected valid JSON output");
 
-    assert_eq!(output.total_duration, 3820);
+    assert_eq!(json["total_duration"], 3820);
 
-    let mut expected_tags = HashMap::new();
-    expected_tags.insert("tag1".to_string(), 3820);
+    let expected_projects = json!({
+        "project1": {
+            "duration": 3820,
+            "tags": {
+                "tag1": 3820
+            }
+        }
+    });
 
-    let expected_projects = {
-        let mut m = std::collections::HashMap::new();
-        m.insert(
-            "project1".to_string(),
-            ProjectDuration {
-                duration: 3820,
-                tags: expected_tags,
-            },
-        );
-        m
-    };
-
-    assert_eq!(output.projects, expected_projects);
+    assert_eq!(json["projects"], expected_projects);
 
     Ok(())
 }
@@ -656,9 +610,9 @@ fn report_applies_day_option() -> Result<(), Box<dyn std::error::Error>> {
         .success();
 
     let stdout = String::from_utf8(assert.get_output().stdout.clone())?;
-    let output: ReportOutput = serde_json::from_str(&stdout)?;
+    let json: Value = serde_json::from_str(&stdout)?;
 
-    assert_eq!(output.timespan.from, expected_from);
+    assert_eq!(json["timespan"]["from"], expected_from);
 
     Ok(())
 }

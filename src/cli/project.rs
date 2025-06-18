@@ -9,8 +9,8 @@ use serde::{Deserialize, Serialize};
 use std::path::Path;
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct ListOutput {
-    pub projects: Vec<String>,
+struct ListOutput {
+    projects: Vec<String>,
 }
 
 impl DisplayOutput for ListOutput {
@@ -20,9 +20,9 @@ impl DisplayOutput for ListOutput {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct RenameOutput {
-    pub old_name: String,
-    pub new_name: String,
+struct RenameOutput {
+    old_name: String,
+    new_name: String,
 }
 
 impl DisplayOutput for RenameOutput {
