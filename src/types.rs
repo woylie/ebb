@@ -177,6 +177,12 @@ pub enum DayPortion {
     Half,
 }
 
+impl Default for DayPortion {
+    fn default() -> Self {
+        DayPortion::Full
+    }
+}
+
 impl fmt::Display for DayPortion {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let s = match self {
@@ -187,12 +193,8 @@ impl fmt::Display for DayPortion {
     }
 }
 
-fn default_portion() -> DayPortion {
-    DayPortion::Full
-}
-
 fn is_default_portion(p: &DayPortion) -> bool {
-    *p == DayPortion::Full
+    *p == DayPortion::default()
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -317,10 +319,7 @@ pub struct Holiday {
     pub date: NaiveDate,
     pub description: String,
 
-    #[serde(
-        default = "default_portion",
-        skip_serializing_if = "is_default_portion"
-    )]
+    #[serde(default, skip_serializing_if = "is_default_portion")]
     pub portion: DayPortion,
 }
 
@@ -328,10 +327,7 @@ pub struct Holiday {
 pub struct HolidayEntry {
     pub description: String,
 
-    #[serde(
-        default = "default_portion",
-        skip_serializing_if = "is_default_portion"
-    )]
+    #[serde(default, skip_serializing_if = "is_default_portion")]
     pub portion: DayPortion,
 }
 
@@ -342,10 +338,7 @@ pub struct SickDay {
     pub date: NaiveDate,
     pub description: String,
 
-    #[serde(
-        default = "default_portion",
-        skip_serializing_if = "is_default_portion"
-    )]
+    #[serde(default, skip_serializing_if = "is_default_portion")]
     pub portion: DayPortion,
 }
 
@@ -353,10 +346,7 @@ pub struct SickDay {
 pub struct SickDayEntry {
     pub description: String,
 
-    #[serde(
-        default = "default_portion",
-        skip_serializing_if = "is_default_portion"
-    )]
+    #[serde(default, skip_serializing_if = "is_default_portion")]
     pub portion: DayPortion,
 }
 
@@ -378,10 +368,7 @@ pub struct Vacation {
     pub date: NaiveDate,
     pub description: String,
 
-    #[serde(
-        default = "default_portion",
-        skip_serializing_if = "is_default_portion"
-    )]
+    #[serde(default, skip_serializing_if = "is_default_portion")]
     pub portion: DayPortion,
 }
 
@@ -389,10 +376,7 @@ pub struct Vacation {
 pub struct VacationEntry {
     pub description: String,
 
-    #[serde(
-        default = "default_portion",
-        skip_serializing_if = "is_default_portion"
-    )]
+    #[serde(default, skip_serializing_if = "is_default_portion")]
     pub portion: DayPortion,
 }
 
