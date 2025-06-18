@@ -344,9 +344,8 @@ mod tests {
 
     fn make_config(working_hours: WorkingHours) -> Config {
         Config {
-            sick_days_per_year: types::default_sick_days_per_year(),
-            vacation_days_per_year: types::default_vacation_days_per_year(),
             working_hours,
+            ..Default::default()
         }
     }
 
