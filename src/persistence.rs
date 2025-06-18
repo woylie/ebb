@@ -13,14 +13,14 @@ use crate::types::{
     default_vacation_days_per_year, default_working_hours,
 };
 
-pub const CONFIG_FILE: &str = "config.toml";
-pub const FRAME_FILE: &str = "frames.toml";
-pub const HOLIDAY_FILE: &str = "holidays.toml";
-pub const SICK_DAY_FILE: &str = "sick_days.toml";
-pub const STATE_FILE: &str = "state.toml";
-pub const VACATION_FILE: &str = "vacations.toml";
+const CONFIG_FILE: &str = "config.toml";
+const FRAME_FILE: &str = "frames.toml";
+const HOLIDAY_FILE: &str = "holidays.toml";
+const SICK_DAY_FILE: &str = "sick_days.toml";
+const STATE_FILE: &str = "state.toml";
+const VACATION_FILE: &str = "vacations.toml";
 
-pub fn load_toml<T: DeserializeOwned>(config_path: &Path, filename: &str, default: T) -> Result<T> {
+fn load_toml<T: DeserializeOwned>(config_path: &Path, filename: &str, default: T) -> Result<T> {
     let path = config_path.join(filename);
     if !path.exists() {
         return Ok(default);
@@ -29,7 +29,7 @@ pub fn load_toml<T: DeserializeOwned>(config_path: &Path, filename: &str, defaul
     Ok(toml::from_str(&contents)?)
 }
 
-pub fn save_toml<T: Serialize>(config_path: &Path, filename: &str, value: &T) -> Result<()> {
+fn save_toml<T: Serialize>(config_path: &Path, filename: &str, value: &T) -> Result<()> {
     let path = config_path.join(filename);
     let toml = toml::to_string(value)?;
     fs::write(path, toml)?;
