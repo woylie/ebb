@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+use crate::output::{DisplayOutput, print_output};
 use crate::persistence::{load_sick_days, save_sick_days};
 use crate::types::{DayPortion, SickDay, SickDayEntry};
 use crate::{Format, SickDayArgs, SickDayCommands};
@@ -15,7 +16,7 @@ struct AddOutput {
     sick_day: SickDay,
 }
 
-impl AddOutput {
+impl DisplayOutput for AddOutput {
     fn to_text(&self) -> String {
         format!(
             "Sick day '{}' added on {}.",
@@ -30,7 +31,7 @@ struct EditOutput {
     sick_day: SickDay,
 }
 
-impl EditOutput {
+impl DisplayOutput for EditOutput {
     fn to_text(&self) -> String {
         format!(
             "Updated sick day '{}' on {}.",
@@ -52,7 +53,7 @@ struct Filters {
     year: Option<i32>,
 }
 
-impl ListOutput {
+impl DisplayOutput for ListOutput {
     fn to_text(&self) -> String {
         if self.sick_days.is_empty() {
             match self.filters.year {
@@ -71,7 +72,7 @@ struct RemoveOutput {
     sick_day: SickDay,
 }
 
-impl RemoveOutput {
+impl DisplayOutput for RemoveOutput {
     fn to_text(&self) -> String {
         format!(
             "Removed sick day '{}' on {}.",
@@ -110,12 +111,7 @@ pub fn run_sick_day(args: &SickDayArgs, config_path: &Path, format: &Format) -> 
                 },
             };
 
-            let output_string = match format {
-                Format::Json => serde_json::to_string_pretty(&output)?,
-                Format::Text => output.to_text(),
-            };
-
-            println!("{}", output_string);
+            print_output(&output, format)?;
         }
 
         SickDayCommands::Edit {
@@ -143,12 +139,7 @@ pub fn run_sick_day(args: &SickDayArgs, config_path: &Path, format: &Format) -> 
                 },
             };
 
-            let output_string = match format {
-                Format::Json => serde_json::to_string_pretty(&output)?,
-                Format::Text => output.to_text(),
-            };
-
-            println!("{}", output_string);
+            print_output(&output, format)?;
         }
 
         SickDayCommands::List { year } => {
@@ -167,12 +158,7 @@ pub fn run_sick_day(args: &SickDayArgs, config_path: &Path, format: &Format) -> 
                 filters: Filters { year: *year },
             };
 
-            let output_string = match format {
-                Format::Json => serde_json::to_string_pretty(&output)?,
-                Format::Text => output.to_text(),
-            };
-
-            println!("{}", output_string);
+            print_output(&output, format)?;
         }
 
         SickDayCommands::Remove { date } => {
@@ -191,12 +177,7 @@ pub fn run_sick_day(args: &SickDayArgs, config_path: &Path, format: &Format) -> 
                 },
             };
 
-            let output_string = match format {
-                Format::Json => serde_json::to_string_pretty(&output)?,
-                Format::Text => output.to_text(),
-            };
-
-            println!("{}", output_string);
+            print_output(&output, format)?;
         }
     };
 

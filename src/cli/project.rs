@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+use crate::output::{DisplayOutput, print_output};
 use crate::persistence::{load_frames, save_frames};
 use crate::{Format, ProjectArgs, ProjectCommands};
 use serde::{Deserialize, Serialize};
@@ -12,7 +13,7 @@ pub struct ListOutput {
     pub projects: Vec<String>,
 }
 
-impl ListOutput {
+impl DisplayOutput for ListOutput {
     fn to_text(&self) -> String {
         self.projects.join("\n")
     }
@@ -24,7 +25,7 @@ pub struct RenameOutput {
     pub new_name: String,
 }
 
-impl RenameOutput {
+impl DisplayOutput for RenameOutput {
     fn to_text(&self) -> String {
         format!(
             "Project renamed from '{}' to '{}'.",
@@ -41,12 +42,7 @@ pub fn run_project(args: &ProjectArgs, config_path: &Path, format: &Format) -> a
             let projects = frames.all_projects();
             let output = ListOutput { projects };
 
-            let output_string = match format {
-                Format::Json => serde_json::to_string_pretty(&output)?,
-                Format::Text => output.to_text(),
-            };
-
-            println!("{}", output_string);
+            print_output(&output, format)?;
         }
         ProjectCommands::Rename { old_name, new_name } => {
             frames.rename_project(old_name, new_name);
@@ -57,12 +53,7 @@ pub fn run_project(args: &ProjectArgs, config_path: &Path, format: &Format) -> a
                 new_name: new_name.to_string(),
             };
 
-            let output_string = match format {
-                Format::Json => serde_json::to_string_pretty(&output)?,
-                Format::Text => output.to_text(),
-            };
-
-            println!("{}", output_string);
+            print_output(&output, format)?;
         }
     };
 

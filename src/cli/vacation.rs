@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+use crate::output::{DisplayOutput, print_output};
 use crate::persistence::{load_vacations, save_vacations};
 use crate::types::{DayPortion, Vacation, VacationEntry};
 use crate::{Format, VacationArgs, VacationCommands};
@@ -15,7 +16,7 @@ struct AddOutput {
     vacation: Vacation,
 }
 
-impl AddOutput {
+impl DisplayOutput for AddOutput {
     fn to_text(&self) -> String {
         format!(
             "Vacation '{}' added on {}.",
@@ -30,7 +31,7 @@ struct EditOutput {
     vacation: Vacation,
 }
 
-impl EditOutput {
+impl DisplayOutput for EditOutput {
     fn to_text(&self) -> String {
         format!(
             "Updated vacation '{}' on {}.",
@@ -52,7 +53,7 @@ struct Filters {
     year: Option<i32>,
 }
 
-impl ListOutput {
+impl DisplayOutput for ListOutput {
     fn to_text(&self) -> String {
         if self.vacations.is_empty() {
             match self.filters.year {
@@ -71,7 +72,7 @@ struct RemoveOutput {
     vacation: Vacation,
 }
 
-impl RemoveOutput {
+impl DisplayOutput for RemoveOutput {
     fn to_text(&self) -> String {
         format!(
             "Removed vacation '{}' on {}.",
@@ -114,12 +115,7 @@ pub fn run_vacation(
                 },
             };
 
-            let output_string = match format {
-                Format::Json => serde_json::to_string_pretty(&output)?,
-                Format::Text => output.to_text(),
-            };
-
-            println!("{}", output_string);
+            print_output(&output, format)?;
         }
 
         VacationCommands::Edit {
@@ -147,12 +143,7 @@ pub fn run_vacation(
                 },
             };
 
-            let output_string = match format {
-                Format::Json => serde_json::to_string_pretty(&output)?,
-                Format::Text => output.to_text(),
-            };
-
-            println!("{}", output_string);
+            print_output(&output, format)?;
         }
 
         VacationCommands::List { year } => {
@@ -171,12 +162,7 @@ pub fn run_vacation(
                 filters: Filters { year: *year },
             };
 
-            let output_string = match format {
-                Format::Json => serde_json::to_string_pretty(&output)?,
-                Format::Text => output.to_text(),
-            };
-
-            println!("{}", output_string);
+            print_output(&output, format)?;
         }
 
         VacationCommands::Remove { date } => {
@@ -195,12 +181,7 @@ pub fn run_vacation(
                 },
             };
 
-            let output_string = match format {
-                Format::Json => serde_json::to_string_pretty(&output)?,
-                Format::Text => output.to_text(),
-            };
-
-            println!("{}", output_string);
+            print_output(&output, format)?;
         }
     };
 
