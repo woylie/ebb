@@ -13,6 +13,10 @@ use std::fmt;
 use std::time::Duration;
 use tabled::Tabled;
 
+const HOUR: u64 = 60 * 60;
+const EIGHT_HOURS: Duration = Duration::from_secs(8 * HOUR);
+const ZERO_HOURS: Duration = Duration::from_secs(0);
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Config {
@@ -84,17 +88,14 @@ pub struct WorkingHours {
 
 impl Default for WorkingHours {
     fn default() -> Self {
-        let eight_hours = Duration::from_secs(60 * 60 * 8);
-        let zero_hours = Duration::from_secs(0);
-
         WorkingHours {
-            monday: eight_hours,
-            tuesday: eight_hours,
-            wednesday: eight_hours,
-            thursday: eight_hours,
-            friday: eight_hours,
-            saturday: zero_hours,
-            sunday: zero_hours,
+            monday: EIGHT_HOURS,
+            tuesday: EIGHT_HOURS,
+            wednesday: EIGHT_HOURS,
+            thursday: EIGHT_HOURS,
+            friday: EIGHT_HOURS,
+            saturday: ZERO_HOURS,
+            sunday: ZERO_HOURS,
         }
     }
 }
