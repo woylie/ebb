@@ -14,16 +14,16 @@ use std::path::Path;
 use tabled::{Table, Tabled, settings::Alignment, settings::Style, settings::object::Columns};
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct ReportOutput {
-    pub projects: HashMap<String, ProjectDuration>,
-    pub total_duration: i64,
-    pub timespan: Timespan,
+struct ReportOutput {
+    projects: HashMap<String, ProjectDuration>,
+    total_duration: i64,
+    timespan: Timespan,
 }
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
-pub struct ProjectDuration {
-    pub duration: i64,
-    pub tags: HashMap<String, i64>,
+struct ProjectDuration {
+    duration: i64,
+    tags: HashMap<String, i64>,
 }
 
 #[derive(Tabled)]
@@ -127,7 +127,7 @@ pub fn run_report(args: &ReportArgs, config_path: &Path, format: &Format) -> any
     Ok(())
 }
 
-pub fn resolve_timespan(args: &ReportArgs, now: i64, frames: &[Frame]) -> Timespan {
+fn resolve_timespan(args: &ReportArgs, now: i64, frames: &[Frame]) -> Timespan {
     let local_now = Local.timestamp_opt(now, 0).unwrap();
 
     let from = if args.day {

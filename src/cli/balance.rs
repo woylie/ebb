@@ -18,11 +18,11 @@ use std::path::Path;
 use std::time::Duration;
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct BalanceOutput {
-    pub expected_working_seconds: i64,
-    pub actual_working_seconds: i64,
-    pub remaining_working_seconds: i64,
-    pub timespan: Timespan,
+struct BalanceOutput {
+    expected_working_seconds: i64,
+    actual_working_seconds: i64,
+    remaining_working_seconds: i64,
+    timespan: Timespan,
 }
 
 impl DisplayOutput for BalanceOutput {
@@ -99,7 +99,7 @@ pub fn run_balance(args: &BalanceArgs, config_path: &Path, format: &Format) -> a
     Ok(())
 }
 
-pub fn resolve_timespan(args: &BalanceArgs, now: i64, frames: &[Frame]) -> Timespan {
+fn resolve_timespan(args: &BalanceArgs, now: i64, frames: &[Frame]) -> Timespan {
     let local_now = Local.timestamp_opt(now, 0).unwrap();
 
     let from = if args.day {
