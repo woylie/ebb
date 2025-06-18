@@ -28,18 +28,36 @@ CLI for time tracking and flex time balance.
   day off means a reduction in 3 hours. This logic might be improved in the
   future based on user needs.
 
-## Building
+## Installation
 
-With cargo:
+### With Nix
 
 ```bash
-cargo build --release
+nix profile install github:woylie/ebb
 ```
 
-With nix:
+If the binary can't be found, ensure your Nix profile is in your `PATH`.
 
 ```bash
-nix build
+export PATH="$HOME/.nix-profile/bin:$PATH"
+```
+
+### Manual Build
+
+With Cargo:
+
+```bash
+git clone https://github.com/woylie/ebb.git
+cd ebb
+cargo build --release
+./target/release/ebb
+```
+
+With Nix:
+
+```bash
+nix build github:woylie/ebb
+./result/bin/ebb
 ```
 
 ## Development
