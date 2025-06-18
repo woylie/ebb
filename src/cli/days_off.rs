@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+use crate::output::{DisplayOutput, print_output};
 use crate::persistence::{load_config, load_sick_days, load_vacations};
 use crate::types::DayPortion;
 use crate::{DaysOffArgs, Format};
@@ -36,8 +37,8 @@ struct SummaryRow {
     remaining: String,
 }
 
-impl Output {
-    pub fn to_text(&self) -> String {
+impl DisplayOutput for Output {
+    fn to_text(&self) -> String {
         let rows = vec![
             SummaryRow {
                 category: "Vacation".into(),
@@ -89,12 +90,7 @@ pub fn run_daysoff(args: &DaysOffArgs, config_path: &Path, format: &Format) -> a
         sick_days_remaining,
     };
 
-    let output_string = match format {
-        Format::Json => serde_json::to_string_pretty(&output)?,
-        Format::Text => output.to_text(),
-    };
-
-    println!("{}", output_string);
+    print_output(&output, format)?;
 
     Ok(())
 }

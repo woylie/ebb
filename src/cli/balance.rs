@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 use crate::formatting::format_duration;
+use crate::output::{DisplayOutput, print_output};
 use crate::persistence::{
     load_config, load_frames, load_holidays, load_sick_days, load_state, load_vacations,
 };
@@ -24,7 +25,7 @@ pub struct BalanceOutput {
     pub timespan: Timespan,
 }
 
-impl BalanceOutput {
+impl DisplayOutput for BalanceOutput {
     fn to_text(&self) -> String {
         let from_str = format_timestamp(self.timespan.from);
         let to_str = format_timestamp(self.timespan.to);
@@ -93,12 +94,7 @@ pub fn run_balance(args: &BalanceArgs, config_path: &Path, format: &Format) -> a
         timespan,
     };
 
-    let output_string = match format {
-        Format::Json => serde_json::to_string_pretty(&output)?,
-        Format::Text => output.to_text(),
-    };
-
-    println!("{}", output_string);
+    print_output(&output, format)?;
 
     Ok(())
 }

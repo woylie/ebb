@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+use crate::output::{DisplayOutput, print_output};
 use crate::persistence::{load_holidays, save_holidays};
 use crate::types::{DayPortion, Holiday, HolidayEntry};
 use crate::{Format, HolidayArgs, HolidayCommands};
@@ -15,7 +16,7 @@ struct AddOutput {
     holiday: Holiday,
 }
 
-impl AddOutput {
+impl DisplayOutput for AddOutput {
     fn to_text(&self) -> String {
         format!(
             "Holiday '{}' added on {}.",
@@ -30,7 +31,7 @@ struct EditOutput {
     holiday: Holiday,
 }
 
-impl EditOutput {
+impl DisplayOutput for EditOutput {
     fn to_text(&self) -> String {
         format!(
             "Updated holiday '{}' on {}.",
@@ -52,7 +53,7 @@ struct Filters {
     year: Option<i32>,
 }
 
-impl ListOutput {
+impl DisplayOutput for ListOutput {
     fn to_text(&self) -> String {
         if self.holidays.is_empty() {
             match self.filters.year {
@@ -71,7 +72,7 @@ struct RemoveOutput {
     holiday: Holiday,
 }
 
-impl RemoveOutput {
+impl DisplayOutput for RemoveOutput {
     fn to_text(&self) -> String {
         format!(
             "Removed holiday '{}' on {}.",
@@ -110,12 +111,7 @@ pub fn run_holiday(args: &HolidayArgs, config_path: &Path, format: &Format) -> a
                 },
             };
 
-            let output_string = match format {
-                Format::Json => serde_json::to_string_pretty(&output)?,
-                Format::Text => output.to_text(),
-            };
-
-            println!("{}", output_string);
+            print_output(&output, format)?;
         }
 
         HolidayCommands::Edit {
@@ -143,12 +139,7 @@ pub fn run_holiday(args: &HolidayArgs, config_path: &Path, format: &Format) -> a
                 },
             };
 
-            let output_string = match format {
-                Format::Json => serde_json::to_string_pretty(&output)?,
-                Format::Text => output.to_text(),
-            };
-
-            println!("{}", output_string);
+            print_output(&output, format)?;
         }
 
         HolidayCommands::List { year } => {
@@ -167,12 +158,7 @@ pub fn run_holiday(args: &HolidayArgs, config_path: &Path, format: &Format) -> a
                 filters: Filters { year: *year },
             };
 
-            let output_string = match format {
-                Format::Json => serde_json::to_string_pretty(&output)?,
-                Format::Text => output.to_text(),
-            };
-
-            println!("{}", output_string);
+            print_output(&output, format)?;
         }
 
         HolidayCommands::Remove { date } => {
@@ -191,12 +177,7 @@ pub fn run_holiday(args: &HolidayArgs, config_path: &Path, format: &Format) -> a
                 },
             };
 
-            let output_string = match format {
-                Format::Json => serde_json::to_string_pretty(&output)?,
-                Format::Text => output.to_text(),
-            };
-
-            println!("{}", output_string);
+            print_output(&output, format)?;
         }
     };
 

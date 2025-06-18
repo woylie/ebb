@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+use crate::output::{DisplayOutput, print_output};
 use crate::persistence::{load_config, save_config};
 use crate::types::Config;
 use crate::{ConfigArgs, ConfigCommands, Format};
@@ -16,7 +17,7 @@ struct GetOutput<'a> {
     value: Value,
 }
 
-impl GetOutput<'_> {
+impl DisplayOutput for GetOutput<'_> {
     fn to_text(&self) -> String {
         match &self.value {
             serde_json::Value::String(s) => s.clone(),
@@ -38,7 +39,7 @@ struct ConfigRow {
     value: String,
 }
 
-impl ListOutput {
+impl DisplayOutput for ListOutput {
     fn to_text(&self) -> String {
         let json_value = serde_json::to_value(&self.config).expect("Serialization should succeed");
         let mut flat = vec![];
@@ -60,7 +61,7 @@ struct SetOutput {
     new_value: Value,
 }
 
-impl SetOutput {
+impl DisplayOutput for SetOutput {
     fn to_text(&self) -> String {
         let old_value = match &self.old_value {
             serde_json::Value::String(s) => s.clone(),
@@ -86,24 +87,12 @@ pub fn run_config(args: &ConfigArgs, config_path: &Path, format: &Format) -> any
         ConfigCommands::Get { key } => {
             let value = get_config_value(&config, key)?;
             let output = GetOutput { key, value };
-
-            let output_string = match format {
-                Format::Json => serde_json::to_string_pretty(&output)?,
-                Format::Text => output.to_text(),
-            };
-
-            println!("{}", output_string);
+            print_output(&output, format)?;
         }
 
         ConfigCommands::List => {
             let output = ListOutput { config };
-
-            let output_string = match format {
-                Format::Json => serde_json::to_string_pretty(&output)?,
-                Format::Text => output.to_text(),
-            };
-
-            println!("{}", output_string);
+            print_output(&output, format)?;
         }
 
         ConfigCommands::Set { key, value } => {
@@ -115,13 +104,7 @@ pub fn run_config(args: &ConfigArgs, config_path: &Path, format: &Format) -> any
                 old_value,
                 new_value,
             };
-
-            let output_string = match format {
-                Format::Json => serde_json::to_string_pretty(&output)?,
-                Format::Text => output.to_text(),
-            };
-
-            println!("{}", output_string);
+            print_output(&output, format)?;
         }
     };
 

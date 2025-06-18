@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+use crate::output::{DisplayOutput, print_output};
 use crate::persistence::{load_frames, load_state, save_frames, save_state};
 use crate::types::{CurrentFrame, Frame, State};
 use crate::{Format, RestartArgs, StartArgs, StopArgs};
@@ -17,7 +18,7 @@ struct StartOutput {
     stopped_frame: Option<Frame>,
 }
 
-impl StartOutput {
+impl DisplayOutput for StartOutput {
     fn to_text(&self) -> String {
         let start_datetime = Local
             .timestamp_opt(self.current_frame.start_time, 0)
@@ -36,7 +37,7 @@ struct StopOutput {
     stopped_frame: Frame,
 }
 
-impl StopOutput {
+impl DisplayOutput for StopOutput {
     fn to_text(&self) -> String {
         let end_datetime = Local.timestamp_opt(self.stopped_frame.end_time, 0).unwrap();
 
@@ -53,7 +54,7 @@ struct CancelOutput {
     cancelled_frame: CurrentFrame,
 }
 
-impl CancelOutput {
+impl DisplayOutput for CancelOutput {
     fn to_text(&self) -> String {
         format!(
             "Current frame of project '{}' cancelled.",
@@ -67,7 +68,7 @@ struct StatusOutput {
     current_frame: Option<CurrentFrame>,
 }
 
-impl StatusOutput {
+impl DisplayOutput for StatusOutput {
     fn to_text(&self) -> String {
         if let Some(current_frame) = &self.current_frame {
             let start = match Local.timestamp_opt(current_frame.start_time, 0).single() {
@@ -125,12 +126,7 @@ pub fn run_start(args: &StartArgs, config_path: &Path, format: &Format) -> anyho
             stopped_frame,
         };
 
-        let output_string = match format {
-            Format::Json => serde_json::to_string_pretty(&output)?,
-            Format::Text => output.to_text(),
-        };
-
-        println!("{}", output_string);
+        print_output(&output, format)?;
     }
 
     Ok(())
@@ -170,12 +166,7 @@ pub fn run_restart(args: &RestartArgs, config_path: &Path, format: &Format) -> a
             stopped_frame: None,
         };
 
-        let output_string = match format {
-            Format::Json => serde_json::to_string_pretty(&output)?,
-            Format::Text => output.to_text(),
-        };
-
-        println!("{}", output_string);
+        print_output(&output, format)?;
     }
 
     Ok(())
@@ -237,12 +228,7 @@ pub fn run_cancel(config_path: &Path, format: &Format) -> anyhow::Result<()> {
             cancelled_frame: current_frame.clone(),
         };
 
-        let output_string = match format {
-            Format::Json => serde_json::to_string_pretty(&output)?,
-            Format::Text => output.to_text(),
-        };
-
-        println!("{}", output_string);
+        print_output(&output, format)?;
     } else {
         bail!("No project started.");
     }

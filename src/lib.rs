@@ -14,6 +14,7 @@ use std::{fs, path::PathBuf};
 
 pub mod cli;
 pub mod formatting;
+pub mod output;
 pub mod persistence;
 pub mod serde_utils;
 pub mod types;
