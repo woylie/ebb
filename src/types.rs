@@ -2,9 +2,9 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+use crate::duration_human;
 use chrono::NaiveDate;
 use clap::ValueEnum;
-use humantime::format_duration;
 use serde::de::{self, MapAccess, Visitor};
 use serde::ser::SerializeMap;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -66,40 +66,19 @@ fn find_allowed_for_year(map: &HashMap<i32, i32>, year: i32) -> i32 {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct WorkingHours {
-    #[serde(
-        deserialize_with = "deserialize_duration_human",
-        serialize_with = "serialize_duration_human"
-    )]
+    #[serde(with = "duration_human")]
     pub monday: Duration,
-    #[serde(
-        deserialize_with = "deserialize_duration_human",
-        serialize_with = "serialize_duration_human"
-    )]
+    #[serde(with = "duration_human")]
     pub tuesday: Duration,
-    #[serde(
-        deserialize_with = "deserialize_duration_human",
-        serialize_with = "serialize_duration_human"
-    )]
+    #[serde(with = "duration_human")]
     pub wednesday: Duration,
-    #[serde(
-        deserialize_with = "deserialize_duration_human",
-        serialize_with = "serialize_duration_human"
-    )]
+    #[serde(with = "duration_human")]
     pub thursday: Duration,
-    #[serde(
-        deserialize_with = "deserialize_duration_human",
-        serialize_with = "serialize_duration_human"
-    )]
+    #[serde(with = "duration_human")]
     pub friday: Duration,
-    #[serde(
-        deserialize_with = "deserialize_duration_human",
-        serialize_with = "serialize_duration_human"
-    )]
+    #[serde(with = "duration_human")]
     pub saturday: Duration,
-    #[serde(
-        deserialize_with = "deserialize_duration_human",
-        serialize_with = "serialize_duration_human"
-    )]
+    #[serde(with = "duration_human")]
     pub sunday: Duration,
 }
 
@@ -130,22 +109,6 @@ impl WorkingHours {
             + self.saturday
             + self.sunday
     }
-}
-
-fn serialize_duration_human<S>(duration: &Duration, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    let s = format_duration(*duration).to_string();
-    serializer.serialize_str(&s)
-}
-
-fn deserialize_duration_human<'de, D>(deserializer: D) -> Result<Duration, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let s = String::deserialize(deserializer)?;
-    humantime::parse_duration(&s).map_err(serde::de::Error::custom)
 }
 
 fn deserialize_map_keys_as_i32<'de, D>(deserializer: D) -> Result<HashMap<i32, i32>, D::Error>
