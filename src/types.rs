@@ -135,10 +135,6 @@ impl fmt::Display for DayPortion {
     }
 }
 
-fn is_default_portion(p: &DayPortion) -> bool {
-    *p == DayPortion::default()
-}
-
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Frame {
     pub start_time: i64,
@@ -261,7 +257,7 @@ pub struct Holiday {
     pub date: NaiveDate,
     pub description: String,
 
-    #[serde(default, skip_serializing_if = "is_default_portion")]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub portion: DayPortion,
 }
 
@@ -269,7 +265,7 @@ pub struct Holiday {
 pub struct HolidayEntry {
     pub description: String,
 
-    #[serde(default, skip_serializing_if = "is_default_portion")]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub portion: DayPortion,
 }
 
@@ -280,7 +276,7 @@ pub struct SickDay {
     pub date: NaiveDate,
     pub description: String,
 
-    #[serde(default, skip_serializing_if = "is_default_portion")]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub portion: DayPortion,
 }
 
@@ -288,7 +284,7 @@ pub struct SickDay {
 pub struct SickDayEntry {
     pub description: String,
 
-    #[serde(default, skip_serializing_if = "is_default_portion")]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub portion: DayPortion,
 }
 
@@ -310,7 +306,7 @@ pub struct Vacation {
     pub date: NaiveDate,
     pub description: String,
 
-    #[serde(default, skip_serializing_if = "is_default_portion")]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub portion: DayPortion,
 }
 
@@ -318,8 +314,15 @@ pub struct Vacation {
 pub struct VacationEntry {
     pub description: String,
 
-    #[serde(default, skip_serializing_if = "is_default_portion")]
+    #[serde(default, skip_serializing_if = "is_default")]
     pub portion: DayPortion,
 }
 
 pub type Vacations = BTreeMap<NaiveDate, VacationEntry>;
+
+fn is_default<T>(value: &T) -> bool
+where
+    T: Default + PartialEq,
+{
+    *value == T::default()
+}
