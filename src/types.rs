@@ -2,12 +2,10 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-use crate::duration_human;
+use crate::serde_utils;
 use chrono::NaiveDate;
 use clap::ValueEnum;
-use serde::de::{self, MapAccess, Visitor};
-use serde::ser::SerializeMap;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fmt;
 use std::time::Duration;
@@ -20,15 +18,9 @@ const ZERO_HOURS: Duration = Duration::from_secs(0);
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Config {
-    #[serde(
-        serialize_with = "serialize_map_keys_as_strings",
-        deserialize_with = "deserialize_map_keys_as_i32"
-    )]
+    #[serde(with = "serde_utils::int_key_map")]
     pub vacation_days_per_year: HashMap<i32, i32>,
-    #[serde(
-        serialize_with = "serialize_map_keys_as_strings",
-        deserialize_with = "deserialize_map_keys_as_i32"
-    )]
+    #[serde(with = "serde_utils::int_key_map")]
     pub sick_days_per_year: HashMap<i32, i32>,
     pub working_hours: WorkingHours,
 }
@@ -70,19 +62,19 @@ fn find_allowed_for_year(map: &HashMap<i32, i32>, year: i32) -> i32 {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct WorkingHours {
-    #[serde(with = "duration_human")]
+    #[serde(with = "serde_utils::human_duration")]
     pub monday: Duration,
-    #[serde(with = "duration_human")]
+    #[serde(with = "serde_utils::human_duration")]
     pub tuesday: Duration,
-    #[serde(with = "duration_human")]
+    #[serde(with = "serde_utils::human_duration")]
     pub wednesday: Duration,
-    #[serde(with = "duration_human")]
+    #[serde(with = "serde_utils::human_duration")]
     pub thursday: Duration,
-    #[serde(with = "duration_human")]
+    #[serde(with = "serde_utils::human_duration")]
     pub friday: Duration,
-    #[serde(with = "duration_human")]
+    #[serde(with = "serde_utils::human_duration")]
     pub saturday: Duration,
-    #[serde(with = "duration_human")]
+    #[serde(with = "serde_utils::human_duration")]
     pub sunday: Duration,
 }
 
@@ -110,57 +102,6 @@ impl WorkingHours {
             + self.saturday
             + self.sunday
     }
-}
-
-fn deserialize_map_keys_as_i32<'de, D>(deserializer: D) -> Result<HashMap<i32, i32>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    struct MapVisitor;
-
-    impl<'de> Visitor<'de> for MapVisitor {
-        type Value = HashMap<i32, i32>;
-
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-            formatter.write_str("a map with string keys that can be parsed as integers")
-        }
-
-        fn visit_map<M>(self, mut access: M) -> Result<HashMap<i32, i32>, M::Error>
-        where
-            M: MapAccess<'de>,
-        {
-            let mut map = HashMap::new();
-            while let Some((key, value)) = access.next_entry::<String, i32>()? {
-                let parsed_key = key
-                    .parse::<i32>()
-                    .map_err(|_| de::Error::custom(format!("Invalid integer key: {}", key)))?;
-                map.insert(parsed_key, value);
-            }
-            Ok(map)
-        }
-    }
-
-    deserializer.deserialize_map(MapVisitor)
-}
-
-pub fn serialize_map_keys_as_strings<S, V>(
-    map: &HashMap<i32, V>,
-    serializer: S,
-) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-    V: Serialize,
-{
-    let mut keys: Vec<_> = map.keys().cloned().collect();
-    keys.sort();
-
-    let mut ser_map = serializer.serialize_map(Some(map.len()))?;
-    for key in keys {
-        if let Some(value) = map.get(&key) {
-            ser_map.serialize_entry(&key.to_string(), value)?;
-        }
-    }
-    ser_map.end()
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]

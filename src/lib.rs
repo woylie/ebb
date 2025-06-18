@@ -13,9 +13,9 @@ use clap::{ArgGroup, Args, Parser, Subcommand, ValueEnum};
 use std::{fs, path::PathBuf};
 
 pub mod cli;
-pub mod duration_human;
 pub mod formatting;
 pub mod persistence;
+pub mod serde_utils;
 pub mod types;
 
 #[derive(Debug, Parser)]
