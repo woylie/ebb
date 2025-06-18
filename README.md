@@ -20,13 +20,14 @@ CLI for time tracking and flex time balance.
 ## Important to know
 
 - In printed durations, 1d means 24h, _not_ one working day.
-- Vacation days, holidays and sick days can be full or half. This is relative to
-  the working hours on that day. If Monday is configured to have 8 working
-  hours, a full day off means the flex time balance is reduced by 8 hours, and a
-  half day off means the flex time balance is reduced by 4 hours. With 6 working
-  hours on a day, a full day off results in a reduction of 6 hours and a half
-  day off means a reduction in 3 hours. This logic might be improved in the
-  future based on user needs.
+- Vacation days, holidays, and sick days can be full or half days. This is
+  relative to the expected working hours configured for that day. For example,
+  if Monday is configured with 8 expected working hours, a full day off will
+  reduce the flex time balance by 8 hours, and a half day off will
+  reduce it by 4 hours. If a day is configured with 6 expected working hours,
+  a full day off reduces the balance by 6 hours, and a half day off reduces the
+  balance by 3 hours. This logic may be improved in the future based on user
+  feedback.
 
 ## Installation
 
