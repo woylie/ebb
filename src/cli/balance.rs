@@ -33,14 +33,19 @@ impl DisplayOutput for BalanceOutput {
         let actual_duration = format_duration(self.actual_working_seconds);
         let remaining_duration = format_duration(self.remaining_working_seconds);
 
+        let width = expected_duration
+            .len()
+            .max(actual_duration.len())
+            .max(remaining_duration.len());
+
         format!(
             r#"
 From: {from_str}
 To: {to_str}
 
-Expected: {expected_duration}
-Actual: {actual_duration}
-Remaining: {remaining_duration}
+Expected:  {expected_duration:>width$}
+Actual:    {actual_duration:>width$}
+Remaining: {remaining_duration:>width$}
 "#
         )
     }
