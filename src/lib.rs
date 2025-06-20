@@ -3,13 +3,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 use crate::Commands::{
-    Balance, Cancel, Config, DaysOff, GenerateDocs, Holiday, Project, Report, Restart, SickDay,
-    Start, Status, Stop, Tag, Vacation,
+    Balance, Cancel, Config, DaysOff, GenerateCompletions, GenerateDocs, Holiday, Project, Report,
+    Restart, SickDay, Start, Status, Stop, Tag, Vacation,
 };
 use crate::types::DayPortion;
 use anyhow::{Result, anyhow};
 use chrono::{DateTime, Datelike, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
+use clap::CommandFactory;
 use clap::{ArgGroup, Args, Parser, Subcommand, ValueEnum};
+use clap_complete::aot;
+use std::io;
 use std::{fs, path::PathBuf};
 
 pub mod cli;
@@ -86,6 +89,12 @@ pub enum Commands {
     /// Generate the Markdown documentation
     #[command(hide = true)]
     GenerateDocs,
+    /// Generate shell completions
+    #[command(hide = true)]
+    GenerateCompletions {
+        #[arg(long)]
+        shell: clap_complete::Shell,
+    },
 }
 
 #[derive(Debug, Args)]
@@ -444,6 +453,11 @@ pub fn run(cli: &Cli) -> Result<()> {
         Vacation(args) => cli::vacation::run_vacation(args, &config_path, format),
         GenerateDocs => {
             clap_markdown::print_help_markdown::<Cli>();
+            Ok(())
+        }
+        GenerateCompletions { shell } => {
+            let mut cmd = Cli::command();
+            aot::generate(*shell, &mut cmd, "ebb", &mut io::stdout());
             Ok(())
         }
     }

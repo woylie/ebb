@@ -49,6 +49,20 @@ nix build github:woylie/ebb
 ./result/bin/ebb
 ```
 
+### Shell Completions
+
+You can generate shell completions with:
+
+```bash
+ebb generate-completions --shell <SHELL>
+```
+
+To see a list of available shells, run:
+
+```bash
+ebb generate-completions --help
+```
+
 ## Getting Started
 
 ### Configuration
