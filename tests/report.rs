@@ -56,8 +56,6 @@ fn report_without_args() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("ebb")?;
     let assert = cmd
         .arg("report")
-        .arg("--to")
-        .arg("1750282303")
         .arg("--format")
         .arg("json")
         .env("EBB_CONFIG_DIR", tmp.path())
@@ -67,30 +65,26 @@ fn report_without_args() -> Result<(), Box<dyn std::error::Error>> {
     let stdout = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
     let output: Value = serde_json::from_str(&stdout).expect("Expected valid JSON output");
 
-    let expected_json = json!({
-        "total_duration": 9872,
-        "timespan": {
-            "from": frame1_start,
-            "to": 1750282303
+    assert_eq!(output["total_duration"], 9872);
+    assert_eq!(output["timespan"]["from"], frame1_start);
+
+    let expected_projects = json!({
+        "project1": {
+            "duration": 5932,
+            "tags": {
+                "tag1": 3820,
+                "tag2": 5932
+            }
         },
-        "projects": {
-            "project1": {
-                "duration": 5932,
-                "tags": {
-                    "tag1": 3820,
-                    "tag2": 5932
-                }
-            },
-            "project2": {
-                "duration": 3940,
-                "tags": {
-                    "tag3": 3940
-                }
+        "project2": {
+            "duration": 3940,
+            "tags": {
+                "tag3": 3940
             }
         }
     });
 
-    assert_eq!(output, expected_json);
+    assert_eq!(output["projects"], expected_projects);
 
     Ok(())
 }
