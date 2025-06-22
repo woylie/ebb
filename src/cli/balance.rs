@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-use crate::formatting::format_duration;
+use crate::formatting::{format_duration, format_timerange};
 use crate::output::{DisplayOutput, print_output};
 use crate::persistence::{
     load_config, load_frames, load_holidays, load_sick_days, load_state, load_vacations,
@@ -27,8 +27,7 @@ struct BalanceOutput {
 
 impl DisplayOutput for BalanceOutput {
     fn to_text(&self) -> String {
-        let from_str = format_timestamp(self.timespan.from);
-        let to_str = format_timestamp(self.timespan.to);
+        let timerange_str = format_timerange(self.timespan.from, self.timespan.to);
         let expected_duration = format_duration(self.expected_working_seconds);
         let actual_duration = format_duration(self.actual_working_seconds);
         let remaining_duration = format_duration(self.remaining_working_seconds);
@@ -40,8 +39,7 @@ impl DisplayOutput for BalanceOutput {
 
         format!(
             r#"
-From: {from_str}
-To: {to_str}
+{timerange_str}
 
 Expected:  {expected_duration:>width$}
 Actual:    {actual_duration:>width$}
@@ -302,21 +300,6 @@ fn total_duration(frames: &Frames) -> i64 {
     }
 
     total_time
-}
-
-fn format_timestamp(ts: i64) -> String {
-    match Local.timestamp_opt(ts, 0) {
-        chrono::LocalResult::Single(dt) => dt.format("%Y-%m-%d %H:%M:%S (%a)").to_string(),
-        chrono::LocalResult::Ambiguous(dt1, _) => dt1.format("%Y-%m-%d %H:%M:%S (%a)").to_string(),
-        chrono::LocalResult::None => {
-            let fallback_date = NaiveDate::from_ymd_opt(1970, 1, 1)
-                .unwrap()
-                .and_hms_opt(0, 0, 0)
-                .unwrap();
-            let fallback_dt = Local.from_local_datetime(&fallback_date).unwrap();
-            fallback_dt.format("%Y-%m-%d %H:%M:%S (%a)").to_string()
-        }
-    }
 }
 
 #[cfg(test)]

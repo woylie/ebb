@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+use chrono::{Local, NaiveDate, TimeZone};
+
 pub fn format_duration(secs: i64) -> String {
     let negative = secs < 0;
     let mut secs = secs.abs();
@@ -32,6 +34,27 @@ pub fn format_duration(secs: i64) -> String {
         format!("-{result}")
     } else {
         result
+    }
+}
+
+pub fn format_timerange(from: i64, to: i64) -> String {
+    let from_str = format_timestamp(from);
+    let to_str = format_timestamp(to);
+    format!("From: {from_str}\nTo: {to_str}")
+}
+
+pub fn format_timestamp(ts: i64) -> String {
+    match Local.timestamp_opt(ts, 0) {
+        chrono::LocalResult::Single(dt) => dt.format("%Y-%m-%d %H:%M:%S (%a)").to_string(),
+        chrono::LocalResult::Ambiguous(dt1, _) => dt1.format("%Y-%m-%d %H:%M:%S (%a)").to_string(),
+        chrono::LocalResult::None => {
+            let fallback_date = NaiveDate::from_ymd_opt(1970, 1, 1)
+                .unwrap()
+                .and_hms_opt(0, 0, 0)
+                .unwrap();
+            let fallback_dt = Local.from_local_datetime(&fallback_date).unwrap();
+            fallback_dt.format("%Y-%m-%d %H:%M:%S (%a)").to_string()
+        }
     }
 }
 
