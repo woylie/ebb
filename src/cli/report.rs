@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-use crate::formatting::format_duration;
+use crate::formatting::{format_duration, format_timerange};
 use crate::output::{DisplayOutput, print_output};
 use crate::persistence::{load_frames, load_state};
 use crate::types::{Frame, Frames, Timespan};
 use crate::{Format, ReportArgs};
-use chrono::{Datelike, Local, NaiveDate, TimeZone, Utc};
+use chrono::{Datelike, Local, TimeZone, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
@@ -36,12 +36,11 @@ struct ProjectRow {
 
 impl DisplayOutput for ReportOutput {
     fn to_text(&self) -> String {
-        let from_str = format_timestamp(self.timespan.from);
-        let to_str = format_timestamp(self.timespan.to);
+        let timerange_str = format_timerange(self.timespan.from, self.timespan.to);
         let duration_str = format_duration(self.total_duration);
 
         if self.projects.is_empty() {
-            return format!("From: {from_str}\nTo: {to_str}\n\nTotal: {duration_str}");
+            return format!("{timerange_str}\n\nTotal: {duration_str}");
         }
 
         let mut rows: Vec<ProjectRow> = Vec::new();
@@ -71,7 +70,7 @@ impl DisplayOutput for ReportOutput {
             .with(Style::sharp())
             .modify(Columns::new(1..2), Alignment::right());
 
-        format!("From: {from_str}\nTo: {to_str}\n\n{table}\n\nTotal: {duration_str}")
+        format!("{timerange_str}\n\n{table}\n\nTotal: {duration_str}")
     }
 }
 
@@ -201,19 +200,4 @@ fn total_duration_by_project(frames: &Frames) -> (HashMap<String, ProjectDuratio
     }
 
     (project_durations, total_time)
-}
-
-fn format_timestamp(ts: i64) -> String {
-    match Local.timestamp_opt(ts, 0) {
-        chrono::LocalResult::Single(dt) => dt.format("%Y-%m-%d %H:%M:%S (%a)").to_string(),
-        chrono::LocalResult::Ambiguous(dt1, _) => dt1.format("%Y-%m-%d %H:%M:%S (%a)").to_string(),
-        chrono::LocalResult::None => {
-            let fallback_date = NaiveDate::from_ymd_opt(1970, 1, 1)
-                .unwrap()
-                .and_hms_opt(0, 0, 0)
-                .unwrap();
-            let fallback_dt = Local.from_local_datetime(&fallback_date).unwrap();
-            fallback_dt.format("%Y-%m-%d %H:%M:%S (%a)").to_string()
-        }
-    }
 }
