@@ -19,10 +19,7 @@ struct GetOutput<'a> {
 
 impl DisplayOutput for GetOutput<'_> {
     fn to_text(&self) -> String {
-        match &self.value {
-            serde_json::Value::String(s) => s.clone(),
-            other => other.to_string(),
-        }
+        value_to_string(&self.value)
     }
 }
 
@@ -63,20 +60,20 @@ struct SetOutput {
 
 impl DisplayOutput for SetOutput {
     fn to_text(&self) -> String {
-        let old_value = match &self.old_value {
-            serde_json::Value::String(s) => s.clone(),
-            other => other.to_string(),
-        };
-
-        let new_value = match &self.new_value {
-            serde_json::Value::String(s) => s.clone(),
-            other => other.to_string(),
-        };
+        let old_value = value_to_string(&self.old_value);
+        let new_value = value_to_string(&self.new_value);
 
         format!(
             "Key: {}\nOld value: {}\nNew value: {}",
             self.key, old_value, new_value
         )
+    }
+}
+
+fn value_to_string(value: &Value) -> String {
+    match value {
+        serde_json::Value::String(s) => s.clone(),
+        other => other.to_string(),
     }
 }
 
