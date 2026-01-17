@@ -6,6 +6,7 @@ path = [
   ".gitignore",
   ".prettierignore",
   "Cargo.lock",
+  "CHANGELOG.md",
   "deny.toml",
   "flake.lock",
   "renovate.json",
