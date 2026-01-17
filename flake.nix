@@ -52,7 +52,7 @@
 
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
-            nixfmt-rfc-style
+            nixfmt
             prettier
             reuse
             rustToolchain
