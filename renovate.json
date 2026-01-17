@@ -1,4 +1,4 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>woylie/renovate-presets:library"]
+  "extends": ["github>woylie/renovate-presets:application"]
 }
