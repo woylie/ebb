@@ -75,10 +75,10 @@ impl DisplayOutput for ReportOutput {
 }
 
 pub fn run_report(args: &ReportArgs, config_path: &Path, format: &Format) -> anyhow::Result<()> {
-    if let (Some(from), Some(to)) = (args.from, args.to) {
-        if from >= to {
-            anyhow::bail!("'to' must be after 'from'");
-        }
+    if let (Some(from), Some(to)) = (args.from, args.to)
+        && from >= to
+    {
+        anyhow::bail!("'to' must be after 'from'");
     }
 
     let now = Utc::now().timestamp();

@@ -36,7 +36,7 @@
           inherit system overlays;
         };
 
-        rustToolchain = pkgs.rust-bin.stable."1.87.0".default;
+        rustToolchain = pkgs.rust-bin.stable."1.92.0".default;
         rustPlatform = pkgs.rustPlatform;
 
         packages = {
@@ -52,7 +52,7 @@
 
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
-            nixfmt-rfc-style
+            nixfmt
             prettier
             reuse
             rustToolchain
