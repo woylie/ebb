@@ -268,31 +268,31 @@ fn update_current_frame(
 
     let mut last_frame_end: Option<i64> = None;
 
-    if *no_gap || at.is_some() {
-        if let Ok(frames) = load_frames(config_path) {
-            last_frame_end = frames.frames.last().map(|f| f.end_time);
-        }
+    if (*no_gap || at.is_some())
+        && let Ok(frames) = load_frames(config_path)
+    {
+        last_frame_end = frames.frames.last().map(|f| f.end_time);
     }
 
     let start_time = if let Some(at_dt) = at {
         let at_ts = at_dt.with_timezone(&Utc).timestamp();
 
-        if let Some(last_end) = last_frame_end {
-            if at_ts < last_end {
-                let at_str = at_dt.format("%Y-%m-%d %H:%M:%S").to_string();
-                let last_str = chrono::Local
-                    .timestamp_opt(last_end, 0)
-                    .single()
-                    .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
-                    .unwrap_or_else(|| format!("(invalid timestamp: {})", last_end));
+        if let Some(last_end) = last_frame_end
+            && at_ts < last_end
+        {
+            let at_str = at_dt.format("%Y-%m-%d %H:%M:%S").to_string();
+            let last_str = chrono::Local
+                .timestamp_opt(last_end, 0)
+                .single()
+                .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
+                .unwrap_or_else(|| format!("(invalid timestamp: {})", last_end));
 
-                bail!(
-                    "Start time ({}) is before the end of the last frame ({}). \
+            bail!(
+                "Start time ({}) is before the end of the last frame ({}). \
                     Please specify a later time or omit --at.",
-                    at_str,
-                    last_str
-                );
-            }
+                at_str,
+                last_str
+            );
         }
 
         at_ts
