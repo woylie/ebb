@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 use assert_cmd::Command;
+use chrono::{Datelike, Local};
 use std::fs;
 use tempfile::tempdir;
 
@@ -81,6 +82,21 @@ Year: 2004
         .assert()
         .success()
         .stdout(expected_output);
+
+    Ok(())
+}
+
+#[test]
+fn daysoff_defaults_to_the_current_year() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let current_year = Local::now().year();
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("daysoff")
+        .env("EBB_CONFIG_DIR", tmp.path())
+        .assert()
+        .success()
+        .stdout(predicates::str::contains(format!("Year: {current_year}")));
 
     Ok(())
 }

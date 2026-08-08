@@ -7,6 +7,7 @@ use crate::persistence::{load_config, load_sick_days, load_vacations};
 use crate::types::DayPortion;
 use crate::{DaysOffArgs, Format};
 use chrono::Datelike;
+use chrono::Local;
 use chrono::NaiveDate;
 use serde::Serialize;
 use std::collections::BTreeMap;
@@ -67,21 +68,22 @@ pub fn run_daysoff(args: &DaysOffArgs, config_path: &Path, format: &Format) -> a
     let config = load_config(config_path)?;
     let mut sick_days = load_sick_days(config_path)?;
     let mut vacations = load_vacations(config_path)?;
+    let year = args.year.unwrap_or_else(|| Local::now().year());
 
-    filter_by_year(&mut sick_days, args.year);
+    filter_by_year(&mut sick_days, year);
     let sick_days_taken = count_days(sick_days.values().map(|v| &v.portion));
-    let sick_days_allowed = config.allowed_sick_days(args.year);
+    let sick_days_allowed = config.allowed_sick_days(year);
 
-    filter_by_year(&mut vacations, args.year);
+    filter_by_year(&mut vacations, year);
     let vacation_days_taken = count_days(vacations.values().map(|v| &v.portion));
-    let vacation_days_allowed = config.allowed_vacation_days(args.year);
+    let vacation_days_allowed = config.allowed_vacation_days(year);
 
     let vacation_days_remaining =
         normalize_zero(vacation_days_allowed as f32 - vacation_days_taken);
     let sick_days_remaining = normalize_zero(sick_days_allowed as f32 - sick_days_taken);
 
     let output = Output {
-        year: args.year,
+        year,
         vacation_days_taken: normalize_zero(vacation_days_taken),
         vacation_days_allowed,
         vacation_days_remaining,
