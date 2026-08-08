@@ -87,3 +87,25 @@ fn balance_fails_if_from_is_in_the_future() -> Result<(), Box<dyn std::error::Er
 
     Ok(())
 }
+
+#[test]
+fn balance_fails_if_a_frame_holds_an_invalid_timestamp() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+
+    fs::write(
+        tmp.path().join("frames.toml"),
+        "[[frames]]\nstart_time = 900000000000000\nend_time = 900000000000001\nproject = \"x\"\nupdated_at = 0\n",
+    )?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("balance")
+        .env("EBB_CONFIG_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains(
+            "frames.toml holds an invalid timestamp",
+        ))
+        .stderr(predicates::str::contains("900000000000000"));
+
+    Ok(())
+}

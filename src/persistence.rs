@@ -2,8 +2,9 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+use crate::formatting;
 use crate::types::{Config, Frames, Holidays, SickDays, State, Vacations};
-use anyhow::Result;
+use anyhow::{Context, Result};
 use serde::{Serialize, de::DeserializeOwned};
 use std::fs;
 use std::io::Write;
@@ -51,8 +52,23 @@ pub fn save_config(config_path: &Path, config: &Config) -> Result<()> {
     save_toml(config_path, CONFIG_FILE, config)
 }
 
+/// A timestamp that no calendar date corresponds to would otherwise reach the
+/// formatting code, which cannot report an error and would panic.
+fn check_timestamp(filename: &str, ts: i64) -> Result<()> {
+    formatting::local_datetime(ts)
+        .with_context(|| format!("{filename} holds an invalid timestamp"))?;
+    Ok(())
+}
+
 pub fn load_frames(config_path: &Path) -> Result<Frames> {
-    load_toml(config_path, FRAME_FILE, Frames::default())
+    let frames: Frames = load_toml(config_path, FRAME_FILE, Frames::default())?;
+
+    for frame in &frames.frames {
+        check_timestamp(FRAME_FILE, frame.start_time)?;
+        check_timestamp(FRAME_FILE, frame.end_time)?;
+    }
+
+    Ok(frames)
 }
 
 pub fn save_frames(config_path: &Path, frames: &Frames) -> Result<()> {
@@ -82,7 +98,13 @@ pub fn save_sick_days(config_path: &Path, sick_days: &SickDays) -> Result<()> {
 }
 
 pub fn load_state(config_path: &Path) -> Result<State> {
-    load_toml(config_path, STATE_FILE, State::default())
+    let state: State = load_toml(config_path, STATE_FILE, State::default())?;
+
+    if let Some(current_frame) = &state.current_frame {
+        check_timestamp(STATE_FILE, current_frame.start_time)?;
+    }
+
+    Ok(state)
 }
 
 pub fn save_state(config_path: &Path, state: &State) -> Result<()> {

@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-use crate::formatting::{format_duration, format_timerange};
+use crate::formatting::{format_duration, format_timerange, local_datetime};
 use crate::output::{DisplayOutput, print_output};
 use crate::persistence::{load_frames, load_state};
 use crate::types::{Frame, Frames, Timespan};
 use crate::{Format, ReportArgs};
-use chrono::{Datelike, Local, TimeZone, Utc};
+use chrono::{Datelike, Local, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
@@ -127,7 +127,7 @@ pub fn run_report(args: &ReportArgs, config_path: &Path, format: &Format) -> any
 }
 
 fn resolve_timespan(args: &ReportArgs, now: i64, frames: &[Frame]) -> Timespan {
-    let local_now = Local.timestamp_opt(now, 0).unwrap();
+    let local_now = local_datetime(now).expect("timestamps are checked when their file is loaded");
 
     let from = if args.day {
         local_now.date_naive().and_hms_opt(0, 0, 0).unwrap()

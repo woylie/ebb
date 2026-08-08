@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-use crate::formatting::{format_duration, format_timerange};
+use crate::formatting::{format_duration, format_timerange, local_datetime};
 use crate::output::{DisplayOutput, print_output};
 use crate::persistence::{
     load_config, load_frames, load_holidays, load_sick_days, load_state, load_vacations,
@@ -12,7 +12,7 @@ use crate::types::{
 };
 use crate::{BalanceArgs, Format};
 use anyhow::Context;
-use chrono::{Datelike, Local, NaiveDate, TimeZone, Utc};
+use chrono::{Datelike, Local, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -104,7 +104,7 @@ pub fn run_balance(args: &BalanceArgs, config_path: &Path, format: &Format) -> a
 }
 
 fn resolve_timespan(args: &BalanceArgs, now: i64, frames: &[Frame]) -> Timespan {
-    let local_now = Local.timestamp_opt(now, 0).unwrap();
+    let local_now = local_datetime(now).expect("timestamps are checked when their file is loaded");
 
     let from = if args.day {
         local_now.date_naive().and_hms_opt(0, 0, 0).unwrap()
@@ -293,7 +293,9 @@ fn subtract_day_offs(
 }
 
 fn timestamp_to_local_date(secs: i64) -> NaiveDate {
-    Local.timestamp_opt(secs, 0).unwrap().date_naive()
+    local_datetime(secs)
+        .expect("timestamps are checked when their file is loaded")
+        .date_naive()
 }
 
 fn total_duration(frames: &Frames) -> i64 {
@@ -311,6 +313,7 @@ fn total_duration(frames: &Frames) -> i64 {
 mod tests {
     use super::*;
     use crate::types;
+    use chrono::TimeZone;
 
     const SECONDS_PER_HOUR: u64 = 3600;
 

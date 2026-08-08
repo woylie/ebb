@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+use crate::formatting::local_datetime;
 use crate::output::{DisplayOutput, print_output};
 use crate::persistence::{load_frames, load_state, save_frames, save_state};
 use crate::types::{CurrentFrame, Frame, State};
@@ -20,9 +21,8 @@ struct StartOutput {
 
 impl DisplayOutput for StartOutput {
     fn to_text(&self) -> String {
-        let start_datetime = Local
-            .timestamp_opt(self.current_frame.start_time, 0)
-            .unwrap();
+        let start_datetime = local_datetime(self.current_frame.start_time)
+            .expect("timestamps are checked when their file is loaded");
 
         format!(
             "Project '{}' started at {}.",
@@ -39,7 +39,8 @@ struct StopOutput {
 
 impl DisplayOutput for StopOutput {
     fn to_text(&self) -> String {
-        let end_datetime = Local.timestamp_opt(self.stopped_frame.end_time, 0).unwrap();
+        let end_datetime = local_datetime(self.stopped_frame.end_time)
+            .expect("timestamps are checked when their file is loaded");
 
         format!(
             "Project '{}' stopped at {}.",
@@ -269,9 +270,8 @@ fn resolve_current_frame(
     // the last end time in frames.toml.
     let (preceding_end, preceding_label) = if state.current_frame.is_some() {
         (Some(now.timestamp()), "the running frame")
-    } else if (*no_gap || at.is_some())
-        && let Ok(frames) = load_frames(config_path)
-    {
+    } else if *no_gap || at.is_some() {
+        let frames = load_frames(config_path)?;
         (frames.frames.last().map(|f| f.end_time), "the last frame")
     } else {
         (None, "the last frame")
