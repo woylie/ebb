@@ -189,6 +189,42 @@ fn start_returns_error_if_start_time_overlaps() -> Result<(), Box<dyn std::error
 }
 
 #[test]
+fn start_leaves_running_frame_untouched_if_start_time_is_invalid()
+-> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let config_dir = tmp.path();
+
+    let state_path = config_dir.join("state.toml");
+    let toml_content = r#"
+        [current_frame]
+        start_time = 1748723006
+        project = "firstproject"
+    "#;
+
+    fs::write(&state_path, toml_content.trim())?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("start")
+        .arg("secondproject")
+        .arg("--at")
+        .arg("1748723007")
+        .env("EBB_CONFIG_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(contains("is before the end of the running frame"));
+
+    let state_contents = fs::read_to_string(&state_path)?;
+    let state: State = toml::from_str(&state_contents)?;
+    let current_frame = state.current_frame.expect("No current frame found");
+    assert_eq!(current_frame.project, "firstproject");
+    assert_eq!(current_frame.start_time, 1748723006);
+
+    assert!(!config_dir.join("frames.toml").exists());
+
+    Ok(())
+}
+
+#[test]
 fn start_fails_with_both_no_gap_and_at() -> Result<(), Box<dyn std::error::Error>> {
     let tmp = tempdir()?;
     let mut cmd = Command::cargo_bin("ebb")?;
