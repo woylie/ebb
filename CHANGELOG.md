@@ -8,6 +8,7 @@
   mode it has.
 - Write tags as plain words. A tag that starts with `+` is rejected, naming the
   tag to write instead.
+- Reject an unknown key in `config.toml` and in `config set`.
 
 ### Fixed
 

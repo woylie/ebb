@@ -111,3 +111,77 @@ New value: 38
 
     Ok(())
 }
+
+#[test]
+fn config_set_rejects_an_unknown_key() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("config")
+        .arg("set")
+        .arg("working_hours.mondey")
+        .arg("6h")
+        .env("EBB_CONFIG_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("unknown field `mondey`"));
+
+    assert!(!tmp.path().join("config.toml").exists());
+
+    Ok(())
+}
+
+#[test]
+fn config_set_rejects_an_unknown_top_level_key() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("config")
+        .arg("set")
+        .arg("workinghours")
+        .arg("6h")
+        .env("EBB_CONFIG_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("unknown field `workinghours`"));
+
+    Ok(())
+}
+
+#[test]
+fn config_set_rejects_a_non_year_key_under_the_year_maps() -> Result<(), Box<dyn std::error::Error>>
+{
+    let tmp = tempdir()?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("config")
+        .arg("set")
+        .arg("vacation_days_per_year.foo")
+        .arg("25")
+        .env("EBB_CONFIG_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("Invalid integer key: foo"));
+
+    Ok(())
+}
+
+#[test]
+fn config_list_rejects_an_unknown_key_in_the_file() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+
+    fs::write(
+        tmp.path().join("config.toml"),
+        "[working_hours]\nmonday = \"6h\"\nmondey = \"9h\"\n",
+    )?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("config")
+        .arg("list")
+        .env("EBB_CONFIG_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("unknown field `mondey`"));
+
+    Ok(())
+}

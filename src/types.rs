@@ -16,7 +16,7 @@ const EIGHT_HOURS: Duration = Duration::from_secs(8 * HOUR);
 const ZERO_HOURS: Duration = Duration::from_secs(0);
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct Config {
     #[serde(with = "serde_utils::int_key_map")]
     pub vacation_days_per_year: HashMap<i32, i32>,
@@ -60,7 +60,7 @@ fn find_allowed_for_year(map: &HashMap<i32, i32>, year: i32) -> i32 {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(default)]
+#[serde(default, deny_unknown_fields)]
 pub struct WorkingHours {
     #[serde(with = "serde_utils::human_duration")]
     pub monday: Duration,
