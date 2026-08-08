@@ -110,24 +110,24 @@ pub fn run_start(args: &StartArgs, config_path: &Path, format: &Format) -> anyho
     let mut state = load_state(config_path)?;
     let now = Utc::now();
 
-    let stopped_frame = if let Some(current_frame) = &state.current_frame {
-        let stopped = stop_current_frame(config_path, current_frame, now)?;
+    let current_frame = resolve_current_frame(&state, args, now, config_path)?;
+
+    let stopped_frame = if let Some(running_frame) = &state.current_frame {
+        let stopped = stop_current_frame(config_path, running_frame, now)?;
         Some(stopped)
     } else {
         None
     };
 
-    update_current_frame(&mut state, args, now, config_path)?;
+    state.current_frame = Some(current_frame.clone());
     save_state(config_path, &state)?;
 
-    if let Some(current_frame) = &state.current_frame {
-        let output = StartOutput {
-            current_frame: current_frame.clone(),
-            stopped_frame,
-        };
+    let output = StartOutput {
+        current_frame,
+        stopped_frame,
+    };
 
-        print_output(&output, format)?;
-    }
+    print_output(&output, format)?;
 
     Ok(())
 }
@@ -157,17 +157,16 @@ pub fn run_restart(args: &RestartArgs, config_path: &Path, format: &Format) -> a
         tags: last_frame.tags.clone(),
     };
 
-    update_current_frame(&mut state, &start_args, now, config_path)?;
+    let current_frame = resolve_current_frame(&state, &start_args, now, config_path)?;
+    state.current_frame = Some(current_frame.clone());
     save_state(config_path, &state)?;
 
-    if let Some(current_frame) = &state.current_frame {
-        let output = StartOutput {
-            current_frame: current_frame.clone(),
-            stopped_frame: None,
-        };
+    let output = StartOutput {
+        current_frame,
+        stopped_frame: None,
+    };
 
-        print_output(&output, format)?;
-    }
+    print_output(&output, format)?;
 
     Ok(())
 }
@@ -253,12 +252,12 @@ pub fn run_status(config_path: &Path, format: &Format) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn update_current_frame(
-    state: &mut State,
+fn resolve_current_frame(
+    state: &State,
     args: &StartArgs,
     now: DateTime<Utc>,
     config_path: &Path,
-) -> Result<()> {
+) -> Result<CurrentFrame> {
     let StartArgs {
         project,
         tags,
@@ -266,18 +265,22 @@ fn update_current_frame(
         no_gap,
     } = args;
 
-    let mut last_frame_end: Option<i64> = None;
-
-    if (*no_gap || at.is_some())
+    // A running frame is stopped at `now`, so `now` precedes the new frame instead of
+    // the last end time in frames.toml.
+    let (preceding_end, preceding_label) = if state.current_frame.is_some() {
+        (Some(now.timestamp()), "the running frame")
+    } else if (*no_gap || at.is_some())
         && let Ok(frames) = load_frames(config_path)
     {
-        last_frame_end = frames.frames.last().map(|f| f.end_time);
-    }
+        (frames.frames.last().map(|f| f.end_time), "the last frame")
+    } else {
+        (None, "the last frame")
+    };
 
     let start_time = if let Some(at_dt) = at {
         let at_ts = at_dt.with_timezone(&Utc).timestamp();
 
-        if let Some(last_end) = last_frame_end
+        if let Some(last_end) = preceding_end
             && at_ts < last_end
         {
             let at_str = at_dt.format("%Y-%m-%d %H:%M:%S").to_string();
@@ -288,16 +291,17 @@ fn update_current_frame(
                 .unwrap_or_else(|| format!("(invalid timestamp: {})", last_end));
 
             bail!(
-                "Start time ({}) is before the end of the last frame ({}). \
+                "Start time ({}) is before the end of {} ({}). \
                     Please specify a later time or omit --at.",
                 at_str,
+                preceding_label,
                 last_str
             );
         }
 
         at_ts
     } else if *no_gap {
-        last_frame_end.unwrap_or_else(|| now.timestamp())
+        preceding_end.unwrap_or_else(|| now.timestamp())
     } else {
         now.timestamp()
     };
@@ -308,14 +312,11 @@ fn update_current_frame(
         .map(|s| s.to_string())
         .collect();
 
-    let current_frame = CurrentFrame {
+    Ok(CurrentFrame {
         project: project.to_string(),
         tags: tags_cleaned,
         start_time,
-    };
-
-    state.current_frame = Some(current_frame);
-    Ok(())
+    })
 }
 
 fn stop_current_frame(
