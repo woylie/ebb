@@ -6,10 +6,13 @@ use crate::types::{Config, Frames, Holidays, SickDays, State, Vacations};
 use anyhow::Result;
 use serde::{Serialize, de::DeserializeOwned};
 use std::fs;
+use std::io::Write;
 use std::path::Path;
+use tempfile::NamedTempFile;
 
 const CONFIG_FILE: &str = "config.toml";
 const FRAME_FILE: &str = "frames.toml";
+const FRAME_BACKUP_FILE: &str = "frames.toml.bak";
 const HOLIDAY_FILE: &str = "holidays.toml";
 const SICK_DAY_FILE: &str = "sick_days.toml";
 const STATE_FILE: &str = "state.toml";
@@ -27,7 +30,12 @@ fn load_toml<T: DeserializeOwned>(config_path: &Path, filename: &str, default: T
 fn save_toml<T: Serialize>(config_path: &Path, filename: &str, value: &T) -> Result<()> {
     let path = config_path.join(filename);
     let toml = toml::to_string(value)?;
-    fs::write(path, toml)?;
+
+    let mut file = NamedTempFile::new_in(config_path)?;
+    file.write_all(toml.as_bytes())?;
+    file.as_file().sync_all()?;
+    file.persist(&path)?;
+
     Ok(())
 }
 
@@ -44,6 +52,12 @@ pub fn load_frames(config_path: &Path) -> Result<Frames> {
 }
 
 pub fn save_frames(config_path: &Path, frames: &Frames) -> Result<()> {
+    let path = config_path.join(FRAME_FILE);
+
+    if path.exists() {
+        fs::copy(&path, config_path.join(FRAME_BACKUP_FILE))?;
+    }
+
     save_toml(config_path, FRAME_FILE, frames)
 }
 

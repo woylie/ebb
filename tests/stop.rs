@@ -133,3 +133,86 @@ fn cancel_fails_if_there_is_no_current_frame() -> Result<(), Box<dyn std::error:
 
     Ok(())
 }
+
+#[test]
+fn stop_backs_up_the_previous_frames() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let config_dir = tmp.path();
+
+    let state_path = config_dir.join("state.toml");
+    let backup_path = config_dir.join("frames.toml.bak");
+
+    fs::write(
+        &state_path,
+        "[current_frame]\nstart_time = 1748723006\nproject = \"firstproject\"",
+    )?;
+
+    Command::cargo_bin("ebb")?
+        .arg("stop")
+        .env("EBB_CONFIG_DIR", config_dir)
+        .assert()
+        .success();
+
+    assert!(!backup_path.exists());
+
+    fs::write(
+        &state_path,
+        "[current_frame]\nstart_time = 1748823006\nproject = \"secondproject\"",
+    )?;
+
+    Command::cargo_bin("ebb")?
+        .arg("stop")
+        .env("EBB_CONFIG_DIR", config_dir)
+        .assert()
+        .success();
+
+    let backup: Frames = toml::from_str(&fs::read_to_string(&backup_path)?)?;
+    assert_eq!(backup.frames.len(), 1);
+    assert_eq!(backup.frames[0].project, "firstproject");
+
+    let frames: Frames = toml::from_str(&fs::read_to_string(config_dir.join("frames.toml"))?)?;
+    assert_eq!(frames.frames.len(), 2);
+
+    Ok(())
+}
+
+#[cfg(unix)]
+#[test]
+fn stop_leaves_the_frames_intact_if_the_write_fails() -> Result<(), Box<dyn std::error::Error>> {
+    use std::os::unix::fs::PermissionsExt;
+
+    let tmp = tempdir()?;
+    let config_dir = tmp.path();
+
+    let frames_path = config_dir.join("frames.toml");
+    let frames_content = r#"
+        [[frames]]
+        start_time = 1748723006
+        end_time = 1748725744
+        project = "firstproject"
+        updated_at = 1748725744
+    "#
+    .trim();
+
+    fs::write(&frames_path, frames_content)?;
+    fs::write(
+        config_dir.join("state.toml"),
+        "[current_frame]\nstart_time = 1748823006\nproject = \"secondproject\"",
+    )?;
+
+    fs::set_permissions(config_dir, fs::Permissions::from_mode(0o555))?;
+
+    let output = Command::cargo_bin("ebb")?
+        .arg("stop")
+        .env("EBB_CONFIG_DIR", config_dir)
+        .output()?;
+
+    // Restore before asserting, so that a failing assertion still leaves a removable
+    // temporary directory.
+    fs::set_permissions(config_dir, fs::Permissions::from_mode(0o755))?;
+
+    assert!(!output.status.success());
+    assert_eq!(fs::read_to_string(&frames_path)?, frames_content);
+
+    Ok(())
+}
