@@ -64,8 +64,8 @@ fn start_saves_tags() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("start")
         .arg("myproject")
-        .arg("+tag1")
-        .arg("+tag2")
+        .arg("tag1")
+        .arg("code review")
         .env("EBB_CONFIG_DIR", tmp.path())
         .assert()
         .success();
@@ -76,7 +76,10 @@ fn start_saves_tags() -> Result<(), Box<dyn std::error::Error>> {
     let contents = fs::read_to_string(file)?;
     let state: State = toml::from_str(&contents)?;
 
-    assert_eq!(state.current_frame.unwrap().tags, vec!["tag1", "tag2"]);
+    assert_eq!(
+        state.current_frame.unwrap().tags,
+        vec!["tag1", "code review"]
+    );
 
     Ok(())
 }
@@ -343,16 +346,32 @@ fn start_applies_at_option_with_unix_timestamp() -> Result<(), Box<dyn std::erro
 }
 
 #[test]
-fn start_applies_at_option_after_a_tag() -> Result<(), Box<dyn std::error::Error>> {
+fn start_rejects_a_tag_with_a_plus_prefix() -> Result<(), Box<dyn std::error::Error>> {
     let tmp = tempdir()?;
 
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("start")
         .arg("myproject")
         .arg("+urgent")
+        .env("EBB_CONFIG_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(contains("the '+' prefix is not used; write 'urgent'"));
+
+    Ok(())
+}
+
+#[test]
+fn start_applies_at_option_after_a_tag() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("start")
+        .arg("myproject")
+        .arg("urgent")
         .arg("--at")
         .arg("1748725744")
-        .arg("+review")
+        .arg("review")
         .env("EBB_CONFIG_DIR", tmp.path())
         .assert()
         .success();
@@ -362,7 +381,10 @@ fn start_applies_at_option_after_a_tag() -> Result<(), Box<dyn std::error::Error
     let current_frame = state.current_frame.expect("No current frame found");
 
     assert_eq!(current_frame.start_time, 1748725744);
-    assert_eq!(current_frame.tags, vec!["urgent", "review"]);
+    assert_eq!(
+        current_frame.tags,
+        vec!["urgent".to_string(), "review".to_string()]
+    );
 
     Ok(())
 }

@@ -306,15 +306,9 @@ fn resolve_current_frame(
         now.timestamp()
     };
 
-    let tags_cleaned: Vec<String> = tags
-        .iter()
-        .filter_map(|t| t.strip_prefix('+'))
-        .map(|s| s.to_string())
-        .collect();
-
     Ok(CurrentFrame {
         project: project.to_string(),
-        tags: tags_cleaned,
+        tags: tags.clone(),
         start_time,
     })
 }
