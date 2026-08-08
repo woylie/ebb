@@ -208,9 +208,9 @@ fn set_config_value(
             serde_json::Value::String(value_str.to_string())
         };
 
-    parent.insert(last_key.to_string(), json_val);
+    parent.insert(last_key.to_string(), json_val.clone());
     *config = serde_json::from_value(json_value)?;
-    Ok((old_value, Value::String(value_str.to_string())))
+    Ok((old_value, json_val))
 }
 
 fn get_mut_parent<'a>(
