@@ -11,6 +11,7 @@ use crate::types::{
     Config, DayPortion, Frame, Frames, Holidays, SickDays, Timespan, Vacations, WorkingHours,
 };
 use crate::{BalanceArgs, Format};
+use anyhow::Context;
 use chrono::{Datelike, Local, NaiveDate, TimeZone, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -78,15 +79,15 @@ pub fn run_balance(args: &BalanceArgs, config_path: &Path, format: &Format) -> a
     let timespan = resolve_timespan(args, now, &frames.frames);
 
     if timespan.from > timespan.to {
-        frames.frames.clear();
-    } else {
-        frames
-            .filter_by_start_time(timespan.from)
-            .filter_by_end_time(timespan.to);
+        anyhow::bail!("'to' must be after 'from'");
     }
 
+    frames
+        .filter_by_start_time(timespan.from)
+        .filter_by_end_time(timespan.to);
+
     let expected_working_seconds =
-        expected_duration(&config, &timespan, &holidays, &sick_days, &vacations);
+        expected_duration(&config, &timespan, &holidays, &sick_days, &vacations)?;
     let actual_working_seconds = total_duration(&frames);
     let remaining_working_seconds = expected_working_seconds - actual_working_seconds;
 
@@ -159,15 +160,16 @@ fn expected_duration(
     holidays: &Holidays,
     sick_days: &SickDays,
     vacations: &Vacations,
-) -> i64 {
+) -> anyhow::Result<i64> {
     let start_date = timestamp_to_local_date(timespan.from);
     let end_date = timestamp_to_local_date(timespan.to);
 
     let (full_weeks, remaining_days) = calculate_weeks_and_days(timespan);
+    let full_weeks = u32::try_from(full_weeks).context("The timespan runs backwards.")?;
     let working_duration_per_week = config.working_hours.total_weekly_duration();
     let full_week_duration = working_duration_per_week
-        .checked_mul(full_weeks as u32)
-        .unwrap();
+        .checked_mul(full_weeks)
+        .context("The expected working duration for the timespan is too large.")?;
 
     let remaining_days_duration =
         calculate_remaining_days_hours(remaining_days, end_date, &config.working_hours);
@@ -177,7 +179,10 @@ fn expected_duration(
     let mut total_duration = full_week_duration + remaining_days_duration;
     total_duration = subtract_day_offs(total_duration, &day_offs, config);
 
-    total_duration.as_secs().try_into().unwrap()
+    total_duration
+        .as_secs()
+        .try_into()
+        .context("The expected working duration for the timespan is too large.")
 }
 
 fn calculate_weeks_and_days(timespan: &Timespan) -> (i64, i64) {
@@ -360,7 +365,8 @@ mod tests {
 
         for (end_date, expected_seconds) in cases {
             let timespan = make_timespan(start_date, end_date);
-            let result = expected_duration(&config, &timespan, &holidays, &sick_days, &vacations);
+            let result =
+                expected_duration(&config, &timespan, &holidays, &sick_days, &vacations).unwrap();
             assert_eq!(result, expected_seconds, "for end date {end_date}")
         }
     }
@@ -388,7 +394,8 @@ mod tests {
         let expected_seconds = (8 * 60 * 60 + 6 * 60 * 60) * 2;
 
         let timespan = make_timespan(start_date, end_date);
-        let result = expected_duration(&config, &timespan, &holidays, &sick_days, &vacations);
+        let result =
+            expected_duration(&config, &timespan, &holidays, &sick_days, &vacations).unwrap();
         assert_eq!(result, expected_seconds, "for end date {end_date}")
     }
 
@@ -417,7 +424,8 @@ mod tests {
             (8 * 60 * 60 + 6 * 60 * 60 + 5 * 60 * 60) * 2 + (8 * 60 * 60 + 6 * 60 * 60);
 
         let timespan = make_timespan(start_date, end_date);
-        let result = expected_duration(&config, &timespan, &holidays, &sick_days, &vacations);
+        let result =
+            expected_duration(&config, &timespan, &holidays, &sick_days, &vacations).unwrap();
         assert_eq!(result, expected_seconds, "for end date {end_date}")
     }
 
@@ -453,7 +461,8 @@ mod tests {
             - 5 * 60 * 60;
 
         let timespan = make_timespan(start_date, end_date);
-        let result = expected_duration(&config, &timespan, &holidays, &sick_days, &vacations);
+        let result =
+            expected_duration(&config, &timespan, &holidays, &sick_days, &vacations).unwrap();
         assert_eq!(result, expected_seconds, "for end date {end_date}")
     }
 
@@ -489,7 +498,8 @@ mod tests {
             - (5 * 60 * 60 / 2);
 
         let timespan = make_timespan(start_date, end_date);
-        let result = expected_duration(&config, &timespan, &holidays, &sick_days, &vacations);
+        let result =
+            expected_duration(&config, &timespan, &holidays, &sick_days, &vacations).unwrap();
         assert_eq!(result, expected_seconds, "for end date {end_date}")
     }
 
@@ -524,7 +534,8 @@ mod tests {
             (8 * 60 * 60 + 6 * 60 * 60 + 5 * 60 * 60) * 2 + (8 * 60 * 60 + 6 * 60 * 60);
 
         let timespan = make_timespan(start_date, end_date);
-        let result = expected_duration(&config, &timespan, &holidays, &sick_days, &vacations);
+        let result =
+            expected_duration(&config, &timespan, &holidays, &sick_days, &vacations).unwrap();
         assert_eq!(result, expected_seconds, "for end date {end_date}")
     }
 
@@ -560,7 +571,8 @@ mod tests {
             - 5 * 60 * 60;
 
         let timespan = make_timespan(start_date, end_date);
-        let result = expected_duration(&config, &timespan, &holidays, &sick_days, &vacations);
+        let result =
+            expected_duration(&config, &timespan, &holidays, &sick_days, &vacations).unwrap();
         assert_eq!(result, expected_seconds, "for end date {end_date}")
     }
 
@@ -596,7 +608,8 @@ mod tests {
             - 5 * 60 * 60;
 
         let timespan = make_timespan(start_date, end_date);
-        let result = expected_duration(&config, &timespan, &holidays, &sick_days, &vacations);
+        let result =
+            expected_duration(&config, &timespan, &holidays, &sick_days, &vacations).unwrap();
         assert_eq!(result, expected_seconds, "for end date {end_date}")
     }
 
@@ -644,7 +657,30 @@ mod tests {
             - 5 * 60 * 60;
 
         let timespan = make_timespan(start_date, end_date);
-        let result = expected_duration(&config, &timespan, &holidays, &sick_days, &vacations);
+        let result =
+            expected_duration(&config, &timespan, &holidays, &sick_days, &vacations).unwrap();
         assert_eq!(result, expected_seconds, "for end date {end_date}")
+    }
+
+    #[test]
+    fn test_rejects_reversed_timespan() {
+        let config = make_config(WorkingHours {
+            monday: Duration::from_secs(8 * SECONDS_PER_HOUR),
+            tuesday: Duration::from_secs(8 * SECONDS_PER_HOUR),
+            wednesday: Duration::from_secs(8 * SECONDS_PER_HOUR),
+            thursday: Duration::from_secs(8 * SECONDS_PER_HOUR),
+            friday: Duration::from_secs(8 * SECONDS_PER_HOUR),
+            saturday: Duration::ZERO,
+            sunday: Duration::ZERO,
+        });
+
+        let holidays: Holidays = BTreeMap::new();
+        let sick_days: SickDays = BTreeMap::new();
+        let vacations: Vacations = BTreeMap::new();
+
+        let timespan = make_timespan(date(2024, 1, 16), date(2024, 1, 1));
+        let result = expected_duration(&config, &timespan, &holidays, &sick_days, &vacations);
+
+        assert!(result.is_err());
     }
 }

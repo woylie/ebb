@@ -71,3 +71,19 @@ Remaining: 83d 3h 18m 41s
 
     Ok(())
 }
+
+#[test]
+fn balance_fails_if_from_is_in_the_future() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("balance")
+        .arg("--from")
+        .arg("2100-01-01 00:00:00")
+        .env("EBB_CONFIG_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("'to' must be after 'from'"));
+
+    Ok(())
+}
