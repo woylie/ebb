@@ -16,6 +16,7 @@
 - Write the data files through a temporary file, so that an interrupted write no
   longer truncates them.
 - Keep the previous frames in `frames.toml.bak`.
+- Apply `--at` and `--no-gap` when they follow a tag.
 
 ## [0.1.0] - 2025-06-22
 

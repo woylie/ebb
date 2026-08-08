@@ -341,3 +341,28 @@ fn start_applies_at_option_with_unix_timestamp() -> Result<(), Box<dyn std::erro
 
     assert_start_time_at(&timestamp.to_string(), expected_dt)
 }
+
+#[test]
+fn start_applies_at_option_after_a_tag() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("start")
+        .arg("myproject")
+        .arg("+urgent")
+        .arg("--at")
+        .arg("1748725744")
+        .arg("+review")
+        .env("EBB_CONFIG_DIR", tmp.path())
+        .assert()
+        .success();
+
+    let contents = fs::read_to_string(tmp.path().join("state.toml"))?;
+    let state: State = toml::from_str(&contents)?;
+    let current_frame = state.current_frame.expect("No current frame found");
+
+    assert_eq!(current_frame.start_time, 1748725744);
+    assert_eq!(current_frame.tags, vec!["urgent", "review"]);
+
+    Ok(())
+}
