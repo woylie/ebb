@@ -20,6 +20,9 @@
   longer truncates them.
 - Keep the previous frames in `frames.toml.bak`.
 - Apply `--at` and `--no-gap` when they follow a tag.
+- Report an invalid timestamp in `frames.toml` or `state.toml` instead of
+  panicking or showing it as 1970-01-01.
+- Report a `frames.toml` that cannot be read when `--no-gap` is given.
 
 ## [0.1.0] - 2025-06-22
 

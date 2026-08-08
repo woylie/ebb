@@ -8,7 +8,7 @@ use crate::Commands::{
 };
 use crate::types::DayPortion;
 use anyhow::{Result, anyhow};
-use chrono::{DateTime, Datelike, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
+use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use clap::CommandFactory;
 use clap::{ArgGroup, Args, Parser, Subcommand, ValueEnum};
 use clap_complete::aot;
@@ -140,13 +140,9 @@ pub struct ConfigArgs {
 
 #[derive(Debug, Args)]
 pub struct DaysOffArgs {
-    /// Year
-    #[arg(short, long, default_value_t = default_year())]
-    year: i32,
-}
-
-fn default_year() -> i32 {
-    Local::now().year()
+    /// Year; defaults to the current year
+    #[arg(short, long)]
+    year: Option<i32>,
 }
 
 #[derive(Debug, Args)]

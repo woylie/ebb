@@ -44,3 +44,25 @@ fn status_returns_message_when_status_is_empty() -> Result<(), Box<dyn std::erro
 
     Ok(())
 }
+
+#[test]
+fn status_fails_if_the_state_holds_an_invalid_timestamp() -> Result<(), Box<dyn std::error::Error>>
+{
+    let tmp = tempdir()?;
+
+    fs::write(
+        tmp.path().join("state.toml"),
+        "[current_frame]\nstart_time = 900000000000000\nproject = \"x\"\n",
+    )?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("status")
+        .env("EBB_CONFIG_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains(
+            "state.toml holds an invalid timestamp",
+        ));
+
+    Ok(())
+}

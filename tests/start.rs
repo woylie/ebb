@@ -388,3 +388,27 @@ fn start_applies_at_option_after_a_tag() -> Result<(), Box<dyn std::error::Error
 
     Ok(())
 }
+
+#[test]
+fn start_with_no_gap_fails_if_a_frame_holds_an_invalid_timestamp()
+-> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+
+    fs::write(
+        tmp.path().join("frames.toml"),
+        "[[frames]]\nstart_time = 900000000000000\nend_time = 900000000000001\nproject = \"x\"\nupdated_at = 0\n",
+    )?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("start")
+        .arg("myproject")
+        .arg("--no-gap")
+        .env("EBB_CONFIG_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(contains("frames.toml holds an invalid timestamp"));
+
+    assert!(!tmp.path().join("state.toml").exists());
+
+    Ok(())
+}

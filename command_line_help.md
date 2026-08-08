@@ -142,9 +142,7 @@ Print overview of remaining vacation and sick days
 
 ###### **Options:**
 
-- `-y`, `--year <YEAR>` — Year
-
-  Default value: `2026`
+- `-y`, `--year <YEAR>` — Year; defaults to the current year
 
 ## `ebb holiday`
 
