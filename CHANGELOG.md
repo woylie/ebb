@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Changed
+
+- Create the data files private (`0600`). A file that already exists keeps the
+  mode it has.
+
 ### Fixed
 
 - Keep the running frame open when `start` rejects the new start time. It used

@@ -216,3 +216,62 @@ fn stop_leaves_the_frames_intact_if_the_write_fails() -> Result<(), Box<dyn std:
 
     Ok(())
 }
+
+#[cfg(unix)]
+#[test]
+fn stop_creates_the_frames_private() -> Result<(), Box<dyn std::error::Error>> {
+    use std::os::unix::fs::PermissionsExt;
+
+    let tmp = tempdir()?;
+    let config_dir = tmp.path();
+
+    fs::write(
+        config_dir.join("state.toml"),
+        "[current_frame]\nstart_time = 1748723006\nproject = \"firstproject\"",
+    )?;
+
+    Command::cargo_bin("ebb")?
+        .arg("stop")
+        .env("EBB_CONFIG_DIR", config_dir)
+        .assert()
+        .success();
+
+    let mode = fs::metadata(config_dir.join("frames.toml"))?
+        .permissions()
+        .mode();
+    assert_eq!(mode & 0o777, 0o600);
+
+    Ok(())
+}
+
+#[cfg(unix)]
+#[test]
+fn stop_keeps_the_mode_of_an_existing_frames_file() -> Result<(), Box<dyn std::error::Error>> {
+    use std::os::unix::fs::PermissionsExt;
+
+    let tmp = tempdir()?;
+    let config_dir = tmp.path();
+    let frames_path = config_dir.join("frames.toml");
+
+    fs::write(
+        &frames_path,
+        "[[frames]]\nstart_time = 1748723006\nend_time = 1748725744\nproject = \"firstproject\"\nupdated_at = 1748725744",
+    )?;
+    fs::set_permissions(&frames_path, fs::Permissions::from_mode(0o640))?;
+
+    fs::write(
+        config_dir.join("state.toml"),
+        "[current_frame]\nstart_time = 1748823006\nproject = \"secondproject\"",
+    )?;
+
+    Command::cargo_bin("ebb")?
+        .arg("stop")
+        .env("EBB_CONFIG_DIR", config_dir)
+        .assert()
+        .success();
+
+    let mode = fs::metadata(&frames_path)?.permissions().mode();
+    assert_eq!(mode & 0o777, 0o640);
+
+    Ok(())
+}
