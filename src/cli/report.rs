@@ -99,18 +99,18 @@ pub fn run_report(args: &ReportArgs, config_path: &Path, format: &Format) -> any
     let timespan = resolve_timespan(args, now, &frames.frames);
 
     if timespan.from > timespan.to {
-        frames.frames.clear();
-    } else {
-        frames
-            .filter_by_start_time(timespan.from)
-            .filter_by_end_time(timespan.to);
+        anyhow::bail!("'to' must be after 'from'");
+    }
 
-        if let Some(ref project) = args.project {
-            frames.filter_by_project(project);
-        }
-        if let Some(ref tag) = args.tag {
-            frames.filter_by_tag(tag);
-        }
+    frames
+        .filter_by_start_time(timespan.from)
+        .filter_by_end_time(timespan.to);
+
+    if let Some(ref project) = args.project {
+        frames.filter_by_project(project);
+    }
+    if let Some(ref tag) = args.tag {
+        frames.filter_by_tag(tag);
     }
 
     let (project_durations, total_duration) = total_duration_by_project(&frames);
