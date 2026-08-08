@@ -34,6 +34,10 @@ fn save_toml<T: Serialize>(config_path: &Path, filename: &str, value: &T) -> Res
     let mut file = NamedTempFile::new_in(config_path)?;
     file.write_all(toml.as_bytes())?;
     file.as_file().sync_all()?;
+    if let Ok(metadata) = fs::metadata(&path) {
+        file.as_file().set_permissions(metadata.permissions())?;
+    }
+
     file.persist(&path)?;
 
     Ok(())
