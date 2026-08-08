@@ -6,6 +6,8 @@
 
 - Create the data files private (`0600`). A file that already exists keeps the
   mode it has.
+- Write tags as plain words. A tag that starts with `+` is rejected, naming the
+  tag to write instead.
 
 ### Fixed
 
@@ -16,6 +18,7 @@
 - Write the data files through a temporary file, so that an interrupted write no
   longer truncates them.
 - Keep the previous frames in `frames.toml.bak`.
+- Apply `--at` and `--no-gap` when they follow a tag.
 
 ## [0.1.0] - 2025-06-22
 

@@ -144,7 +144,7 @@ Print overview of remaining vacation and sick days
 
 - `-y`, `--year <YEAR>` — Year
 
-  Default value: `2025`
+  Default value: `2026`
 
 ## `ebb holiday`
 
@@ -356,7 +356,7 @@ Start time tracking
 ###### **Arguments:**
 
 - `<PROJECT>` — Name of the project
-- `<TAGS>` — Any number of additional tags
+- `<TAGS>` — Any number of additional tags; quote a tag that contains spaces
 
 ###### **Options:**
 

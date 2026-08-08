@@ -236,8 +236,8 @@ pub struct SickDayArgs {
 pub struct StartArgs {
     /// Name of the project
     project: String,
-    /// Any number of additional tags
-    #[arg(num_args = 0.., trailing_var_arg = true)]
+    /// Any number of additional tags; quote a tag that contains spaces
+    #[arg(num_args = 0.., value_parser=parse_tag)]
     tags: Vec<String>,
     /// Time at which the project is started (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); if omitted, the current time is used
     #[arg(long, value_parser=parse_flexible_datetime)]
@@ -461,6 +461,18 @@ pub fn run(cli: &Cli) -> Result<()> {
             Ok(())
         }
     }
+}
+
+fn parse_tag(input: &str) -> Result<String> {
+    if let Some(tag) = input.strip_prefix('+') {
+        return Err(anyhow!("the '+' prefix is not used; write '{tag}'"));
+    }
+
+    if input.trim().is_empty() {
+        return Err(anyhow!("a tag cannot be empty"));
+    }
+
+    Ok(input.to_string())
 }
 
 fn parse_flexible_datetime(input: &str) -> Result<DateTime<Local>> {
