@@ -17,7 +17,7 @@ fn config_get_returns_working_hours() -> Result<(), Box<dyn std::error::Error>> 
     cmd.arg("config")
         .arg("get")
         .arg("working_hours.wednesday")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success()
         .stdout(expected_output);
@@ -37,7 +37,7 @@ fn config_get_returns_sick_days() -> Result<(), Box<dyn std::error::Error>> {
     cmd.arg("config")
         .arg("get")
         .arg("sick_days_per_year.2000")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success()
         .stdout(expected_output);
@@ -57,7 +57,7 @@ fn config_get_returns_vacation_days() -> Result<(), Box<dyn std::error::Error>> 
     cmd.arg("config")
         .arg("get")
         .arg("vacation_days_per_year.2000")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success()
         .stdout(expected_output);

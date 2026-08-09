@@ -23,7 +23,7 @@ fn status_returns_current_frame() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("status")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success()
         .stdout(contains("Current project 'myproject' started at"));
@@ -37,7 +37,7 @@ fn status_returns_message_when_status_is_empty() -> Result<(), Box<dyn std::erro
 
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("status")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success()
         .stdout(contains("No project started."));
@@ -57,7 +57,7 @@ fn status_fails_if_the_state_holds_an_invalid_timestamp() -> Result<(), Box<dyn 
 
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("status")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .failure()
         .stderr(predicates::str::contains(

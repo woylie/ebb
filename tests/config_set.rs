@@ -23,7 +23,7 @@ New value: 4h
         .arg("set")
         .arg("working_hours.wednesday")
         .arg("4h")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success()
         .stdout(expected_output);
@@ -57,7 +57,7 @@ New value: 38
         .arg("set")
         .arg("sick_days_per_year.2010")
         .arg("38")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success()
         .stdout(expected_output);
@@ -92,7 +92,7 @@ New value: 38
         .arg("set")
         .arg("vacation_days_per_year.2010")
         .arg("38")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success()
         .stdout(expected_output);
@@ -121,7 +121,7 @@ fn config_set_rejects_an_unknown_key() -> Result<(), Box<dyn std::error::Error>>
         .arg("set")
         .arg("working_hours.mondey")
         .arg("6h")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .failure()
         .stderr(predicates::str::contains("unknown field `mondey`"));
@@ -140,7 +140,7 @@ fn config_set_rejects_an_unknown_top_level_key() -> Result<(), Box<dyn std::erro
         .arg("set")
         .arg("workinghours")
         .arg("6h")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .failure()
         .stderr(predicates::str::contains("unknown field `workinghours`"));
@@ -158,7 +158,7 @@ fn config_set_rejects_a_non_year_key_under_the_year_maps() -> Result<(), Box<dyn
         .arg("set")
         .arg("vacation_days_per_year.foo")
         .arg("25")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .failure()
         .stderr(predicates::str::contains("Invalid integer key: foo"));
@@ -178,7 +178,7 @@ fn config_list_rejects_an_unknown_key_in_the_file() -> Result<(), Box<dyn std::e
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("config")
         .arg("list")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .failure()
         .stderr(predicates::str::contains("unknown field `mondey`"));

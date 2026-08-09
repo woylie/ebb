@@ -58,7 +58,7 @@ fn report_without_args() -> Result<(), Box<dyn std::error::Error>> {
         .arg("report")
         .arg("--format")
         .arg("json")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success();
 
@@ -100,7 +100,7 @@ fn report_without_frames() -> Result<(), Box<dyn std::error::Error>> {
         .arg("1750282303")
         .arg("--format")
         .arg("json")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success();
 
@@ -161,7 +161,7 @@ fn report_includes_current_frame() -> Result<(), Box<dyn std::error::Error>> {
         .arg("report")
         .arg("--format")
         .arg("json")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success();
 
@@ -226,7 +226,7 @@ fn report_applies_from_option() -> Result<(), Box<dyn std::error::Error>> {
         .arg(from.to_string())
         .arg("--format")
         .arg("json")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success();
 
@@ -286,7 +286,7 @@ fn report_adjusts_start_time_if_frame_starts_before_from() -> Result<(), Box<dyn
         .arg(from.to_string())
         .arg("--format")
         .arg("json")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success();
 
@@ -363,7 +363,7 @@ fn report_applies_to_option() -> Result<(), Box<dyn std::error::Error>> {
         .arg(to.to_string())
         .arg("--format")
         .arg("json")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success();
 
@@ -426,7 +426,7 @@ fn report_adjusts_end_time_if_frame_ends_after_to() -> Result<(), Box<dyn std::e
         .arg(to.to_string())
         .arg("--format")
         .arg("json")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success();
 
@@ -492,7 +492,7 @@ fn report_filters_by_project() -> Result<(), Box<dyn std::error::Error>> {
         .arg("project1")
         .arg("--format")
         .arg("json")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success();
 
@@ -557,7 +557,7 @@ fn report_filters_by_tag() -> Result<(), Box<dyn std::error::Error>> {
         .arg("tag1")
         .arg("--format")
         .arg("json")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success();
 
@@ -599,7 +599,7 @@ fn report_applies_day_option() -> Result<(), Box<dyn std::error::Error>> {
         .arg("--day")
         .arg("--format")
         .arg("json")
-        .env("EBB_CONFIG_DIR", config_dir)
+        .env("EBB_DATA_DIR", config_dir)
         .assert()
         .success();
 

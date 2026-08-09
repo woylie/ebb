@@ -18,7 +18,7 @@ fn add_sick_day_creates_file() -> Result<(), Box<dyn std::error::Error>> {
         .arg("add")
         .arg("2025-05-28")
         .arg("headache")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success();
 
@@ -50,7 +50,7 @@ fn add_sick_day_fails_if_date_exists() -> Result<(), Box<dyn std::error::Error>>
         .arg("add")
         .arg("2025-05-28")
         .arg("headache")
-        .env("EBB_CONFIG_DIR", tmp.path());
+        .env("EBB_DATA_DIR", tmp.path());
 
     cmd.assert().failure().stderr(contains("already exists"));
 

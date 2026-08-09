@@ -26,7 +26,7 @@ fn restart_sets_state_from_last_frame() -> Result<(), Box<dyn std::error::Error>
 
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("restart")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success();
 
@@ -60,7 +60,7 @@ fn restart_applies_no_gap_option() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("restart")
         .arg("--no-gap")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success();
 
@@ -97,7 +97,7 @@ fn restart_applies_at_option() -> Result<(), Box<dyn std::error::Error>> {
     cmd.arg("restart")
         .arg("--at")
         .arg("1748725750")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success();
 
@@ -134,7 +134,7 @@ fn restart_fails_if_start_time_is_before_last_end_time() -> Result<(), Box<dyn s
     cmd.arg("restart")
         .arg("--at")
         .arg("1748725743")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .failure()
         .stderr(contains("is before the end"));
@@ -163,7 +163,7 @@ fn restart_fails_with_no_gap_and_at() -> Result<(), Box<dyn std::error::Error>> 
         .arg("--at")
         .arg("1748725743")
         .arg("--no-gap")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .failure()
         .stderr(contains(
@@ -178,7 +178,7 @@ fn restart_fails_if_there_is_no_previous_frame() -> Result<(), Box<dyn std::erro
     let tmp = tempdir()?;
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("restart")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .failure()
         .stderr(contains("No previous project"));
@@ -202,7 +202,7 @@ fn restart_fails_if_current_frame_exists() -> Result<(), Box<dyn std::error::Err
 
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("restart")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .failure()
         .stderr(contains("already in progress."));

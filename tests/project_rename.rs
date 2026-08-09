@@ -47,7 +47,7 @@ Project renamed from \'project2\' to \'project3\'.
         .arg("rename")
         .arg("project2")
         .arg("project3")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success()
         .stdout(expected_output);

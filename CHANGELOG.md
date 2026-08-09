@@ -9,6 +9,14 @@
 - Write tags as plain words. A tag that starts with `+` is rejected, naming the
   tag to write instead.
 - Reject an unknown key in `config.toml` and in `config set`.
+- Store the files in `~/.local/share/ebb`, or in `$XDG_DATA_HOME/ebb` when that
+  variable names an absolute path.
+- Rename `--config-dir` to `--data-dir` and `EBB_CONFIG_DIR` to `EBB_DATA_DIR`.
+
+### Deprecated
+
+- `EBB_CONFIG_DIR`. Use `EBB_DATA_DIR` instead. The old name still works and
+  warns.
 
 ### Fixed
 
@@ -23,6 +31,19 @@
 - Report an invalid timestamp in `frames.toml` or `state.toml` instead of
   panicking or showing it as 1970-01-01.
 - Report a `frames.toml` that cannot be read when `--no-gap` is given.
+
+### How to upgrade
+
+Ebb keeps its files in the XDG data directory rather than the configuration
+directory, because only one of them is configuration. Move the directory once:
+
+```bash
+mv ~/.config/ebb ~/.local/share/ebb
+```
+
+If you set `EBB_CONFIG_DIR` or pass `--config-dir`, nothing moves. Both still
+work, and `--config-dir` is an alias, but rename the variable to `EBB_DATA_DIR`
+to stop the warning.
 
 ## [0.1.0] - 2025-06-22
 

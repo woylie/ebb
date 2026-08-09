@@ -7,13 +7,16 @@ use crate::Commands::{
     Restart, SickDay, Start, Status, Stop, Tag, Vacation,
 };
 use crate::types::DayPortion;
-use anyhow::{Result, anyhow};
+use anyhow::{Context, Result, anyhow};
 use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use clap::CommandFactory;
 use clap::{ArgGroup, Args, Parser, Subcommand, ValueEnum};
 use clap_complete::aot;
+use etcetera::base_strategy::{BaseStrategy, choose_base_strategy};
+use std::env;
+use std::fs;
 use std::io;
-use std::{fs, path::PathBuf};
+use std::path::{Path, PathBuf};
 
 pub mod cli;
 pub mod formatting;
@@ -28,15 +31,16 @@ pub mod types;
 pub struct Cli {
     #[command(subcommand)]
     command: Commands,
-    /// Set the configuration directory
+    /// Set the directory holding the configuration and the data; defaults to
+    /// $XDG_DATA_HOME/ebb, or ~/.local/share/ebb when that is not set
     #[arg(
         short = 'c',
-        long = "config-dir",
-        env = "EBB_CONFIG_DIR",
-        global = true,
-        default_value = "~/.config/ebb"
+        long = "data-dir",
+        alias = "config-dir",
+        env = "EBB_DATA_DIR",
+        global = true
     )]
-    config_dir: std::path::PathBuf,
+    data_dir: Option<PathBuf>,
     /// Set the output format
     #[arg(
         short = 'f',
@@ -428,25 +432,30 @@ pub enum VacationCommands {
 
 pub fn run(cli: &Cli) -> Result<()> {
     let format = &cli.format;
-    let config_dir = shellexpand::tilde(&cli.config_dir.to_string_lossy()).to_string();
-    let config_path = PathBuf::from(config_dir);
-    fs::create_dir_all(&config_path)?;
+
+    // Resolved per command, so that the two commands that only write to stdout keep
+    // working without a home directory and without creating anything.
+    let config_path = || -> Result<PathBuf> {
+        let path = resolve_data_dir(cli.data_dir.as_deref())?;
+        fs::create_dir_all(&path)?;
+        Ok(path)
+    };
 
     match &cli.command {
-        Balance(args) => cli::balance::run_balance(args, &config_path, format),
-        Cancel => cli::tracking::run_cancel(&config_path, format),
-        Config(args) => cli::config::run_config(args, &config_path, format),
-        DaysOff(args) => cli::days_off::run_daysoff(args, &config_path, format),
-        Holiday(args) => cli::holiday::run_holiday(args, &config_path, format),
-        Project(args) => cli::project::run_project(args, &config_path, format),
-        Report(args) => cli::report::run_report(args, &config_path, format),
-        Restart(args) => cli::tracking::run_restart(args, &config_path, format),
-        SickDay(args) => cli::sick_day::run_sick_day(args, &config_path, format),
-        Start(args) => cli::tracking::run_start(args, &config_path, format),
-        Status => cli::tracking::run_status(&config_path, format),
-        Stop(args) => cli::tracking::run_stop(args, &config_path, format),
-        Tag(args) => cli::tag::run_tag(args, &config_path, format),
-        Vacation(args) => cli::vacation::run_vacation(args, &config_path, format),
+        Balance(args) => cli::balance::run_balance(args, &config_path()?, format),
+        Cancel => cli::tracking::run_cancel(&config_path()?, format),
+        Config(args) => cli::config::run_config(args, &config_path()?, format),
+        DaysOff(args) => cli::days_off::run_daysoff(args, &config_path()?, format),
+        Holiday(args) => cli::holiday::run_holiday(args, &config_path()?, format),
+        Project(args) => cli::project::run_project(args, &config_path()?, format),
+        Report(args) => cli::report::run_report(args, &config_path()?, format),
+        Restart(args) => cli::tracking::run_restart(args, &config_path()?, format),
+        SickDay(args) => cli::sick_day::run_sick_day(args, &config_path()?, format),
+        Start(args) => cli::tracking::run_start(args, &config_path()?, format),
+        Status => cli::tracking::run_status(&config_path()?, format),
+        Stop(args) => cli::tracking::run_stop(args, &config_path()?, format),
+        Tag(args) => cli::tag::run_tag(args, &config_path()?, format),
+        Vacation(args) => cli::vacation::run_vacation(args, &config_path()?, format),
         GenerateDocs => {
             clap_markdown::print_help_markdown::<Cli>();
             Ok(())
@@ -457,6 +466,32 @@ pub fn run(cli: &Cli) -> Result<()> {
             Ok(())
         }
     }
+}
+
+/// A single directory holds every file. Five of the six are data rather than
+/// configuration, so it sits under the XDG Base Directory Specification's data
+/// location: `~/.local/share` unless `$XDG_DATA_HOME` names an absolute path.
+fn resolve_data_dir(configured: Option<&Path>) -> Result<PathBuf> {
+    if let Some(dir) = configured {
+        return Ok(expand_tilde(dir));
+    }
+
+    // The directory was named after the configuration until the files moved to the
+    // data directory. Honouring the old variable keeps an existing shell profile
+    // working instead of silently reading an empty directory.
+    if let Some(dir) = env::var_os("EBB_CONFIG_DIR") {
+        eprintln!("EBB_CONFIG_DIR is deprecated. Rename it to EBB_DATA_DIR.");
+        return Ok(expand_tilde(Path::new(&dir)));
+    }
+
+    let strategy = choose_base_strategy()
+        .context("Cannot determine the home directory. Set HOME, or pass --data-dir.")?;
+
+    Ok(strategy.data_dir().join("ebb"))
+}
+
+fn expand_tilde(path: &Path) -> PathBuf {
+    PathBuf::from(shellexpand::tilde(&path.to_string_lossy()).to_string())
 }
 
 fn parse_tag(input: &str) -> Result<String> {

@@ -31,7 +31,7 @@ fn remove_sick_day_removes_entry() -> Result<(), Box<dyn std::error::Error>> {
     cmd.arg("sickday")
         .arg("remove")
         .arg("2025-05-28")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success();
 
@@ -65,7 +65,7 @@ fn add_sick_day_fails_if_date_exists() -> Result<(), Box<dyn std::error::Error>>
     cmd.arg("sickday")
         .arg("remove")
         .arg("2025-05-28")
-        .env("EBB_CONFIG_DIR", tmp.path());
+        .env("EBB_DATA_DIR", tmp.path());
 
     cmd.assert()
         .failure()

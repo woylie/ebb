@@ -141,6 +141,48 @@ The commands related to time tracking are:
   balance by 3 hours. This logic may be improved in the future based on user
   feedback.
 
+### Your Data
+
+Everything Ebb knows is stored as TOML files in a single directory, so you can
+read and edit all of it with a text editor. The directory is
+`~/.local/share/ebb`, or `$XDG_DATA_HOME/ebb` if you have that variable set to an
+absolute path. You can point Ebb somewhere else with `--data-dir` or by setting
+`EBB_DATA_DIR`.
+
+- `config.toml` - Your configuration.
+- `frames.toml` - Every time frame you have recorded. This is the file you
+  cannot reconstruct if you lose it.
+- `frames.toml.bak` - The contents of `frames.toml` as they were before the most
+  recent change. Ebb keeps one previous version, not a history.
+- `state.toml` - The frame that is currently running, if any.
+- `holidays.toml`, `sick_days.toml`, `vacations.toml` - Your days off.
+
+Nothing backs these files up for you, so copy the directory somewhere safe:
+
+```bash
+cp -r ~/.local/share/ebb ~/backups/ebb-$(date +%Y-%m-%d)
+```
+
+### If Something Looks Wrong
+
+Ebb refuses to run when a data file does not make sense, and the error names the
+file and the value, so start by reading it. Because the files are plain TOML, the
+repair is to open the named file and correct the entry by hand.
+
+If a project appears to be counted twice, compare `state.toml` with the end of
+`frames.toml`. A project can legitimately appear in both, but only when the entry
+in `frames.toml` ended before the one in `state.toml` started. If the same
+stretch of time is recorded in both, delete whichever of the two is wrong. To
+discard the running frame rather than record it, use `ebb cancel`.
+
+Before you edit `frames.toml`, copy it, because Ebb overwrites `frames.toml.bak`
+on the next change. If a change turns out to be wrong, you can restore the file
+Ebb saved:
+
+```bash
+cp ~/.local/share/ebb/frames.toml.bak ~/.local/share/ebb/frames.toml
+```
+
 ### Further Help
 
 There's a [Markdown version of the command-line help](https://github.com/woylie/ebb/blob/main/command_line_help.md) available. You can also view help for any command with

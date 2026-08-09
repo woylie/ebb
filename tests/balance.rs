@@ -64,7 +64,7 @@ Remaining: 83d 3h 18m 41s
         .arg("2024-01-01 00:00:00")
         .arg("--to")
         .arg("2024-12-12 23:59:59")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success()
         .stdout(expected_output);
@@ -80,7 +80,7 @@ fn balance_fails_if_from_is_in_the_future() -> Result<(), Box<dyn std::error::Er
     cmd.arg("balance")
         .arg("--from")
         .arg("2100-01-01 00:00:00")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .failure()
         .stderr(predicates::str::contains("'to' must be after 'from'"));
@@ -99,7 +99,7 @@ fn balance_fails_if_a_frame_holds_an_invalid_timestamp() -> Result<(), Box<dyn s
 
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("balance")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .failure()
         .stderr(predicates::str::contains(
