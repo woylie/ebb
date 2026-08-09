@@ -36,7 +36,7 @@ fn list_vacations_displays_all() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("vacation")
         .arg("list")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success()
         .stdout(expected_output);
@@ -75,7 +75,7 @@ fn list_vacations_filters_by_year() -> Result<(), Box<dyn std::error::Error>> {
         .arg("list")
         .arg("-y")
         .arg("2024")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success()
         .stdout(expected_output);

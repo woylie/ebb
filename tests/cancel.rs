@@ -24,7 +24,7 @@ fn cancel_resets_state_file() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("cancel")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success();
 
@@ -48,7 +48,7 @@ fn cancel_fails_if_there_is_no_current_frame() -> Result<(), Box<dyn std::error:
 
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("cancel")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .failure()
         .stderr(contains("No project started."));

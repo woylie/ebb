@@ -34,7 +34,7 @@ fn edit_holiday_updates_entry() -> Result<(), Box<dyn std::error::Error>> {
         .arg("Ocean Day")
         .arg("-p")
         .arg("full")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success();
 
@@ -68,7 +68,7 @@ fn edit_holiday_fails_if_not_exists() -> Result<(), Box<dyn std::error::Error>> 
         .arg("Ocean Day")
         .arg("-p")
         .arg("full")
-        .env("EBB_CONFIG_DIR", tmp.path());
+        .env("EBB_DATA_DIR", tmp.path());
 
     cmd.assert()
         .failure()

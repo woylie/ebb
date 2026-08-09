@@ -47,7 +47,7 @@ Tag renamed from 'tag1' to 'tag6'.
         .arg("rename")
         .arg("tag1")
         .arg("tag6")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success()
         .stdout(expected_output);

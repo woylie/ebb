@@ -31,7 +31,7 @@ fn remove_vacation_removes_entry() -> Result<(), Box<dyn std::error::Error>> {
     cmd.arg("vacation")
         .arg("remove")
         .arg("2025-05-28")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success();
 
@@ -65,7 +65,7 @@ fn add_vacation_fails_if_date_does_not_exist() -> Result<(), Box<dyn std::error:
     cmd.arg("vacation")
         .arg("remove")
         .arg("2025-05-28")
-        .env("EBB_CONFIG_DIR", tmp.path());
+        .env("EBB_DATA_DIR", tmp.path());
 
     cmd.assert()
         .failure()

@@ -24,7 +24,7 @@ fn stop_saves_current_frame() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("stop")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success();
 
@@ -66,7 +66,7 @@ fn stop_applies_at_option() -> Result<(), Box<dyn std::error::Error>> {
     cmd.arg("stop")
         .arg("--at")
         .arg("1748723100")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success();
 
@@ -109,7 +109,7 @@ fn stop_fails_if_end_time_is_before_start_time() -> Result<(), Box<dyn std::erro
     cmd.arg("stop")
         .arg("--at")
         .arg("1748723005")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .failure()
         .stderr(contains("is before start time"));
@@ -126,7 +126,7 @@ fn cancel_fails_if_there_is_no_current_frame() -> Result<(), Box<dyn std::error:
 
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("stop")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .failure()
         .stderr(contains("No project started."));
@@ -149,7 +149,7 @@ fn stop_backs_up_the_previous_frames() -> Result<(), Box<dyn std::error::Error>>
 
     Command::cargo_bin("ebb")?
         .arg("stop")
-        .env("EBB_CONFIG_DIR", config_dir)
+        .env("EBB_DATA_DIR", config_dir)
         .assert()
         .success();
 
@@ -162,7 +162,7 @@ fn stop_backs_up_the_previous_frames() -> Result<(), Box<dyn std::error::Error>>
 
     Command::cargo_bin("ebb")?
         .arg("stop")
-        .env("EBB_CONFIG_DIR", config_dir)
+        .env("EBB_DATA_DIR", config_dir)
         .assert()
         .success();
 
@@ -204,7 +204,7 @@ fn stop_leaves_the_frames_intact_if_the_write_fails() -> Result<(), Box<dyn std:
 
     let output = Command::cargo_bin("ebb")?
         .arg("stop")
-        .env("EBB_CONFIG_DIR", config_dir)
+        .env("EBB_DATA_DIR", config_dir)
         .output()?;
 
     // Restore before asserting, so that a failing assertion still leaves a removable
@@ -232,7 +232,7 @@ fn stop_creates_the_frames_private() -> Result<(), Box<dyn std::error::Error>> {
 
     Command::cargo_bin("ebb")?
         .arg("stop")
-        .env("EBB_CONFIG_DIR", config_dir)
+        .env("EBB_DATA_DIR", config_dir)
         .assert()
         .success();
 
@@ -266,7 +266,7 @@ fn stop_keeps_the_mode_of_an_existing_frames_file() -> Result<(), Box<dyn std::e
 
     Command::cargo_bin("ebb")?
         .arg("stop")
-        .env("EBB_CONFIG_DIR", config_dir)
+        .env("EBB_DATA_DIR", config_dir)
         .assert()
         .success();
 

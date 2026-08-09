@@ -29,7 +29,7 @@ fn config_list_prints_default_config() -> Result<(), Box<dyn std::error::Error>>
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("config")
         .arg("list")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success()
         .stdout(expected_output);
@@ -86,7 +86,7 @@ fn config_list_prints_custom_config() -> Result<(), Box<dyn std::error::Error>> 
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("config")
         .arg("list")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success()
         .stdout(expected_output);

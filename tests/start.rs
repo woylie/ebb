@@ -16,7 +16,7 @@ fn start_creates_state_file() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("start")
         .arg("myproject")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success();
 
@@ -42,7 +42,7 @@ fn start_updates_empty_state_file() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("start")
         .arg("myproject")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success();
 
@@ -66,7 +66,7 @@ fn start_saves_tags() -> Result<(), Box<dyn std::error::Error>> {
         .arg("myproject")
         .arg("tag1")
         .arg("code review")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success();
 
@@ -101,7 +101,7 @@ fn start_stops_current_frame_and_updates_state_file() -> Result<(), Box<dyn std:
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("start")
         .arg("secondproject")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success();
 
@@ -148,7 +148,7 @@ fn start_applies_no_gap_option() -> Result<(), Box<dyn std::error::Error>> {
     cmd.arg("start")
         .arg("secondproject")
         .arg("--no-gap")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success();
 
@@ -183,7 +183,7 @@ fn start_returns_error_if_start_time_overlaps() -> Result<(), Box<dyn std::error
         .arg("secondproject")
         .arg("--at")
         .arg("1748725743")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .failure()
         .stderr(contains("is before the end of the last frame"));
@@ -211,7 +211,7 @@ fn start_leaves_running_frame_untouched_if_start_time_is_invalid()
         .arg("secondproject")
         .arg("--at")
         .arg("1748723007")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .failure()
         .stderr(contains("is before the end of the running frame"));
@@ -237,7 +237,7 @@ fn start_fails_with_both_no_gap_and_at() -> Result<(), Box<dyn std::error::Error
         .arg("--at")
         .arg("1748725743")
         .arg("--no-gap")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .failure()
         .stderr(contains(
@@ -257,7 +257,7 @@ fn assert_start_time_at(
         .arg("myproject")
         .arg("--at")
         .arg(time_str)
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success();
 
@@ -353,7 +353,7 @@ fn start_rejects_a_tag_with_a_plus_prefix() -> Result<(), Box<dyn std::error::Er
     cmd.arg("start")
         .arg("myproject")
         .arg("+urgent")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .failure()
         .stderr(contains("the '+' prefix is not used; write 'urgent'"));
@@ -372,7 +372,7 @@ fn start_applies_at_option_after_a_tag() -> Result<(), Box<dyn std::error::Error
         .arg("--at")
         .arg("1748725744")
         .arg("review")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success();
 
@@ -403,7 +403,7 @@ fn start_with_no_gap_fails_if_a_frame_holds_an_invalid_timestamp()
     cmd.arg("start")
         .arg("myproject")
         .arg("--no-gap")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .failure()
         .stderr(contains("frames.toml holds an invalid timestamp"));

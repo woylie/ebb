@@ -48,7 +48,7 @@ tag5
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("tag")
         .arg("list")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success()
         .stdout(expected_output);

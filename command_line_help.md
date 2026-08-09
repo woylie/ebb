@@ -63,10 +63,7 @@ This document contains the help content for the `ebb` command-line program.
 
 ###### **Options:**
 
-- `-c`, `--config-dir <CONFIG_DIR>` — Set the configuration directory
-
-  Default value: `~/.config/ebb`
-
+- `-c`, `--data-dir <DATA_DIR>` — Set the directory holding the configuration and the data; defaults to $XDG_DATA_HOME/ebb, or ~/.local/share/ebb when that is not set
 - `-f`, `--format <FORMAT>` — Set the output format
 
   Default value: `text`

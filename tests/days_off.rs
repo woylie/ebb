@@ -78,7 +78,7 @@ Year: 2004
     cmd.arg("daysoff")
         .arg("--year")
         .arg("2004")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success()
         .stdout(expected_output);
@@ -93,7 +93,7 @@ fn daysoff_defaults_to_the_current_year() -> Result<(), Box<dyn std::error::Erro
 
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("daysoff")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success()
         .stdout(predicates::str::contains(format!("Year: {current_year}")));

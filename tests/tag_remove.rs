@@ -46,7 +46,7 @@ Tag 'tag1' removed from all frames.
     cmd.arg("tag")
         .arg("remove")
         .arg("tag1")
-        .env("EBB_CONFIG_DIR", tmp.path())
+        .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success()
         .stdout(expected_output);
