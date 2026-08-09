@@ -97,7 +97,7 @@ fn report_without_frames() -> Result<(), Box<dyn std::error::Error>> {
     let assert = cmd
         .arg("report")
         .arg("--to")
-        .arg("1750282303")
+        .arg("2025-06-18T21:31:43+00:00")
         .arg("--format")
         .arg("json")
         .env("EBB_DATA_DIR", tmp.path())
@@ -223,7 +223,7 @@ fn report_applies_from_option() -> Result<(), Box<dyn std::error::Error>> {
     let assert = cmd
         .arg("report")
         .arg("--from")
-        .arg(from.to_string())
+        .arg(Utc.timestamp_opt(from, 0).unwrap().to_rfc3339())
         .arg("--format")
         .arg("json")
         .env("EBB_DATA_DIR", tmp.path())
@@ -283,7 +283,7 @@ fn report_adjusts_start_time_if_frame_starts_before_from() -> Result<(), Box<dyn
     let assert = cmd
         .arg("report")
         .arg("--from")
-        .arg(from.to_string())
+        .arg(Utc.timestamp_opt(from, 0).unwrap().to_rfc3339())
         .arg("--format")
         .arg("json")
         .env("EBB_DATA_DIR", tmp.path())
@@ -360,7 +360,7 @@ fn report_applies_to_option() -> Result<(), Box<dyn std::error::Error>> {
     let assert = cmd
         .arg("report")
         .arg("--to")
-        .arg(to.to_string())
+        .arg(Utc.timestamp_opt(to, 0).unwrap().to_rfc3339())
         .arg("--format")
         .arg("json")
         .env("EBB_DATA_DIR", tmp.path())
@@ -423,7 +423,7 @@ fn report_adjusts_end_time_if_frame_ends_after_to() -> Result<(), Box<dyn std::e
     let assert = cmd
         .arg("report")
         .arg("--to")
-        .arg(to.to_string())
+        .arg(Utc.timestamp_opt(to, 0).unwrap().to_rfc3339())
         .arg("--format")
         .arg("json")
         .env("EBB_DATA_DIR", tmp.path())

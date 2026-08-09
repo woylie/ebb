@@ -8,7 +8,7 @@ use crate::Commands::{
 };
 use crate::types::DayPortion;
 use anyhow::{Context, Result, anyhow};
-use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
+use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone};
 use clap::CommandFactory;
 use clap::{ArgGroup, Args, Parser, Subcommand, ValueEnum};
 use clap_complete::aot;
@@ -535,13 +535,8 @@ fn parse_flexible_datetime(input: &str) -> Result<DateTime<Local>> {
         }
     }
 
-    if let Ok(secs) = input.parse::<i64>() {
-        let naive_dt = Utc
-            .timestamp_opt(secs, 0)
-            .single()
-            .ok_or_else(|| anyhow!("Invalid timestamp"))?;
-        return Ok(naive_dt.with_timezone(&Local));
-    }
-
-    Err(anyhow!("Could not parse datetime from input: {}", input))
+    Err(anyhow!(
+        "'{input}' is not a time. Write it as hh:mm, hh:mm:ss, \
+         yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601."
+    ))
 }

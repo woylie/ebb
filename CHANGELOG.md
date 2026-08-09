@@ -12,6 +12,8 @@
 - Store the files in `~/.local/share/ebb`, or in `$XDG_DATA_HOME/ebb` when that
   variable names an absolute path.
 - Rename `--config-dir` to `--data-dir` and `EBB_CONFIG_DIR` to `EBB_DATA_DIR`.
+- Reject a bare number as a time. `--at`, `--from` and `--to` used to read one
+  as a Unix timestamp, so `--at 1200` silently meant 1970-01-01.
 
 ### Deprecated
 

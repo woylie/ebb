@@ -182,7 +182,7 @@ fn start_returns_error_if_start_time_overlaps() -> Result<(), Box<dyn std::error
     cmd.arg("start")
         .arg("secondproject")
         .arg("--at")
-        .arg("1748725743")
+        .arg("2025-05-31T21:09:03+00:00")
         .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .failure()
@@ -210,7 +210,7 @@ fn start_leaves_running_frame_untouched_if_start_time_is_invalid()
     cmd.arg("start")
         .arg("secondproject")
         .arg("--at")
-        .arg("1748723007")
+        .arg("2025-05-31T20:23:27+00:00")
         .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .failure()
@@ -235,7 +235,7 @@ fn start_fails_with_both_no_gap_and_at() -> Result<(), Box<dyn std::error::Error
     cmd.arg("start")
         .arg("project")
         .arg("--at")
-        .arg("1748725743")
+        .arg("2025-05-31T21:09:03+00:00")
         .arg("--no-gap")
         .env("EBB_DATA_DIR", tmp.path())
         .assert()
@@ -333,16 +333,23 @@ fn start_applies_at_option_with_iso8601() -> Result<(), Box<dyn std::error::Erro
 }
 
 #[test]
-fn start_applies_at_option_with_unix_timestamp() -> Result<(), Box<dyn std::error::Error>> {
-    let timestamp = 1357388625;
+fn start_rejects_a_bare_number_as_a_start_time() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
 
-    let expected_dt = chrono::Utc
-        .timestamp_opt(timestamp, 0)
-        .single()
-        .ok_or("Invalid timestamp")?
-        .with_timezone(&chrono::Local);
+    // A natural typo for 12:00, which used to parse as a Unix timestamp in 1970.
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("start")
+        .arg("myproject")
+        .arg("--at")
+        .arg("1200")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(contains("'1200' is not a time"));
 
-    assert_start_time_at(&timestamp.to_string(), expected_dt)
+    assert!(!tmp.path().join("state.toml").exists());
+
+    Ok(())
 }
 
 #[test]
@@ -370,7 +377,7 @@ fn start_applies_at_option_after_a_tag() -> Result<(), Box<dyn std::error::Error
         .arg("myproject")
         .arg("urgent")
         .arg("--at")
-        .arg("1748725744")
+        .arg("2025-05-31T21:09:04+00:00")
         .arg("review")
         .env("EBB_DATA_DIR", tmp.path())
         .assert()
