@@ -14,4 +14,10 @@ fi
 
 set -x
 
-cargo license --color never --avoid-dev-deps > THIRD_PARTY
+# Written to a temporary file first, so that a failed run leaves the previous
+# contents in place rather than truncating them.
+tmp="$(mktemp)"
+trap 'rm -f "$tmp"' EXIT
+
+cargo license --color never --avoid-dev-deps > "$tmp"
+mv "$tmp" THIRD_PARTY
