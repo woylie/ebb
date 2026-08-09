@@ -96,7 +96,7 @@ fn restart_applies_at_option() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("restart")
         .arg("--at")
-        .arg("1748725750")
+        .arg("2025-05-31T21:09:10+00:00")
         .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success();
@@ -133,7 +133,7 @@ fn restart_fails_if_start_time_is_before_last_end_time() -> Result<(), Box<dyn s
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("restart")
         .arg("--at")
-        .arg("1748725743")
+        .arg("2025-05-31T21:09:03+00:00")
         .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .failure()
@@ -161,7 +161,7 @@ fn restart_fails_with_no_gap_and_at() -> Result<(), Box<dyn std::error::Error>> 
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("restart")
         .arg("--at")
-        .arg("1748725743")
+        .arg("2025-05-31T21:09:03+00:00")
         .arg("--no-gap")
         .env("EBB_DATA_DIR", tmp.path())
         .assert()

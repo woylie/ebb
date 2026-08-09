@@ -1,6 +1,14 @@
 # Changelog
 
-## Unreleased
+All notable changes to this project will be documented in this file.
+
+The format is based on
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
+adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.2.0] - 2026-08-09
 
 ### Changed
 
@@ -12,6 +20,8 @@
 - Store the files in `~/.local/share/ebb`, or in `$XDG_DATA_HOME/ebb` when that
   variable names an absolute path.
 - Rename `--config-dir` to `--data-dir` and `EBB_CONFIG_DIR` to `EBB_DATA_DIR`.
+- Reject a bare number as a time. `--at`, `--from` and `--to` used to read one
+  as a Unix timestamp, so `--at 1200` silently meant 1970-01-01.
 
 ### Deprecated
 
@@ -48,3 +58,7 @@ to stop the warning.
 ## [0.1.0] - 2025-06-22
 
 Initial release
+
+[unreleased]: https://github.com/woylie/ebb/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/woylie/ebb/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/woylie/ebb/releases/tag/v0.1.0

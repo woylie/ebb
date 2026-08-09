@@ -65,7 +65,7 @@ fn stop_applies_at_option() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("stop")
         .arg("--at")
-        .arg("1748723100")
+        .arg("2025-05-31T20:25:00+00:00")
         .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success();
@@ -108,7 +108,7 @@ fn stop_fails_if_end_time_is_before_start_time() -> Result<(), Box<dyn std::erro
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("stop")
         .arg("--at")
-        .arg("1748723005")
+        .arg("2025-05-31T20:23:25+00:00")
         .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .failure()
