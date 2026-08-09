@@ -65,7 +65,7 @@
             inherit version src cargoLock;
 
             nativeBuildInputs = with pkgs; [
-              nixfmt-rfc-style
+              nixfmt
               prettier
               rustToolchain
             ];
