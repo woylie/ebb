@@ -139,3 +139,62 @@ fn prefers_the_current_env_var_over_the_deprecated_one() -> Result<(), Box<dyn s
 
     Ok(())
 }
+
+#[cfg(unix)]
+#[test]
+fn creates_the_data_directory_and_its_files_private() -> Result<(), Box<dyn std::error::Error>> {
+    use std::os::unix::fs::PermissionsExt;
+
+    let tmp = tempdir()?;
+    let data_dir = tmp.path().join("ebb");
+
+    let script = r#"
+        umask 022
+        "$EBB" config set working_hours.monday 4h
+        "$EBB" start first --at "2025-06-02 09:00"
+        "$EBB" stop --at "2025-06-02 10:00"
+        "$EBB" start second --at "2025-06-02 11:00"
+        "$EBB" stop --at "2025-06-02 12:00"
+    "#;
+
+    Command::new("sh")
+        .arg("-ec")
+        .arg(script)
+        .env("EBB", assert_cmd::cargo::cargo_bin("ebb"))
+        .env("EBB_DATA_DIR", &data_dir)
+        .assert()
+        .success();
+
+    let mode = |path: &Path| -> std::io::Result<u32> {
+        Ok(std::fs::metadata(path)?.permissions().mode() & 0o777)
+    };
+
+    assert_eq!(mode(&data_dir)?, 0o700);
+    assert_eq!(mode(&data_dir.join("config.toml"))?, 0o600);
+    assert_eq!(mode(&data_dir.join("frames.toml.bak"))?, 0o600);
+
+    Ok(())
+}
+
+#[cfg(unix)]
+#[test]
+fn makes_an_existing_data_directory_private() -> Result<(), Box<dyn std::error::Error>> {
+    use std::fs;
+    use std::os::unix::fs::PermissionsExt;
+
+    let tmp = tempdir()?;
+    let data_dir = tmp.path();
+    fs::set_permissions(data_dir, fs::Permissions::from_mode(0o755))?;
+
+    Command::cargo_bin("ebb")?
+        .env("EBB_DATA_DIR", data_dir)
+        .arg("start")
+        .arg("myproject")
+        .assert()
+        .success();
+
+    let mode = fs::metadata(data_dir)?.permissions().mode();
+    assert_eq!(mode & 0o777, 0o700);
+
+    Ok(())
+}
