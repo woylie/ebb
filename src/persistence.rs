@@ -35,12 +35,29 @@ fn save_toml<T: Serialize>(config_path: &Path, filename: &str, value: &T) -> Res
     let mut file = NamedTempFile::new_in(config_path)?;
     file.write_all(toml.as_bytes())?;
     file.as_file().sync_all()?;
-    if let Ok(metadata) = fs::metadata(&path) {
-        file.as_file().set_permissions(metadata.permissions())?;
-    }
-
     file.persist(&path)?;
 
+    Ok(())
+}
+
+pub fn create_data_dir(config_path: &Path) -> Result<()> {
+    fs::create_dir_all(config_path)?;
+    make_private(config_path)
+}
+
+#[cfg(unix)]
+fn make_private(path: &Path) -> Result<()> {
+    use std::os::unix::fs::PermissionsExt;
+
+    let mode = fs::metadata(path)?.permissions().mode();
+    if mode & 0o077 != 0 {
+        let _ = fs::set_permissions(path, fs::Permissions::from_mode(mode & !0o077));
+    }
+    Ok(())
+}
+
+#[cfg(not(unix))]
+fn make_private(_path: &Path) -> Result<()> {
     Ok(())
 }
 
@@ -75,7 +92,9 @@ pub fn save_frames(config_path: &Path, frames: &Frames) -> Result<()> {
     let path = config_path.join(FRAME_FILE);
 
     if path.exists() {
-        fs::copy(&path, config_path.join(FRAME_BACKUP_FILE))?;
+        let backup_path = config_path.join(FRAME_BACKUP_FILE);
+        fs::copy(&path, &backup_path)?;
+        make_private(&backup_path)?;
     }
 
     save_toml(config_path, FRAME_FILE, frames)

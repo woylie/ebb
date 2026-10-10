@@ -14,7 +14,6 @@ use clap::{ArgGroup, Args, Parser, Subcommand, ValueEnum};
 use clap_complete::aot;
 use etcetera::base_strategy::{BaseStrategy, choose_base_strategy};
 use std::env;
-use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
@@ -437,7 +436,7 @@ pub fn run(cli: &Cli) -> Result<()> {
     // working without a home directory and without creating anything.
     let config_path = || -> Result<PathBuf> {
         let path = resolve_data_dir(cli.data_dir.as_deref())?;
-        fs::create_dir_all(&path)?;
+        persistence::create_data_dir(&path)?;
         Ok(path)
     };
 
