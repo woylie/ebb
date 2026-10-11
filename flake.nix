@@ -24,7 +24,7 @@
     flake-utils.lib.eachDefaultSystem (
       system:
       let
-        version = "0.2.0";
+        version = "0.2.1";
         src = ./.;
         cargoLock = {
           lockFile = ./Cargo.lock;
@@ -36,7 +36,7 @@
           inherit system overlays;
         };
 
-        rustToolchain = pkgs.rust-bin.stable."1.97.1".default;
+        rustToolchain = pkgs.rust-bin.stable."1.99.0".default;
         rustPlatform = pkgs.rustPlatform;
 
         packages = {
