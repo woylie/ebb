@@ -270,7 +270,7 @@ fn assert_start_time_at(
     let saved_start_time = state
         .current_frame
         .as_ref()
-        .expect("No current_frame found")
+        .ok_or("No current_frame found")?
         .start_time;
 
     let expected_timestamp = expected_dt.timestamp();

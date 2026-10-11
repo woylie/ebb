@@ -30,3 +30,8 @@ unsafe_code = "forbid"
 [dev-dependencies]
 assert_cmd = "2"
 predicates = "3.1.4"
+
+[lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+indexing_slicing = "deny"

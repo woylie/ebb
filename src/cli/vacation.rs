@@ -149,7 +149,7 @@ pub fn run_vacation(
         VacationCommands::List { year } => {
             let filtered: Vec<Vacation> = vacations
                 .iter()
-                .filter(|(date, _)| year.is_none() || date.year() == year.unwrap())
+                .filter(|(date, _)| year.is_none_or(|year| date.year() == year))
                 .map(|(date, entry)| Vacation {
                     date: *date,
                     description: entry.description.clone(),
