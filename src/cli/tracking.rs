@@ -2,13 +2,13 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-use crate::formatting::{format_timestamp, local_datetime, to_local};
+use crate::formatting::{format_datetime, to_local};
 use crate::output::{DisplayOutput, print_output};
 use crate::persistence::{load_frames, load_state, save_frames, save_state};
 use crate::types::{CurrentFrame, Frame, State};
 use crate::{Format, RestartArgs, StartArgs, StopArgs, check_name};
 use anyhow::{Result, bail};
-use chrono::{DateTime, Local, TimeZone, Utc};
+use chrono::{DateTime, Local, Utc};
 use serde::Serialize;
 use std::path::Path;
 
@@ -70,18 +70,8 @@ struct StatusOutput {
 impl DisplayOutput for StatusOutput {
     fn to_text(&self) -> String {
         if let Some(current_frame) = &self.current_frame {
-            let start = match Local.timestamp_opt(current_frame.start_time, 0).single() {
-                Some(start) => start,
-                None => {
-                    return format!(
-                        "Current project '{}' has an invalid or ambiguous start time ({}).",
-                        current_frame.project, current_frame.start_time
-                    );
-                }
-            };
-
-            let now = Local::now();
-            let duration = now.signed_duration_since(start);
+            let start = to_local(current_frame.start_time);
+            let duration = Local::now().signed_duration_since(start);
 
             let duration_str = if duration.num_seconds() < 60 {
                 "just now".to_string()
@@ -96,7 +86,7 @@ impl DisplayOutput for StatusOutput {
             format!(
                 "Current project '{}' started at {} ({}).",
                 current_frame.project,
-                start.format("%Y-%m-%d %H:%M:%S"),
+                format_datetime(current_frame.start_time),
                 duration_str
             )
         } else {
@@ -112,8 +102,7 @@ pub fn run_start(args: &StartArgs, config_path: &Path, format: &Format) -> anyho
     let current_frame = resolve_current_frame(&state, args, now, config_path)?;
 
     let stopped_frame = if let Some(running_frame) = &state.current_frame {
-        let end_time = local_datetime(current_frame.start_time)?.with_timezone(&Utc);
-        let stopped = stop_current_frame(config_path, running_frame, end_time)?;
+        let stopped = stop_current_frame(config_path, running_frame, current_frame.start_time)?;
         Some(stopped)
     } else {
         None
@@ -180,24 +169,18 @@ pub fn run_stop(args: &StopArgs, config_path: &Path, format: &Format) -> anyhow:
 
     let StopArgs { at } = args;
     let end_time = if let Some(at) = at {
-        if at.timestamp() <= current_frame.start_time {
-            let at_str = at.format("%Y-%m-%d %H:%M:%S").to_string();
-            let start_time_str = chrono::Local
-                .timestamp_opt(current_frame.start_time, 0)
-                .single()
-                .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
-                .unwrap_or_else(|| format!("(invalid timestamp: {})", current_frame.start_time));
-
+        let end_time = at.timestamp();
+        if end_time <= current_frame.start_time {
             bail!(
                 "End time ({}) is before start time ({}). \
-        Please specify a later time or omit --at.",
-                at_str,
-                start_time_str
+                    Please specify a later time or omit --at.",
+                format_datetime(end_time),
+                format_datetime(current_frame.start_time)
             );
         }
-        at.with_timezone(&Utc)
+        end_time
     } else {
-        Utc::now()
+        Utc::now().timestamp()
     };
 
     let frame = stop_current_frame(config_path, &current_frame, end_time)?;
@@ -280,18 +263,11 @@ fn resolve_current_frame(
         if let Some(last_end) = preceding_end
             && at_ts < last_end
         {
-            let at_str = at_dt.format("%Y-%m-%d %H:%M:%S").to_string();
-            let last_str = chrono::Local
-                .timestamp_opt(last_end, 0)
-                .single()
-                .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
-                .unwrap_or_else(|| format!("(invalid timestamp: {})", last_end));
-
             bail!(
                 "Start time ({}) is before the end of the last frame ({}). \
                     Please specify a later time or omit --at.",
-                at_str,
-                last_str
+                format_datetime(at_ts),
+                format_datetime(last_end)
             );
         }
 
@@ -314,14 +290,14 @@ fn check_switch_time(
     at: &DateTime<Local>,
     now: DateTime<Utc>,
 ) -> Result<()> {
-    let at_str = at.format("%Y-%m-%d %H:%M:%S");
+    let at_str = format_datetime(at.timestamp());
 
     if at.timestamp() <= running_frame.start_time {
         bail!(
             "Start time ({}) is not after the start of the running frame ({}). \
                 Please specify a later time or omit --at.",
             at_str,
-            local_datetime(running_frame.start_time)?.format("%Y-%m-%d %H:%M:%S")
+            format_datetime(running_frame.start_time)
         );
     }
 
@@ -339,13 +315,13 @@ fn check_switch_time(
 fn stop_current_frame(
     config_path: &Path,
     current_frame: &CurrentFrame,
-    now: DateTime<Utc>,
+    end_time: i64,
 ) -> anyhow::Result<Frame> {
-    if now.timestamp() <= current_frame.start_time {
+    if end_time <= current_frame.start_time {
         bail!(
             "End time ({}) is not after start time ({}). Check the system clock.",
-            format_timestamp(now.timestamp()),
-            format_timestamp(current_frame.start_time)
+            format_datetime(end_time),
+            format_datetime(current_frame.start_time)
         );
     }
 
@@ -353,10 +329,10 @@ fn stop_current_frame(
 
     let frame = Frame {
         start_time: current_frame.start_time,
-        end_time: now.timestamp(),
+        end_time,
         project: current_frame.project.clone(),
         tags: current_frame.tags.clone(),
-        updated_at: now.timestamp(),
+        updated_at: end_time,
     };
 
     frames.frames.push(frame.clone());

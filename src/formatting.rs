@@ -5,8 +5,7 @@
 use anyhow::{Result, anyhow, bail};
 use chrono::{DateTime, Local, LocalResult, NaiveDate, NaiveTime, TimeZone};
 
-/// Every timestamp is checked when its file is loaded, so callers that hold a value
-/// from a data file can expect this to succeed.
+/// Loading a file checks every timestamp with this function.
 pub fn local_datetime(ts: i64) -> Result<DateTime<Local>> {
     match Local.timestamp_opt(ts, 0) {
         LocalResult::Single(dt) => Ok(dt),
@@ -74,6 +73,10 @@ pub fn format_timerange(from: i64, to: i64) -> String {
     let from_str = format_timestamp(from);
     let to_str = format_timestamp(to);
     format!("From: {from_str}\nTo: {to_str}")
+}
+
+pub fn format_datetime(ts: i64) -> String {
+    to_local(ts).format("%Y-%m-%d %H:%M:%S").to_string()
 }
 
 pub fn format_timestamp(ts: i64) -> String {
