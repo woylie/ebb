@@ -4,7 +4,7 @@
 
 use crate::output::{DisplayOutput, print_output};
 use crate::persistence::{load_frames, save_frames};
-use crate::{Format, TagArgs, TagCommands};
+use crate::{Format, TagArgs, TagCommands, check_name};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
@@ -65,6 +65,7 @@ pub fn run_tag(args: &TagArgs, config_path: &Path, format: &Format) -> anyhow::R
             print_output(&output, format)?;
         }
         TagCommands::Rename { old_name, new_name } => {
+            check_name(new_name, "The new tag name")?;
             frames.rename_tag(old_name, new_name);
             save_frames(config_path, &frames)?;
 

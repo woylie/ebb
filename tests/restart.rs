@@ -209,3 +209,50 @@ fn restart_fails_if_current_frame_exists() -> Result<(), Box<dyn std::error::Err
 
     Ok(())
 }
+
+#[test]
+fn restart_rejects_a_last_frame_whose_project_name_has_a_control_character()
+-> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let toml_content = r#"
+        [[frames]]
+        start_time = 1748723006
+        end_time = 1748723008
+        project = "work\u001b[2J"
+        tags = []
+        updated_at = 1748723008
+        "#;
+    fs::write(tmp.path().join("frames.toml"), toml_content.trim())?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("restart")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr("Error: The project name contains a control character.\n");
+
+    assert!(!tmp.path().join("state.toml").exists());
+
+    Ok(())
+}
+
+#[test]
+fn restart_replaces_control_characters_in_an_error() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let toml_content = r#"
+        [current_frame]
+        start_time = 1748723006
+        project = "work\u001b[2J"
+        tags = []
+        "#;
+    fs::write(tmp.path().join("state.toml"), toml_content.trim())?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("restart")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr("Error: The project 'work\u{fffd}[2J' is already in progress.\n");
+
+    Ok(())
+}

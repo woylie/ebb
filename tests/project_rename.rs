@@ -61,3 +61,65 @@ Project renamed from \'project2\' to \'project3\'.
 
     Ok(())
 }
+
+#[test]
+fn project_rename_rejects_a_new_name_with_a_control_character()
+-> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let file_path = tmp.path().join("frames.toml");
+    let toml_content = r#"
+        [[frames]]
+        start_time = 1748723006
+        end_time = 1748723008
+        project = "work"
+        tags = []
+        updated_at = 1748723008
+        "#;
+    fs::write(&file_path, toml_content.trim())?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("project")
+        .arg("rename")
+        .arg("work")
+        .arg("work\u{1b}[2J")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr("Error: The new project name contains a control character.\n");
+
+    let parsed: Frames = toml::from_str(&fs::read_to_string(file_path)?)?;
+    assert_eq!(parsed.frames[0].project, "work");
+
+    Ok(())
+}
+
+#[test]
+fn project_rename_renames_a_name_with_a_control_character() -> Result<(), Box<dyn std::error::Error>>
+{
+    let tmp = tempdir()?;
+    let file_path = tmp.path().join("frames.toml");
+    let toml_content = r#"
+        [[frames]]
+        start_time = 1748723006
+        end_time = 1748723008
+        project = "work\u001b[2J"
+        tags = []
+        updated_at = 1748723008
+        "#;
+    fs::write(&file_path, toml_content.trim())?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("project")
+        .arg("rename")
+        .arg("work\u{1b}[2J")
+        .arg("work")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .success()
+        .stdout("Project renamed from 'work\u{fffd}[2J' to 'work'.\n");
+
+    let parsed: Frames = toml::from_str(&fs::read_to_string(file_path)?)?;
+    assert_eq!(parsed.frames[0].project, "work");
+
+    Ok(())
+}

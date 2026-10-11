@@ -12,6 +12,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Make the data directory and its files readable by the owner only, including
   ones that already exist.
+- Reject a project or tag name that contains a control character in `start`,
+  `restart`, `project rename` and `tag rename`.
+- Replace control characters with `�` in text output and error messages, so an
+  escape sequence in a name written into a data file cannot act on the
+  terminal. JSON output is unchanged.
 
 ## [0.2.0] - 2026-08-09
 

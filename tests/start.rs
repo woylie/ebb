@@ -419,3 +419,39 @@ fn start_with_no_gap_fails_if_a_frame_holds_an_invalid_timestamp()
 
     Ok(())
 }
+
+#[test]
+fn start_rejects_a_project_name_with_a_control_character() -> Result<(), Box<dyn std::error::Error>>
+{
+    let tmp = tempdir()?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("start")
+        .arg("work\u{1b}[2J")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr("Error: The project name contains a control character.\n");
+
+    assert!(!tmp.path().join("state.toml").exists());
+
+    Ok(())
+}
+
+#[test]
+fn start_rejects_a_tag_with_a_control_character() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("start")
+        .arg("work")
+        .arg("review\u{7}")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr("Error: A tag contains a control character.\n");
+
+    assert!(!tmp.path().join("state.toml").exists());
+
+    Ok(())
+}

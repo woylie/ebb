@@ -66,3 +66,25 @@ fn status_fails_if_the_state_holds_an_invalid_timestamp() -> Result<(), Box<dyn 
 
     Ok(())
 }
+
+#[test]
+fn status_replaces_control_characters_in_the_project_name() -> Result<(), Box<dyn std::error::Error>>
+{
+    let tmp = tempdir()?;
+    let toml_content = r#"
+        [current_frame]
+        start_time = 1748723006
+        project = "work\u001b[2J"
+        tags = []
+        "#;
+    fs::write(tmp.path().join("state.toml"), toml_content.trim())?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("status")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .success()
+        .stdout(contains("Current project 'work\u{fffd}[2J' started at"));
+
+    Ok(())
+}
