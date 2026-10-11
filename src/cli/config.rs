@@ -27,7 +27,7 @@ impl DisplayOutput for GetOutput<'_> {
 struct ListOutput {
     config: Config,
     #[serde(skip)]
-    rows: Vec<(String, String)>,
+    rows: Vec<ConfigRow>,
 }
 
 #[derive(Tabled)]
@@ -40,16 +40,7 @@ struct ConfigRow {
 
 impl DisplayOutput for ListOutput {
     fn to_text(&self) -> String {
-        let rows: Vec<ConfigRow> = self
-            .rows
-            .iter()
-            .map(|(key, value)| ConfigRow {
-                key: key.clone(),
-                value: value.clone(),
-            })
-            .collect();
-
-        Table::new(rows).with(Style::sharp()).to_string()
+        Table::new(&self.rows).with(Style::sharp()).to_string()
     }
 }
 
@@ -112,7 +103,7 @@ pub fn run_config(args: &ConfigArgs, config_path: &Path, format: &Format) -> any
     Ok(())
 }
 
-fn flatten_value(prefix: String, value: &Value, output: &mut Vec<(String, String)>) {
+fn flatten_value(prefix: String, value: &Value, output: &mut Vec<ConfigRow>) {
     if prefix == "vacation_days_per_year" || prefix == "sick_days_per_year" {
         if let Value::Object(map) = value {
             let mut sorted: Vec<_> = map.iter().collect();
@@ -167,7 +158,10 @@ fn flatten_value(prefix: String, value: &Value, output: &mut Vec<(String, String
                 Value::String(s) => s.clone(),
                 _ => value.to_string(),
             };
-            output.push((prefix, val));
+            output.push(ConfigRow {
+                key: prefix,
+                value: val,
+            });
         }
     }
 }
