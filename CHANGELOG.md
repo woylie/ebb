@@ -29,6 +29,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `--at` and in `start`, for example after the system clock is set back.
 - Show an error in `report` and `balance` when `--day`, `--week`, `--month` or
   `--year` starts on a date on which the clock skips midnight.
+- Count a running frame that starts after the current time as zero in `report`
+  and `balance`, for example after the system clock is set back.
 
 ## [0.2.0] - 2026-08-09
 
