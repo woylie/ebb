@@ -26,6 +26,8 @@ impl DisplayOutput for GetOutput<'_> {
 #[derive(Serialize)]
 struct ListOutput {
     config: Config,
+    #[serde(skip)]
+    rows: Vec<(String, String)>,
 }
 
 #[derive(Tabled)]
@@ -38,13 +40,13 @@ struct ConfigRow {
 
 impl DisplayOutput for ListOutput {
     fn to_text(&self) -> String {
-        let json_value = serde_json::to_value(&self.config).expect("Serialization should succeed");
-        let mut flat = vec![];
-        flatten_value("".to_string(), &json_value, &mut flat);
-
-        let rows: Vec<ConfigRow> = flat
-            .into_iter()
-            .map(|(key, value)| ConfigRow { key, value })
+        let rows: Vec<ConfigRow> = self
+            .rows
+            .iter()
+            .map(|(key, value)| ConfigRow {
+                key: key.clone(),
+                value: value.clone(),
+            })
             .collect();
 
         Table::new(rows).with(Style::sharp()).to_string()
@@ -88,7 +90,9 @@ pub fn run_config(args: &ConfigArgs, config_path: &Path, format: &Format) -> any
         }
 
         ConfigCommands::List => {
-            let output = ListOutput { config };
+            let mut rows = vec![];
+            flatten_value("".to_string(), &serde_json::to_value(&config)?, &mut rows);
+            let output = ListOutput { config, rows };
             print_output(&output, format)?;
         }
 
@@ -194,10 +198,12 @@ fn set_config_value(
     value_str: &str,
 ) -> anyhow::Result<(Value, Value)> {
     let mut json_value = serde_json::to_value(&config)?;
-    let parts: Vec<&str> = key.split('.').collect();
-    let parent = get_mut_parent(&mut json_value, &parts)?;
-    let last_key = parts.last().unwrap();
-    let old_value = parent.get(*last_key).cloned().unwrap_or(Value::Null);
+    let (parent_path, last_key) = match key.rsplit_once('.') {
+        Some((parent_path, last_key)) => (Some(parent_path), last_key),
+        None => (None, key),
+    };
+    let parent = get_mut_parent(&mut json_value, parent_path)?;
+    let old_value = parent.get(last_key).cloned().unwrap_or(Value::Null);
     let json_val =
         if key.starts_with("vacation_days_per_year.") || key.starts_with("sick_days_per_year.") {
             let n = value_str
@@ -215,17 +221,17 @@ fn set_config_value(
 
 fn get_mut_parent<'a>(
     root: &'a mut Value,
-    parts: &[&str],
+    parent_path: Option<&str>,
 ) -> anyhow::Result<&'a mut Map<String, Value>> {
     let mut current = root;
 
-    for part in &parts[..parts.len() - 1] {
+    for part in parent_path.into_iter().flat_map(|path| path.split('.')) {
         let obj = current
             .as_object_mut()
             .ok_or_else(|| anyhow::anyhow!("Expected object while traversing key path"))?;
 
         current = obj
-            .get_mut(*part)
+            .get_mut(part)
             .ok_or_else(|| anyhow::anyhow!("Key part '{}' not found", part))?;
     }
 

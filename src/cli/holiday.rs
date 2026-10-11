@@ -145,7 +145,7 @@ pub fn run_holiday(args: &HolidayArgs, config_path: &Path, format: &Format) -> a
         HolidayCommands::List { year } => {
             let filtered: Vec<Holiday> = holidays
                 .iter()
-                .filter(|(date, _)| year.is_none() || date.year() == year.unwrap())
+                .filter(|(date, _)| year.is_none_or(|year| date.year() == year))
                 .map(|(date, entry)| Holiday {
                     date: *date,
                     description: entry.description.clone(),

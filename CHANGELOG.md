@@ -27,6 +27,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Reject ending the running frame before its start time in `stop` without
   `--at` and in `start`, for example after the system clock is set back.
+- Show an error in `report` and `balance` when `--day`, `--week`, `--month` or
+  `--year` starts on a date on which the clock skips midnight.
 
 ## [0.2.0] - 2026-08-09
 

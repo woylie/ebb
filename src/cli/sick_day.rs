@@ -145,7 +145,7 @@ pub fn run_sick_day(args: &SickDayArgs, config_path: &Path, format: &Format) -> 
         SickDayCommands::List { year } => {
             let filtered: Vec<SickDay> = sick_days
                 .iter()
-                .filter(|(date, _)| year.is_none() || date.year() == year.unwrap())
+                .filter(|(date, _)| year.is_none_or(|year| date.year() == year))
                 .map(|(date, entry)| SickDay {
                     date: *date,
                     description: entry.description.clone(),

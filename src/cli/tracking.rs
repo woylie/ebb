@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-use crate::formatting::{format_timestamp, local_datetime};
+use crate::formatting::{format_timestamp, local_datetime, to_local};
 use crate::output::{DisplayOutput, print_output};
 use crate::persistence::{load_frames, load_state, save_frames, save_state};
 use crate::types::{CurrentFrame, Frame, State};
@@ -21,8 +21,7 @@ struct StartOutput {
 
 impl DisplayOutput for StartOutput {
     fn to_text(&self) -> String {
-        let start_datetime = local_datetime(self.current_frame.start_time)
-            .expect("timestamps are checked when their file is loaded");
+        let start_datetime = to_local(self.current_frame.start_time);
 
         format!(
             "Project '{}' started at {}.",
@@ -39,8 +38,7 @@ struct StopOutput {
 
 impl DisplayOutput for StopOutput {
     fn to_text(&self) -> String {
-        let end_datetime = local_datetime(self.stopped_frame.end_time)
-            .expect("timestamps are checked when their file is loaded");
+        let end_datetime = to_local(self.stopped_frame.end_time);
 
         format!(
             "Project '{}' stopped at {}.",

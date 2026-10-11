@@ -2,8 +2,8 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-use anyhow::{Result, bail};
-use chrono::{DateTime, Local, LocalResult, TimeZone};
+use anyhow::{Result, anyhow, bail};
+use chrono::{DateTime, Local, LocalResult, NaiveDate, NaiveTime, TimeZone};
 
 /// Every timestamp is checked when its file is loaded, so callers that hold a value
 /// from a data file can expect this to succeed.
@@ -13,6 +13,28 @@ pub fn local_datetime(ts: i64) -> Result<DateTime<Local>> {
         LocalResult::Ambiguous(dt, _) => Ok(dt),
         LocalResult::None => bail!("{ts} is not a valid timestamp"),
     }
+}
+
+#[expect(
+    clippy::expect_used,
+    reason = "timestamps are checked when their file is loaded"
+)]
+pub fn to_local(ts: i64) -> DateTime<Local> {
+    local_datetime(ts).expect("timestamps are checked when their file is loaded")
+}
+
+/// Fails on a date on which the clock skips midnight.
+pub fn local_midnight(date: NaiveDate) -> Result<i64> {
+    date.and_time(NaiveTime::MIN)
+        .and_local_timezone(Local)
+        .earliest()
+        .map(|dt| dt.timestamp())
+        .ok_or_else(|| {
+            anyhow!(
+                "Midnight on {date} does not exist in the local time zone. \
+                 Please specify the start with --from instead."
+            )
+        })
 }
 
 pub fn format_duration(secs: i64) -> String {
@@ -55,10 +77,7 @@ pub fn format_timerange(from: i64, to: i64) -> String {
 }
 
 pub fn format_timestamp(ts: i64) -> String {
-    local_datetime(ts)
-        .expect("timestamps are checked when their file is loaded")
-        .format("%Y-%m-%d %H:%M:%S (%a)")
-        .to_string()
+    to_local(ts).format("%Y-%m-%d %H:%M:%S (%a)").to_string()
 }
 
 #[cfg(test)]

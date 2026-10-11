@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-use crate::formatting::{format_duration, format_timerange, local_datetime};
+use crate::formatting::{format_duration, format_timerange, local_midnight, to_local};
 use crate::output::{DisplayOutput, print_output};
 use crate::persistence::{load_frames, load_state};
 use crate::types::{Frame, Frames, Timespan};
 use crate::{Format, ReportArgs};
-use chrono::{Datelike, Local, Utc};
+use chrono::{Datelike, Days, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
@@ -44,11 +44,10 @@ impl DisplayOutput for ReportOutput {
         }
 
         let mut rows: Vec<ProjectRow> = Vec::new();
-        let mut project_names: Vec<_> = self.projects.keys().collect();
-        project_names.sort();
+        let mut projects: Vec<_> = self.projects.iter().collect();
+        projects.sort_by_key(|(project, _)| *project);
 
-        for project in project_names {
-            let info = &self.projects[project];
+        for (project, info) in projects {
             rows.push(ProjectRow {
                 project: project.clone(),
                 duration: format_duration(info.duration),
@@ -96,7 +95,7 @@ pub fn run_report(args: &ReportArgs, config_path: &Path, format: &Format) -> any
         });
     }
 
-    let timespan = resolve_timespan(args, now, &frames.frames);
+    let timespan = resolve_timespan(args, now, &frames.frames)?;
 
     if timespan.from > timespan.to {
         anyhow::bail!("'to' must be after 'from'");
@@ -126,55 +125,36 @@ pub fn run_report(args: &ReportArgs, config_path: &Path, format: &Format) -> any
     Ok(())
 }
 
-fn resolve_timespan(args: &ReportArgs, now: i64, frames: &[Frame]) -> Timespan {
-    let local_now = local_datetime(now).expect("timestamps are checked when their file is loaded");
+fn resolve_timespan(args: &ReportArgs, now: i64, frames: &[Frame]) -> anyhow::Result<Timespan> {
+    let today = to_local(now).date_naive();
 
     let from = if args.day {
-        local_now.date_naive().and_hms_opt(0, 0, 0).unwrap()
+        today
     } else if args.week {
-        let weekday = local_now.weekday().num_days_from_monday();
-        (local_now.date_naive() - chrono::Duration::days(weekday.into()))
-            .and_hms_opt(0, 0, 0)
-            .unwrap()
+        today - Days::new(today.weekday().num_days_from_monday().into())
     } else if args.month {
-        local_now
-            .date_naive()
-            .with_day(1)
-            .unwrap()
-            .and_hms_opt(0, 0, 0)
-            .unwrap()
+        today - Days::new(today.day0().into())
     } else if args.year {
-        local_now
-            .date_naive()
-            .with_month(1)
-            .unwrap()
-            .with_day(1)
-            .unwrap()
-            .and_hms_opt(0, 0, 0)
-            .unwrap()
+        today - Days::new(today.ordinal0().into())
     } else {
         let from_ts = args
             .from
             .map(|dt| dt.with_timezone(&Utc).timestamp())
             .or_else(|| frames.first().map(|f| f.start_time))
             .unwrap_or(0);
-        return Timespan {
+        return Ok(Timespan {
             from: from_ts,
             to: args
                 .to
                 .map(|dt| dt.with_timezone(&Utc).timestamp())
                 .unwrap_or(now),
-        };
+        });
     };
 
-    Timespan {
-        from: from
-            .and_local_timezone(Local)
-            .unwrap()
-            .with_timezone(&Utc)
-            .timestamp(),
+    Ok(Timespan {
+        from: local_midnight(from)?,
         to: now,
-    }
+    })
 }
 
 fn total_duration_by_project(frames: &Frames) -> (HashMap<String, ProjectDuration>, i64) {
