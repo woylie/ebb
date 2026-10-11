@@ -238,7 +238,7 @@ pub struct StartArgs {
     /// Any number of additional tags; quote a tag that contains spaces
     #[arg(num_args = 0.., value_parser=parse_tag)]
     tags: Vec<String>,
-    /// Time at which the project is started (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); if omitted, the current time is used
+    /// Time at which the project is started and a running frame is stopped (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); if omitted, the current time is used
     #[arg(long, value_parser=parse_flexible_datetime)]
     at: Option<DateTime<Local>>,
     /// Set the start time to the end time of the last saved frame

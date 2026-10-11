@@ -210,11 +210,11 @@ fn start_leaves_running_frame_untouched_if_start_time_is_invalid()
     cmd.arg("start")
         .arg("secondproject")
         .arg("--at")
-        .arg("2025-05-31T20:23:27+00:00")
+        .arg("2025-05-31T20:23:26+00:00")
         .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .failure()
-        .stderr(contains("is before the end of the running frame"));
+        .stderr(contains("is not after the start of the running frame"));
 
     let state_contents = fs::read_to_string(&state_path)?;
     let state: State = toml::from_str(&state_contents)?;
@@ -486,6 +486,70 @@ fn start_keeps_the_running_frame_if_the_clock_went_back() -> Result<(), Box<dyn 
     let current_frame = state.current_frame.unwrap();
     assert_eq!(current_frame.project, "firstproject");
     assert_eq!(current_frame.start_time, start_time);
+    assert!(!tmp.path().join("frames.toml").exists());
+
+    Ok(())
+}
+
+#[test]
+fn start_stops_the_running_frame_at_the_at_time() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let toml_content = r#"
+        [current_frame]
+        start_time = 1748723006
+        project = "firstproject"
+    "#;
+    fs::write(tmp.path().join("state.toml"), toml_content.trim())?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("start")
+        .arg("secondproject")
+        .arg("--at")
+        .arg("2025-05-31T21:00:00+00:00")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .success();
+
+    let state: State = toml::from_str(&fs::read_to_string(tmp.path().join("state.toml"))?)?;
+    let current_frame = state.current_frame.unwrap();
+    assert_eq!(current_frame.project, "secondproject");
+    assert_eq!(current_frame.start_time, 1748725200);
+
+    let frames: Frames = toml::from_str(&fs::read_to_string(tmp.path().join("frames.toml"))?)?;
+    let stopped_frame = frames.frames.last().unwrap();
+    assert_eq!(stopped_frame.project, "firstproject");
+    assert_eq!(stopped_frame.start_time, 1748723006);
+    assert_eq!(stopped_frame.end_time, 1748725200);
+
+    Ok(())
+}
+
+#[test]
+fn start_rejects_a_future_at_time_while_a_frame_is_running()
+-> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let state_path = tmp.path().join("state.toml");
+    let toml_content = r#"
+        [current_frame]
+        start_time = 1748723006
+        project = "firstproject"
+    "#;
+    fs::write(&state_path, toml_content.trim())?;
+
+    let at = (Local::now() + chrono::Duration::hours(1)).to_rfc3339();
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("start")
+        .arg("secondproject")
+        .arg("--at")
+        .arg(at)
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(contains("is in the future"));
+
+    let state: State = toml::from_str(&fs::read_to_string(&state_path)?)?;
+    assert_eq!(state.current_frame.unwrap().project, "firstproject");
     assert!(!tmp.path().join("frames.toml").exists());
 
     Ok(())

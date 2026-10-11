@@ -355,7 +355,7 @@ Start time tracking
 
 ###### **Options:**
 
-- `--at <AT>` — Time at which the project is started (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); if omitted, the current time is used
+- `--at <AT>` — Time at which the project is started and a running frame is stopped (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); if omitted, the current time is used
 - `-G`, `--no-gap` — Set the start time to the end time of the last saved frame
 
 ## `ebb status`
