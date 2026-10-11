@@ -114,7 +114,8 @@ pub fn run_start(args: &StartArgs, config_path: &Path, format: &Format) -> anyho
     let current_frame = resolve_current_frame(&state, args, now, config_path)?;
 
     let stopped_frame = if let Some(running_frame) = &state.current_frame {
-        let stopped = stop_current_frame(config_path, running_frame, now)?;
+        let end_time = local_datetime(current_frame.start_time)?.with_timezone(&Utc);
+        let stopped = stop_current_frame(config_path, running_frame, end_time)?;
         Some(stopped)
     } else {
         None
@@ -261,15 +262,18 @@ fn resolve_current_frame(
         check_name(tag, "A tag")?;
     }
 
-    // A running frame is stopped at `now`, so `now` precedes the new frame instead of
-    // the last end time in frames.toml.
-    let (preceding_end, preceding_label) = if state.current_frame.is_some() {
-        (Some(now.timestamp()), "the running frame")
+    // A running frame started after the last frame in frames.toml, so the new start
+    // time is checked against the running frame's start instead.
+    let preceding_end = if let Some(running_frame) = &state.current_frame {
+        if let Some(at_dt) = at {
+            check_switch_time(running_frame, at_dt, now)?;
+        }
+        None
     } else if *no_gap || at.is_some() {
         let frames = load_frames(config_path)?;
-        (frames.frames.last().map(|f| f.end_time), "the last frame")
+        frames.frames.last().map(|f| f.end_time)
     } else {
-        (None, "the last frame")
+        None
     };
 
     let start_time = if let Some(at_dt) = at {
@@ -286,10 +290,9 @@ fn resolve_current_frame(
                 .unwrap_or_else(|| format!("(invalid timestamp: {})", last_end));
 
             bail!(
-                "Start time ({}) is before the end of {} ({}). \
+                "Start time ({}) is before the end of the last frame ({}). \
                     Please specify a later time or omit --at.",
                 at_str,
-                preceding_label,
                 last_str
             );
         }
@@ -306,6 +309,33 @@ fn resolve_current_frame(
         tags: tags.clone(),
         start_time,
     })
+}
+
+fn check_switch_time(
+    running_frame: &CurrentFrame,
+    at: &DateTime<Local>,
+    now: DateTime<Utc>,
+) -> Result<()> {
+    let at_str = at.format("%Y-%m-%d %H:%M:%S");
+
+    if at.timestamp() <= running_frame.start_time {
+        bail!(
+            "Start time ({}) is not after the start of the running frame ({}). \
+                Please specify a later time or omit --at.",
+            at_str,
+            local_datetime(running_frame.start_time)?.format("%Y-%m-%d %H:%M:%S")
+        );
+    }
+
+    if at.timestamp() > now.timestamp() {
+        bail!(
+            "Start time ({}) is in the future, and the running frame cannot end in the \
+                future. Please specify an earlier time, or stop the running frame first.",
+            at_str
+        );
+    }
+
+    Ok(())
 }
 
 fn stop_current_frame(
