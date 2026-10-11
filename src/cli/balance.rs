@@ -66,7 +66,10 @@ pub fn run_balance(args: &BalanceArgs, config_path: &Path, format: &Format) -> a
     let sick_days = load_sick_days(config_path)?;
     let vacations = load_vacations(config_path)?;
 
-    if let Some(current_frame) = &state.current_frame {
+    // The start is after the current time if the clock was set back since `start`.
+    if let Some(current_frame) = &state.current_frame
+        && current_frame.start_time < now
+    {
         frames.frames.push(Frame {
             start_time: current_frame.start_time,
             end_time: now,

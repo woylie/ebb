@@ -109,3 +109,34 @@ fn balance_fails_if_a_frame_holds_an_invalid_timestamp() -> Result<(), Box<dyn s
 
     Ok(())
 }
+
+#[test]
+fn balance_counts_a_running_frame_after_the_current_time_as_zero()
+-> Result<(), Box<dyn std::error::Error>> {
+    // The clock was set back by an hour.
+    let start_time = Utc::now().timestamp() + 3600;
+    let tmp = tempdir()?;
+    let toml_content = format!(
+        r#"
+        [current_frame]
+        start_time = {start_time}
+        project = "myproject"
+        "#
+    );
+    fs::write(tmp.path().join("state.toml"), toml_content.trim())?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    let assert = cmd
+        .arg("balance")
+        .arg("--day")
+        .arg("--format")
+        .arg("json")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .success();
+
+    let output: serde_json::Value = serde_json::from_slice(&assert.get_output().stdout)?;
+    assert_eq!(output["actual_working_seconds"], 0);
+
+    Ok(())
+}

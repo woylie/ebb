@@ -661,3 +661,34 @@ fn report_replaces_control_characters_in_text_output() -> Result<(), Box<dyn std
 
     Ok(())
 }
+
+#[test]
+fn report_counts_a_running_frame_after_the_current_time_as_zero()
+-> Result<(), Box<dyn std::error::Error>> {
+    // The clock was set back by an hour.
+    let start_time = Utc::now().timestamp() + 3600;
+    let tmp = tempdir()?;
+    let toml_content = format!(
+        r#"
+        [current_frame]
+        start_time = {start_time}
+        project = "myproject"
+        "#
+    );
+    fs::write(tmp.path().join("state.toml"), toml_content.trim())?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    let assert = cmd
+        .arg("report")
+        .arg("--format")
+        .arg("json")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .success();
+
+    let output: Value = serde_json::from_slice(&assert.get_output().stdout)?;
+    assert_eq!(output["total_duration"], 0);
+    assert_eq!(output["projects"], json!({}));
+
+    Ok(())
+}
