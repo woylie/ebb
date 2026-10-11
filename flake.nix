@@ -36,7 +36,7 @@
           inherit system overlays;
         };
 
-        rustToolchain = pkgs.rust-bin.stable."1.97.1".default;
+        rustToolchain = pkgs.rust-bin.stable."1.99.0".default;
         rustPlatform = pkgs.rustPlatform;
 
         packages = {
