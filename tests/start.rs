@@ -287,14 +287,14 @@ fn assert_start_time_at(
 #[test]
 fn start_applies_at_option_with_hour_minute_second() -> Result<(), Box<dyn std::error::Error>> {
     let today = Local::now().date_naive();
-    let naive_time = NaiveTime::from_hms_opt(12, 24, 14).unwrap();
+    let naive_time = NaiveTime::from_hms_opt(0, 0, 0).unwrap();
     let naive_dt = NaiveDateTime::new(today, naive_time);
     let expected_dt = Local
         .from_local_datetime(&naive_dt)
         .single()
         .expect("Ambiguous local datetime");
 
-    assert_start_time_at("12:24:14", expected_dt)
+    assert_start_time_at("00:00:00", expected_dt)
 }
 
 #[test]
@@ -551,6 +551,26 @@ fn start_rejects_a_future_at_time_while_a_frame_is_running()
     let state: State = toml::from_str(&fs::read_to_string(&state_path)?)?;
     assert_eq!(state.current_frame.unwrap().project, "firstproject");
     assert!(!tmp.path().join("frames.toml").exists());
+
+    Ok(())
+}
+
+#[test]
+fn start_rejects_a_future_at_time() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let at = (Local::now() + chrono::Duration::hours(1)).to_rfc3339();
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("start")
+        .arg("myproject")
+        .arg("--at")
+        .arg(at)
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(contains("is in the future"));
+
+    assert!(!tmp.path().join("state.toml").exists());
 
     Ok(())
 }

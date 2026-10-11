@@ -243,11 +243,20 @@ fn resolve_current_frame(
         check_name(tag, "A tag")?;
     }
 
+    if let Some(at_dt) = at
+        && at_dt.timestamp() > now.timestamp()
+    {
+        bail!(
+            "Start time ({}) is in the future. Please specify an earlier time or omit --at.",
+            format_datetime(at_dt.timestamp())
+        );
+    }
+
     // A running frame started after the last frame in frames.toml, so the new start
     // time is checked against the running frame's start instead.
     let preceding_end = if let Some(running_frame) = &state.current_frame {
         if let Some(at_dt) = at {
-            check_switch_time(running_frame, at_dt, now)?;
+            check_switch_time(running_frame, at_dt)?;
         }
         None
     } else if *no_gap || at.is_some() {
@@ -285,27 +294,13 @@ fn resolve_current_frame(
     })
 }
 
-fn check_switch_time(
-    running_frame: &CurrentFrame,
-    at: &DateTime<Local>,
-    now: DateTime<Utc>,
-) -> Result<()> {
-    let at_str = format_datetime(at.timestamp());
-
+fn check_switch_time(running_frame: &CurrentFrame, at: &DateTime<Local>) -> Result<()> {
     if at.timestamp() <= running_frame.start_time {
         bail!(
             "Start time ({}) is not after the start of the running frame ({}). \
                 Please specify a later time or omit --at.",
-            at_str,
+            format_datetime(at.timestamp()),
             format_datetime(running_frame.start_time)
-        );
-    }
-
-    if at.timestamp() > now.timestamp() {
-        bail!(
-            "Start time ({}) is in the future, and the running frame cannot end in the \
-                future. Please specify an earlier time, or stop the running frame first.",
-            at_str
         );
     }
 
