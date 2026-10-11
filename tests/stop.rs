@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 use assert_cmd::Command;
+use chrono::Utc;
 use ebb::types::{Frames, State};
 use predicates::str::contains;
 use std::fs;
@@ -113,6 +114,44 @@ fn stop_fails_if_end_time_is_before_start_time() -> Result<(), Box<dyn std::erro
         .assert()
         .failure()
         .stderr(contains("is before start time"));
+
+    Ok(())
+}
+
+#[test]
+fn stop_keeps_the_frame_running_if_the_clock_went_back() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let state_path = tmp.path().join("state.toml");
+
+    // The clock was set back by an hour.
+    let start_time = Utc::now().timestamp() + 3600;
+    let toml_content = format!(
+        r#"
+        [current_frame]
+        start_time = {start_time}
+        project = "firstproject"
+        tags = []
+        "#
+    );
+    fs::write(&state_path, toml_content.trim())?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("stop")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(contains("is not after start time"));
+
+    let state: State = toml::from_str(&fs::read_to_string(&state_path)?)?;
+    assert_eq!(state.current_frame.unwrap().start_time, start_time);
+    assert!(!tmp.path().join("frames.toml").exists());
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("status")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .success()
+        .stdout(contains("Current project 'firstproject' started at"));
 
     Ok(())
 }

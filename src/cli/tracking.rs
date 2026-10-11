@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-use crate::formatting::local_datetime;
+use crate::formatting::{format_timestamp, local_datetime};
 use crate::output::{DisplayOutput, print_output};
 use crate::persistence::{load_frames, load_state, save_frames, save_state};
 use crate::types::{CurrentFrame, Frame, State};
@@ -313,6 +313,14 @@ fn stop_current_frame(
     current_frame: &CurrentFrame,
     now: DateTime<Utc>,
 ) -> anyhow::Result<Frame> {
+    if now.timestamp() <= current_frame.start_time {
+        bail!(
+            "End time ({}) is not after start time ({}). Check the system clock.",
+            format_timestamp(now.timestamp()),
+            format_timestamp(current_frame.start_time)
+        );
+    }
+
     let mut frames = load_frames(config_path)?;
 
     let frame = Frame {

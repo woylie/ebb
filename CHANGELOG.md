@@ -18,6 +18,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   escape sequence in a name written into a data file cannot act on the
   terminal. JSON output is unchanged.
 
+### Fixed
+
+- Reject ending the running frame before its start time in `stop` without
+  `--at` and in `start`, for example after the system clock is set back.
+
 ## [0.2.0] - 2026-08-09
 
 ### Changed

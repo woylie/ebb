@@ -455,3 +455,38 @@ fn start_rejects_a_tag_with_a_control_character() -> Result<(), Box<dyn std::err
 
     Ok(())
 }
+
+#[test]
+fn start_keeps_the_running_frame_if_the_clock_went_back() -> Result<(), Box<dyn std::error::Error>>
+{
+    let tmp = tempdir()?;
+    let state_path = tmp.path().join("state.toml");
+
+    // The clock was set back by an hour.
+    let start_time = Local::now().timestamp() + 3600;
+    let toml_content = format!(
+        r#"
+        [current_frame]
+        start_time = {start_time}
+        project = "firstproject"
+        tags = []
+        "#
+    );
+    fs::write(&state_path, toml_content.trim())?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("start")
+        .arg("secondproject")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(contains("is not after start time"));
+
+    let state: State = toml::from_str(&fs::read_to_string(&state_path)?)?;
+    let current_frame = state.current_frame.unwrap();
+    assert_eq!(current_frame.project, "firstproject");
+    assert_eq!(current_frame.start_time, start_time);
+    assert!(!tmp.path().join("frames.toml").exists());
+
+    Ok(())
+}
