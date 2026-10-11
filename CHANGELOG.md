@@ -8,6 +8,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-10-11
+
 ### Security
 
 - Make the data directory and its files readable by the owner only, including
@@ -18,13 +20,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   escape sequence in a name written into a data file cannot act on the
   terminal. JSON output is unchanged.
 
-### Changed
-
-- Stop the running frame at the `--at` time in `start`, instead of the current
-  time.
-
 ### Fixed
 
+- Accept a past `--at` in `start` while a frame is running, and stop the
+  running frame at that time.
 - Reject a start time in the future in `start` and `restart`.
 - Reject ending the running frame before its start time in `stop` without
   `--at` and in `start`, for example after the system clock is set back.
@@ -84,6 +83,7 @@ to stop the warning.
 
 Initial release
 
-[unreleased]: https://github.com/woylie/ebb/compare/v0.2.0...HEAD
+[unreleased]: https://github.com/woylie/ebb/compare/v0.2.1...HEAD
+[0.2.0]: https://github.com/woylie/ebb/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/woylie/ebb/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/woylie/ebb/releases/tag/v0.1.0
