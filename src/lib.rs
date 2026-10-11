@@ -493,6 +493,14 @@ fn expand_tilde(path: &Path) -> PathBuf {
     PathBuf::from(shellexpand::tilde(&path.to_string_lossy()).to_string())
 }
 
+fn check_name(name: &str, argument: &str) -> Result<()> {
+    if name.chars().any(char::is_control) {
+        return Err(anyhow!("{argument} contains a control character."));
+    }
+
+    Ok(())
+}
+
 fn parse_tag(input: &str) -> Result<String> {
     if let Some(tag) = input.strip_prefix('+') {
         return Err(anyhow!("the '+' prefix is not used; write '{tag}'"));

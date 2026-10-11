@@ -61,3 +61,34 @@ Tag renamed from 'tag1' to 'tag6'.
 
     Ok(())
 }
+
+#[test]
+fn tag_rename_rejects_a_new_name_with_a_control_character() -> Result<(), Box<dyn std::error::Error>>
+{
+    let tmp = tempdir()?;
+    let file_path = tmp.path().join("frames.toml");
+    let toml_content = r#"
+        [[frames]]
+        start_time = 1748723006
+        end_time = 1748723008
+        project = "work"
+        tags = ["review"]
+        updated_at = 1748723008
+        "#;
+    fs::write(&file_path, toml_content.trim())?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("tag")
+        .arg("rename")
+        .arg("review")
+        .arg("review\r")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr("Error: The new tag name contains a control character.\n");
+
+    let parsed: Frames = toml::from_str(&fs::read_to_string(file_path)?)?;
+    assert_eq!(parsed.frames[0].tags, vec!["review"]);
+
+    Ok(())
+}

@@ -610,3 +610,54 @@ fn report_applies_day_option() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn report_replaces_control_characters_in_text_output() -> Result<(), Box<dyn std::error::Error>> {
+    let now = Utc::now().timestamp();
+    let start = now - 3600;
+
+    let tmp = tempdir()?;
+    let toml_content = format!(
+        r#"
+        [[frames]]
+        start_time = {start}
+        end_time = {now}
+        project = "work\u001b[2J"
+        tags = ["review\u0007"]
+        updated_at = {now}
+        "#
+    );
+    fs::write(tmp.path().join("frames.toml"), toml_content.trim())?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    let assert = cmd
+        .arg("report")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .success();
+
+    let stdout = String::from_utf8(assert.get_output().stdout.clone())?;
+    assert!(stdout.contains("│ work\u{fffd}[2J   │"), "{stdout}");
+    assert!(stdout.contains("│   +review\u{fffd} │"), "{stdout}");
+    assert!(!stdout.contains(['\u{1b}', '\u{7}']), "{stdout}");
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    let assert = cmd
+        .arg("report")
+        .arg("--format")
+        .arg("json")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .success();
+
+    let stdout = String::from_utf8(assert.get_output().stdout.clone())?;
+    assert!(stdout.contains(r#""work\u001b[2J""#), "{stdout}");
+
+    let output: Value = serde_json::from_str(&stdout)?;
+    assert_eq!(
+        output["projects"]["work\u{1b}[2J"]["tags"]["review\u{7}"],
+        3600
+    );
+
+    Ok(())
+}

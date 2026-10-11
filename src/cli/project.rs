@@ -4,7 +4,7 @@
 
 use crate::output::{DisplayOutput, print_output};
 use crate::persistence::{load_frames, save_frames};
-use crate::{Format, ProjectArgs, ProjectCommands};
+use crate::{Format, ProjectArgs, ProjectCommands, check_name};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
@@ -45,6 +45,7 @@ pub fn run_project(args: &ProjectArgs, config_path: &Path, format: &Format) -> a
             print_output(&output, format)?;
         }
         ProjectCommands::Rename { old_name, new_name } => {
+            check_name(new_name, "The new project name")?;
             frames.rename_project(old_name, new_name);
             save_frames(config_path, &frames)?;
 

@@ -6,7 +6,7 @@ use crate::formatting::local_datetime;
 use crate::output::{DisplayOutput, print_output};
 use crate::persistence::{load_frames, load_state, save_frames, save_state};
 use crate::types::{CurrentFrame, Frame, State};
-use crate::{Format, RestartArgs, StartArgs, StopArgs};
+use crate::{Format, RestartArgs, StartArgs, StopArgs, check_name};
 use anyhow::{Result, bail};
 use chrono::{DateTime, Local, TimeZone, Utc};
 use serde::Serialize;
@@ -208,12 +208,7 @@ pub fn run_stop(args: &StopArgs, config_path: &Path, format: &Format) -> anyhow:
         stopped_frame: frame,
     };
 
-    let output_string = match format {
-        Format::Json => serde_json::to_string_pretty(&output)?,
-        Format::Text => output.to_text(),
-    };
-
-    println!("{}", output_string);
+    print_output(&output, format)?;
 
     Ok(())
 }
@@ -243,12 +238,7 @@ pub fn run_status(config_path: &Path, format: &Format) -> anyhow::Result<()> {
         current_frame: state.current_frame.clone(),
     };
 
-    let output_string = match format {
-        Format::Json => serde_json::to_string_pretty(&output)?,
-        Format::Text => output.to_text(),
-    };
-
-    println!("{}", output_string);
+    print_output(&output, format)?;
 
     Ok(())
 }
@@ -265,6 +255,11 @@ fn resolve_current_frame(
         at,
         no_gap,
     } = args;
+
+    check_name(project, "The project name")?;
+    for tag in tags {
+        check_name(tag, "A tag")?;
+    }
 
     // A running frame is stopped at `now`, so `now` precedes the new frame instead of
     // the last end time in frames.toml.
