@@ -21,10 +21,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 
 - Stop the running frame at the `--at` time in `start`, instead of the current
-  time. A time in the future is rejected while a frame is running.
+  time.
 
 ### Fixed
 
+- Reject a start time in the future in `start` and `restart`.
 - Reject ending the running frame before its start time in `stop` without
   `--at` and in `start`, for example after the system clock is set back.
 - Show an error in `report` and `balance` when `--day`, `--week`, `--month` or
