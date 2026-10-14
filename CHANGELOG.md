@@ -8,6 +8,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- Count two half days off on one date as a whole day off in `balance`, for
+  example a half holiday and a half vacation day.
+
 ## [0.2.1] - 2026-10-11
 
 ### Security

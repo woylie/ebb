@@ -221,39 +221,25 @@ fn merge_day_offs_in_range(
     let mut combined = BTreeMap::new();
 
     for (&date, entry) in vacations.range(start_date..=end_date) {
-        insert_or_upgrade_portion(&mut combined, date, &entry.portion);
+        add_portion(&mut combined, date, &entry.portion);
     }
 
     for (&date, entry) in holidays.range(start_date..=end_date) {
-        insert_or_upgrade_portion(&mut combined, date, &entry.portion);
+        add_portion(&mut combined, date, &entry.portion);
     }
 
     for (&date, entry) in sick_days.range(start_date..=end_date) {
-        insert_or_upgrade_portion(&mut combined, date, &entry.portion);
+        add_portion(&mut combined, date, &entry.portion);
     }
 
     combined
 }
 
-fn insert_or_upgrade_portion(
-    map: &mut BTreeMap<NaiveDate, DayPortion>,
-    date: NaiveDate,
-    portion: &DayPortion,
-) {
+/// Two days off on one date add up to at least a whole day, and are capped at it.
+fn add_portion(map: &mut BTreeMap<NaiveDate, DayPortion>, date: NaiveDate, portion: &DayPortion) {
     map.entry(date)
-        .and_modify(|existing| {
-            if portion_order(portion) > portion_order(existing) {
-                *existing = portion.clone();
-            }
-        })
+        .and_modify(|existing| *existing = DayPortion::Full)
         .or_insert_with(|| portion.clone());
-}
-
-fn portion_order(portion: &DayPortion) -> u8 {
-    match portion {
-        DayPortion::Full => 2,
-        DayPortion::Half => 1,
-    }
 }
 
 fn subtract_day_offs(
@@ -641,6 +627,46 @@ mod tests {
         let expected_seconds = (8 * 60 * 60 + 6 * 60 * 60 + 5 * 60 * 60) * 2
             + (8 * 60 * 60 + 6 * 60 * 60)
             - 5 * 60 * 60;
+
+        let timespan = make_timespan(start_date, end_date);
+        let result =
+            expected_duration(&config, &timespan, &holidays, &sick_days, &vacations).unwrap();
+        assert_eq!(result, expected_seconds, "for end date {end_date}")
+    }
+
+    #[test]
+    fn test_adds_up_half_days_off_on_one_date() {
+        // Monday
+        let start_date = date(2024, 1, 1);
+
+        let config = make_config(WorkingHours {
+            monday: Duration::from_secs(8 * SECONDS_PER_HOUR),
+            tuesday: Duration::from_secs(6 * SECONDS_PER_HOUR),
+            wednesday: Duration::from_secs(5 * SECONDS_PER_HOUR),
+            thursday: Duration::ZERO,
+            friday: Duration::ZERO,
+            saturday: Duration::ZERO,
+            sunday: Duration::ZERO,
+        });
+
+        let holidays: Holidays = BTreeMap::from([(
+            date(2024, 1, 3),
+            types::HolidayEntry {
+                description: "Holiday".to_string(),
+                portion: types::DayPortion::Half,
+            },
+        )]);
+        let sick_days: SickDays = BTreeMap::new();
+        let vacations: Vacations = BTreeMap::from([(
+            date(2024, 1, 3),
+            types::VacationEntry {
+                description: "Vacation".to_string(),
+                portion: types::DayPortion::Half,
+            },
+        )]);
+
+        let end_date = date(2024, 1, 3);
+        let expected_seconds = 8 * 60 * 60 + 6 * 60 * 60;
 
         let timespan = make_timespan(start_date, end_date);
         let result =
