@@ -50,7 +50,7 @@ fn balance_prints_overview() -> Result<(), Box<dyn std::error::Error>> {
 
     let expected_output = r#"
 From: 2024-01-01 00:00:00 (Mon)
-To: 2024-12-12 23:59:59 (Thu)
+To: 2024-12-13 00:00:00 (Fri)
 
 Expected:  83d 4h 22m 21s
 Actual:         1h 3m 40s
@@ -61,9 +61,9 @@ Remaining: 83d 3h 18m 41s
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("balance")
         .arg("--from")
-        .arg("2024-01-01 00:00:00")
+        .arg("2024-01-01")
         .arg("--to")
-        .arg("2024-12-12 23:59:59")
+        .arg("2024-12-12")
         .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .success()
@@ -79,7 +79,7 @@ fn balance_fails_if_from_is_in_the_future() -> Result<(), Box<dyn std::error::Er
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("balance")
         .arg("--from")
-        .arg("2100-01-01 00:00:00")
+        .arg("2100-01-01")
         .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .failure()
@@ -150,7 +150,7 @@ fn balance_rejects_exclude_today_with_from_after_the_start_of_today()
     cmd.arg("balance")
         .arg("--exclude-today")
         .arg("--from")
-        .arg("2999-01-01 00:00")
+        .arg("2999-01-01")
         .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .failure()
@@ -169,7 +169,7 @@ fn balance_rejects_exclude_today_with_to() -> Result<(), Box<dyn std::error::Err
     cmd.arg("balance")
         .arg("--exclude-today")
         .arg("--to")
-        .arg("2026-10-07 00:00")
+        .arg("2026-10-07")
         .env("EBB_DATA_DIR", tmp.path())
         .assert()
         .failure()
@@ -194,6 +194,42 @@ fn balance_rejects_exclude_today_with_day() -> Result<(), Box<dyn std::error::Er
         .stderr(predicates::str::contains(
             "the argument '--exclude-today' cannot be used with '--day'",
         ));
+
+    Ok(())
+}
+
+#[test]
+fn balance_rejects_a_time_in_from() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("balance")
+        .arg("--from")
+        .arg("2026-10-06 14:00")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains(
+            "'2026-10-06 14:00' is not a date. Write it as yyyy-mm-dd.",
+        ));
+
+    Ok(())
+}
+
+#[test]
+fn balance_rejects_a_to_before_from() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("balance")
+        .arg("--from")
+        .arg("2026-10-06")
+        .arg("--to")
+        .arg("2026-10-05")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("'to' must not be before 'from'"));
 
     Ok(())
 }

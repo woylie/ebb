@@ -114,12 +114,12 @@ pub enum Commands {
         .multiple(false),
 ))]
 pub struct BalanceArgs {
-    /// Start time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); for the current day, week, month or year, use --day, --week, --month or --year
-    #[arg(long, value_parser=parse_flexible_datetime)]
-    from: Option<DateTime<Local>>,
-    /// End time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); for the current day, week, month or year, use --day, --week, --month or --year
-    #[arg(long, value_parser=parse_flexible_datetime)]
-    to: Option<DateTime<Local>>,
+    /// First date (yyyy-mm-dd); for the current day, week, month or year, use --day, --week, --month or --year
+    #[arg(long, value_parser=parse_date)]
+    from: Option<NaiveDate>,
+    /// Last date, included (yyyy-mm-dd); for the current day, week, month or year, use --day, --week, --month or --year
+    #[arg(long, value_parser=parse_date)]
+    to: Option<NaiveDate>,
     /// Report time spent in the current year
     #[arg(short, long)]
     year: bool,
@@ -559,12 +559,17 @@ fn parse_range_end(input: &str) -> Result<DateTime<Local>> {
     parse_range_bound(input, "end", |date| date.succ_opt())
 }
 
+fn parse_date(input: &str) -> Result<NaiveDate> {
+    NaiveDate::parse_from_str(input, "%Y-%m-%d")
+        .map_err(|_| anyhow!("'{input}' is not a date. Write it as yyyy-mm-dd."))
+}
+
 fn parse_range_bound(
     input: &str,
     edge: &str,
     midnight_of: impl Fn(NaiveDate) -> Option<NaiveDate>,
 ) -> Result<DateTime<Local>> {
-    if let Ok(date) = NaiveDate::parse_from_str(input, "%Y-%m-%d") {
+    if let Ok(date) = parse_date(input) {
         return midnight_of(date)
             .and_then(|day| {
                 day.and_time(NaiveTime::MIN)
