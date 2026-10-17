@@ -27,6 +27,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   on a holiday, and only half a day on a half holiday.
 - Count two half days off on one date as a whole day off in `balance`, for
   example a half holiday and a half vacation day.
+- Reject a stop time in the future in `stop`.
 
 ## [0.2.1] - 2026-10-11
 
