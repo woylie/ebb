@@ -16,6 +16,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Show durations in `report` and `balance` in hours instead of days, e.g.
+  `26h 5m`.
 - Take a date instead of a date time in the `--from` and `--to` options of
   `balance`.
 

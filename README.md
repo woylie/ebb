@@ -125,7 +125,6 @@ The commands related to time tracking are:
 
 ### Important to Know
 
-- In printed durations, 1d means 24h, _not_ one working day.
 - Vacation days, holidays, and sick days can be full or half days. This is
   relative to the expected working hours configured for that day. For example,
   if Monday is configured with 8 expected working hours, a full day off will
