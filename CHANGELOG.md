@@ -10,6 +10,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Count no vacation or sick day in `daysoff` on a date without working hours or
+  on a holiday, and only half a day on a half holiday.
 - Count two half days off on one date as a whole day off in `balance`, for
   example a half holiday and a half vacation day.
 

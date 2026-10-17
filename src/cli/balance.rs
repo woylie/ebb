@@ -193,22 +193,10 @@ fn calculate_remaining_days_hours(
 
     for offset in 0..remaining_days {
         let current_date = start_date + chrono::Duration::days(offset);
-        total += get_hours_for_day(current_date, working_days);
+        total += working_days.on(current_date.weekday());
     }
 
     total
-}
-
-fn get_hours_for_day(date: NaiveDate, working_hours: &WorkingHours) -> Duration {
-    match date.weekday() {
-        chrono::Weekday::Mon => working_hours.monday,
-        chrono::Weekday::Tue => working_hours.tuesday,
-        chrono::Weekday::Wed => working_hours.wednesday,
-        chrono::Weekday::Thu => working_hours.thursday,
-        chrono::Weekday::Fri => working_hours.friday,
-        chrono::Weekday::Sat => working_hours.saturday,
-        chrono::Weekday::Sun => working_hours.sunday,
-    }
 }
 
 fn merge_day_offs_in_range(
@@ -248,7 +236,7 @@ fn subtract_day_offs(
     config: &Config,
 ) -> Duration {
     for (&date, portion) in day_offs {
-        let daily_duration = get_hours_for_day(date, &config.working_hours);
+        let daily_duration = config.working_hours.on(date.weekday());
         let subtract = match portion {
             DayPortion::Full => daily_duration,
             DayPortion::Half => daily_duration / 2,
