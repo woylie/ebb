@@ -12,6 +12,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Add `--ago` to `start`, `restart` and `stop`.
 - Add `--exclude-today` to `balance` to count only finished days.
+- Allow passing a date as `--from` and `--to` to the `report` command.
 
 ### Changed
 

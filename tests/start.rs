@@ -739,3 +739,20 @@ fn start_rejects_an_ago_before_1970() -> Result<(), Box<dyn std::error::Error>> 
 
     Ok(())
 }
+
+#[test]
+fn start_rejects_a_date_as_a_start_time() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let mut cmd = Command::cargo_bin("ebb")?;
+
+    cmd.arg("start")
+        .arg("project")
+        .arg("--at")
+        .arg("2026-10-01")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(contains("'2026-10-01' is not a time"));
+
+    Ok(())
+}
