@@ -93,16 +93,6 @@ impl Default for WorkingHours {
 }
 
 impl WorkingHours {
-    pub fn total_weekly_duration(&self) -> Duration {
-        self.monday
-            + self.tuesday
-            + self.wednesday
-            + self.thursday
-            + self.friday
-            + self.saturday
-            + self.sunday
-    }
-
     pub fn on(&self, weekday: Weekday) -> Duration {
         match weekday {
             Weekday::Mon => self.monday,

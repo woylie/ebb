@@ -132,6 +132,9 @@ pub struct BalanceArgs {
     /// Report time spent on the current day
     #[arg(short, long)]
     day: bool,
+    /// End at the start of the current day, counting only finished days
+    #[arg(long, conflicts_with_all = ["to", "day"])]
+    exclude_today: bool,
 }
 
 #[derive(Debug, Args)]

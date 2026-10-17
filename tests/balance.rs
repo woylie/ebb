@@ -140,3 +140,60 @@ fn balance_counts_a_running_frame_after_the_current_time_as_zero()
 
     Ok(())
 }
+
+#[test]
+fn balance_rejects_exclude_today_with_from_after_the_start_of_today()
+-> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("balance")
+        .arg("--exclude-today")
+        .arg("--from")
+        .arg("2999-01-01 00:00")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains(
+            "'from' must not be after the start of today when --exclude-today is set",
+        ));
+
+    Ok(())
+}
+
+#[test]
+fn balance_rejects_exclude_today_with_to() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("balance")
+        .arg("--exclude-today")
+        .arg("--to")
+        .arg("2026-10-07 00:00")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains(
+            "the argument '--exclude-today' cannot be used with '--to <TO>'",
+        ));
+
+    Ok(())
+}
+
+#[test]
+fn balance_rejects_exclude_today_with_day() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("balance")
+        .arg("--exclude-today")
+        .arg("--day")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains(
+            "the argument '--exclude-today' cannot be used with '--day'",
+        ));
+
+    Ok(())
+}
