@@ -394,3 +394,32 @@ fn stop_fails_with_both_at_and_ago() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn stop_rejects_a_future_at_time() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let state_path = tmp.path().join("state.toml");
+    let toml_content = r#"
+        [current_frame]
+        start_time = 1748723006
+        project = "firstproject"
+    "#;
+    fs::write(&state_path, toml_content.trim())?;
+
+    let at = (Utc::now() + chrono::Duration::hours(1)).to_rfc3339();
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("stop")
+        .arg("--at")
+        .arg(at)
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(contains("is in the future"));
+
+    let state: State = toml::from_str(&fs::read_to_string(&state_path)?)?;
+    assert_eq!(state.current_frame.unwrap().project, "firstproject");
+    assert!(!tmp.path().join("frames.toml").exists());
+
+    Ok(())
+}

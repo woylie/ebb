@@ -170,8 +170,15 @@ pub fn run_stop(args: &StopArgs, config_path: &Path, format: &Format) -> anyhow:
 
     let StopArgs { at, ago } = args;
     let flag = time_flag(ago);
+    let now = Utc::now().timestamp();
     let end_time = if let Some(at) = at.or(*ago) {
         let end_time = at.timestamp();
+        if end_time > now {
+            bail!(
+                "End time ({}) is in the future. Please specify an earlier time or omit {flag}.",
+                format_datetime(end_time)
+            );
+        }
         if end_time <= current_frame.start_time {
             bail!(
                 "End time ({}) is before start time ({}). \
@@ -182,7 +189,7 @@ pub fn run_stop(args: &StopArgs, config_path: &Path, format: &Format) -> anyhow:
         }
         end_time
     } else {
-        Utc::now().timestamp()
+        now
     };
 
     let frame = stop_current_frame(config_path, &current_frame, end_time)?;
