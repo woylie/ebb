@@ -40,17 +40,12 @@ pub fn format_duration(secs: i64) -> String {
     let negative = secs < 0;
     let mut secs = secs.abs();
 
-    let days = secs / 86400;
-    secs %= 86400;
     let hours = secs / 3600;
     secs %= 3600;
     let minutes = secs / 60;
     secs %= 60;
 
     let mut parts = Vec::new();
-    if days > 0 {
-        parts.push(format!("{}d", days));
-    }
     if hours > 0 {
         parts.push(format!("{}h", hours));
     }
@@ -99,9 +94,11 @@ mod tests {
             (3600, "1h"),
             (3601, "1h 1s"),
             (3662, "1h 1m 2s"),
-            (86400, "1d"),
-            (88888, "1d 41m 28s"),
-            (1440000, "16d 16h"),
+            (86400, "24h"),
+            (88888, "24h 41m 28s"),
+            (93900, "26h 5m"),
+            (1440000, "400h"),
+            (-93900, "-26h 5m"),
         ];
 
         for (secs, expected_str) in cases {

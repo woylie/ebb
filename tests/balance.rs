@@ -52,9 +52,9 @@ fn balance_prints_overview() -> Result<(), Box<dyn std::error::Error>> {
 From: 2024-01-01 00:00:00 (Mon)
 To: 2024-12-13 00:00:00 (Fri)
 
-Expected:  83d 4h 22m 21s
-Actual:         1h 3m 40s
-Remaining: 83d 3h 18m 41s
+Expected:  1996h 22m 21s
+Actual:        1h 3m 40s
+Remaining: 1995h 18m 41s
 
 "#;
 
