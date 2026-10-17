@@ -269,7 +269,7 @@ Restart the last project
 ###### **Options:**
 
 - `--at <AT>` — Time at which the project is restarted (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); if omitted, the current time is used
-- `--ago <AGO>` — How long ago the project was restarted, such as 30m or "1h 30m"; resolves to the time --at would name
+- `--ago <AGO>` — How long ago the project was restarted, e.g. 30m or "1h 30m"; resolves to the time --at would name
 - `-G`, `--no-gap` — Set the start time to the end time of the last saved frame
 
 ## `ebb sickday`
@@ -358,7 +358,7 @@ Start time tracking
 ###### **Options:**
 
 - `--at <AT>` — Time at which the project is started and a running frame is stopped (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); if omitted, the current time is used
-- `--ago <AGO>` — How long ago the project was started, such as 30m or "1h 30m"; resolves to the time --at would name
+- `--ago <AGO>` — How long ago the project was started, e.g. 30m or "1h 30m"; resolves to the time --at would name
 - `-G`, `--no-gap` — Set the start time to the end time of the last saved frame
 
 ## `ebb status`
@@ -376,7 +376,7 @@ Stop time tracking
 ###### **Options:**
 
 - `--at <AT>` — Time at which the project is stopped (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); if omitted, the current time is used
-- `--ago <AGO>` — How long ago the project was stopped, such as 30m or "1h 30m"; resolves to the time --at would name
+- `--ago <AGO>` — How long ago the project was stopped, e.g. 30m or "1h 30m"; resolves to the time --at would name
 
 ## `ebb tag`
 

@@ -72,7 +72,7 @@ fn edit_holiday_fails_if_not_exists() -> Result<(), Box<dyn std::error::Error>> 
 
     cmd.assert()
         .failure()
-        .stderr(contains("No holiday exists on 2025-05-28"));
+        .stderr(contains("No holiday found on 2025-05-28"));
 
     let contents = fs::read_to_string(&file_path)?;
     let parsed: BTreeMap<String, HolidayEntry> = toml::from_str(&contents)?;

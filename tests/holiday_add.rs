@@ -65,3 +65,49 @@ fn add_holiday_fails_if_date_exists() -> Result<(), Box<dyn std::error::Error>> 
 
     Ok(())
 }
+
+#[test]
+fn add_holiday_prints_the_entry() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("holiday")
+        .arg("add")
+        .arg("2025-05-28")
+        .arg("Some day")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .success()
+        .stdout("Holiday 'Some day' added on 2025-05-28.\n");
+
+    Ok(())
+}
+
+#[test]
+fn add_holiday_prints_json() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    let assert = cmd
+        .arg("holiday")
+        .arg("add")
+        .arg("2025-05-28")
+        .arg("Some day")
+        .arg("--portion")
+        .arg("half")
+        .arg("--format")
+        .arg("json")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .success();
+
+    let json: serde_json::Value = serde_json::from_slice(&assert.get_output().stdout)?;
+    assert_eq!(
+        json,
+        serde_json::json!({
+            "holiday": {"date": "2025-05-28", "description": "Some day", "portion": "half"}
+        })
+    );
+
+    Ok(())
+}

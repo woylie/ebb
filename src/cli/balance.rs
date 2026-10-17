@@ -119,33 +119,24 @@ fn resolve_timespan(args: &BalanceArgs, now: i64, frames: &[Frame]) -> anyhow::R
         now
     };
 
-    let from = if args.day {
-        today
-    } else if args.week {
-        today - Days::new(today.weekday().num_days_from_monday().into())
-    } else if args.month {
-        today - Days::new(today.day0().into())
-    } else if args.year {
-        today - Days::new(today.ordinal0().into())
-    } else {
-        let from = match (args.from, frames.first()) {
-            (Some(date), _) => local_midnight(date)?,
-            (None, Some(frame)) => {
-                local_midnight(to_local(frame.start_time).date_naive())?.min(end)
-            }
-            (None, None) => 0,
-        };
-        let to = match args.to {
-            Some(date) => local_midnight(date + Days::new(1))?,
-            None => end,
-        };
-        return Ok(Timespan { from, to });
+    if let Some(start) = args.period.start(today) {
+        return Ok(Timespan {
+            from: local_midnight(start)?,
+            to: end,
+        });
+    }
+
+    let from = match (args.from, frames.first()) {
+        (Some(date), _) => local_midnight(date)?,
+        (None, Some(frame)) => local_midnight(to_local(frame.start_time).date_naive())?.min(end),
+        (None, None) => 0,
+    };
+    let to = match args.to {
+        Some(date) => local_midnight(date + Days::new(1))?,
+        None => end,
     };
 
-    Ok(Timespan {
-        from: local_midnight(from)?,
-        to: end,
-    })
+    Ok(Timespan { from, to })
 }
 
 fn expected_duration(
@@ -236,6 +227,7 @@ fn total_duration(frames: &Frames) -> i64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Period;
     use crate::types;
     use chrono::{Local, NaiveDateTime, TimeZone};
 
@@ -678,15 +670,10 @@ mod tests {
             .timestamp()
     }
 
-    fn week_args(exclude_today: bool) -> BalanceArgs {
-        BalanceArgs {
-            from: None,
-            to: None,
-            year: false,
-            month: false,
+    fn this_week() -> Period {
+        Period {
             week: true,
-            day: false,
-            exclude_today,
+            ..Default::default()
         }
     }
 
@@ -694,7 +681,15 @@ mod tests {
     fn test_ends_the_range_at_the_current_time() {
         // A Wednesday at 10:00.
         let now = timestamp("2026-10-07 10:00");
-        let timespan = resolve_timespan(&week_args(false), now, &[]).unwrap();
+        let timespan = resolve_timespan(
+            &BalanceArgs {
+                period: this_week(),
+                ..Default::default()
+            },
+            now,
+            &[],
+        )
+        .unwrap();
 
         assert_eq!(timespan.from, timestamp("2026-10-05 00:00"));
         assert_eq!(timespan.to, now);
@@ -704,7 +699,16 @@ mod tests {
     fn test_ends_the_range_at_the_start_of_today_with_exclude_today() {
         // A Wednesday at 10:00.
         let now = timestamp("2026-10-07 10:00");
-        let timespan = resolve_timespan(&week_args(true), now, &[]).unwrap();
+        let timespan = resolve_timespan(
+            &BalanceArgs {
+                period: this_week(),
+                exclude_today: true,
+                ..Default::default()
+            },
+            now,
+            &[],
+        )
+        .unwrap();
 
         assert_eq!(timespan.from, timestamp("2026-10-05 00:00"));
         assert_eq!(timespan.to, timestamp("2026-10-07 00:00"));
@@ -722,8 +726,8 @@ mod tests {
             updated_at: timestamp("2026-10-07 09:00"),
         }];
         let args = BalanceArgs {
-            week: false,
-            ..week_args(true)
+            exclude_today: true,
+            ..Default::default()
         };
         let timespan = resolve_timespan(&args, now, &frames).unwrap();
 
@@ -736,8 +740,8 @@ mod tests {
         let now = timestamp("2026-10-07 10:00");
         let args = BalanceArgs {
             from: Some(date(2026, 10, 6)),
-            week: false,
-            ..week_args(true)
+            exclude_today: true,
+            ..Default::default()
         };
         let timespan = resolve_timespan(&args, now, &[]).unwrap();
 
@@ -751,8 +755,7 @@ mod tests {
         let args = BalanceArgs {
             from: Some(date(2026, 10, 5)),
             to: Some(date(2026, 10, 6)),
-            week: false,
-            ..week_args(false)
+            ..Default::default()
         };
         let timespan = resolve_timespan(&args, now, &[]).unwrap();
 
@@ -771,8 +774,7 @@ mod tests {
             updated_at: timestamp("2026-10-06 15:00"),
         }];
         let args = BalanceArgs {
-            week: false,
-            ..week_args(false)
+            ..Default::default()
         };
         let timespan = resolve_timespan(&args, now, &frames).unwrap();
 

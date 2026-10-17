@@ -8,7 +8,9 @@ use crate::Commands::{
 };
 use crate::types::DayPortion;
 use anyhow::{Context, Result, anyhow};
-use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeDelta, TimeZone};
+use chrono::{
+    DateTime, Datelike, Days, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeDelta, TimeZone,
+};
 use clap::CommandFactory;
 use clap::{ArgGroup, Args, Parser, Subcommand, ValueEnum};
 use clap_complete::aot;
@@ -100,26 +102,24 @@ pub enum Commands {
     },
 }
 
-#[derive(Debug, Args)]
-#[command(group(
-    ArgGroup::new("time_filter_from")
-        .args(&["from", "day", "week", "month", "year"])
-        .required(false)
-        .multiple(false),
-))]
-#[command(group(
-    ArgGroup::new("time_filter_to")
-        .args(&["to", "day", "week", "month", "year"])
-        .required(false)
-        .multiple(false),
-))]
+#[derive(Debug, Default, Args)]
 pub struct BalanceArgs {
     /// First date (yyyy-mm-dd); for the current day, week, month or year, use --day, --week, --month or --year
-    #[arg(long, value_parser=parse_date)]
+    #[arg(long, value_parser=parse_date, conflicts_with = "period")]
     from: Option<NaiveDate>,
     /// Last date, included (yyyy-mm-dd); for the current day, week, month or year, use --day, --week, --month or --year
-    #[arg(long, value_parser=parse_date)]
+    #[arg(long, value_parser=parse_date, conflicts_with = "period")]
     to: Option<NaiveDate>,
+    #[command(flatten)]
+    period: Period,
+    /// End at the start of the current day, counting only finished days
+    #[arg(long, conflicts_with_all = ["to", "day"])]
+    exclude_today: bool,
+}
+
+#[derive(Debug, Default, Args)]
+#[group(id = "period", multiple = false)]
+pub struct Period {
     /// Report time spent in the current year
     #[arg(short, long)]
     year: bool,
@@ -132,9 +132,24 @@ pub struct BalanceArgs {
     /// Report time spent on the current day
     #[arg(short, long)]
     day: bool,
-    /// End at the start of the current day, counting only finished days
-    #[arg(long, conflicts_with_all = ["to", "day"])]
-    exclude_today: bool,
+}
+
+impl Period {
+    pub fn start(&self, today: NaiveDate) -> Option<NaiveDate> {
+        let days_back = if self.day {
+            0
+        } else if self.week {
+            today.weekday().num_days_from_monday()
+        } else if self.month {
+            today.day0()
+        } else if self.year {
+            today.ordinal0()
+        } else {
+            return None;
+        };
+
+        Some(today - Days::new(days_back.into()))
+    }
 }
 
 #[derive(Debug, Args)]
@@ -166,37 +181,15 @@ pub struct ProjectArgs {
 }
 
 #[derive(Debug, Args)]
-#[command(group(
-    ArgGroup::new("time_filter_from")
-        .args(&["from", "day", "week", "month", "year"])
-        .required(false)
-        .multiple(false),
-))]
-#[command(group(
-    ArgGroup::new("time_filter_to")
-        .args(&["to", "day", "week", "month", "year"])
-        .required(false)
-        .multiple(false),
-))]
 pub struct ReportArgs {
     /// Start date or time (yyyy-mm-dd, hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); for the current day, week, month or year, use --day, --week, --month or --year
-    #[arg(long, value_parser=parse_range_start)]
+    #[arg(long, value_parser=parse_range_start, conflicts_with = "period")]
     from: Option<DateTime<Local>>,
     /// End date or time (yyyy-mm-dd, hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); a date includes that day; for the current day, week, month or year, use --day, --week, --month or --year
-    #[arg(long, value_parser=parse_range_end)]
+    #[arg(long, value_parser=parse_range_end, conflicts_with = "period")]
     to: Option<DateTime<Local>>,
-    /// Report time spent in the current year
-    #[arg(short, long)]
-    year: bool,
-    /// Report time spent in the current month
-    #[arg(short, long)]
-    month: bool,
-    /// Report time spent in the current week
-    #[arg(short, long)]
-    week: bool,
-    /// Report time spent on the current day
-    #[arg(short, long)]
-    day: bool,
+    #[command(flatten)]
+    period: Period,
     /// Filter by project
     #[arg(short, long)]
     project: Option<String>,
@@ -216,7 +209,7 @@ pub struct RestartArgs {
     /// Time at which the project is restarted (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); if omitted, the current time is used
     #[arg(long, value_parser=parse_flexible_datetime)]
     at: Option<DateTime<Local>>,
-    /// How long ago the project was restarted, such as 30m or "1h 30m"; resolves to the time --at would name
+    /// How long ago the project was restarted, e.g. 30m or "1h 30m"; resolves to the time --at would name
     #[arg(long, value_parser=parse_ago)]
     ago: Option<DateTime<Local>>,
     /// Set the start time to the end time of the last saved frame
@@ -247,7 +240,7 @@ pub struct StartArgs {
     /// Time at which the project is started and a running frame is stopped (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); if omitted, the current time is used
     #[arg(long, value_parser=parse_flexible_datetime)]
     at: Option<DateTime<Local>>,
-    /// How long ago the project was started, such as 30m or "1h 30m"; resolves to the time --at would name
+    /// How long ago the project was started, e.g. 30m or "1h 30m"; resolves to the time --at would name
     #[arg(long, value_parser=parse_ago)]
     ago: Option<DateTime<Local>>,
     /// Set the start time to the end time of the last saved frame
@@ -266,7 +259,7 @@ pub struct StopArgs {
     /// Time at which the project is stopped (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); if omitted, the current time is used
     #[arg(long, value_parser=parse_flexible_datetime)]
     at: Option<DateTime<Local>>,
-    /// How long ago the project was stopped, such as 30m or "1h 30m"; resolves to the time --at would name
+    /// How long ago the project was stopped, e.g. 30m or "1h 30m"; resolves to the time --at would name
     #[arg(long, value_parser=parse_ago)]
     ago: Option<DateTime<Local>>,
 }
@@ -463,16 +456,31 @@ pub fn run(cli: &Cli) -> Result<()> {
         Cancel => cli::tracking::run_cancel(&config_path()?, format),
         Config(args) => cli::config::run_config(args, &config_path()?, format),
         DaysOff(args) => cli::days_off::run_daysoff(args, &config_path()?, format),
-        Holiday(args) => cli::holiday::run_holiday(args, &config_path()?, format),
+        Holiday(args) => cli::calendar::run(
+            &cli::calendar::HOLIDAY,
+            (&args.command).into(),
+            &config_path()?,
+            format,
+        ),
         Project(args) => cli::project::run_project(args, &config_path()?, format),
         Report(args) => cli::report::run_report(args, &config_path()?, format),
         Restart(args) => cli::tracking::run_restart(args, &config_path()?, format),
-        SickDay(args) => cli::sick_day::run_sick_day(args, &config_path()?, format),
+        SickDay(args) => cli::calendar::run(
+            &cli::calendar::SICK_DAY,
+            (&args.command).into(),
+            &config_path()?,
+            format,
+        ),
         Start(args) => cli::tracking::run_start(args, &config_path()?, format),
         Status => cli::tracking::run_status(&config_path()?, format),
         Stop(args) => cli::tracking::run_stop(args, &config_path()?, format),
         Tag(args) => cli::tag::run_tag(args, &config_path()?, format),
-        Vacation(args) => cli::vacation::run_vacation(args, &config_path()?, format),
+        Vacation(args) => cli::calendar::run(
+            &cli::calendar::VACATION,
+            (&args.command).into(),
+            &config_path()?,
+            format,
+        ),
         GenerateDocs => {
             clap_markdown::print_help_markdown::<Cli>();
             Ok(())
@@ -626,4 +634,50 @@ fn parse_local_datetime(input: &str) -> Option<Result<DateTime<Local>>> {
     }
 
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_starts_each_period_on_its_first_date() {
+        // A Wednesday.
+        let today = NaiveDate::from_ymd_opt(2026, 10, 7).unwrap();
+        let cases = [
+            (Period::default(), None),
+            (
+                Period {
+                    day: true,
+                    ..Default::default()
+                },
+                NaiveDate::from_ymd_opt(2026, 10, 7),
+            ),
+            (
+                Period {
+                    week: true,
+                    ..Default::default()
+                },
+                NaiveDate::from_ymd_opt(2026, 10, 5),
+            ),
+            (
+                Period {
+                    month: true,
+                    ..Default::default()
+                },
+                NaiveDate::from_ymd_opt(2026, 10, 1),
+            ),
+            (
+                Period {
+                    year: true,
+                    ..Default::default()
+                },
+                NaiveDate::from_ymd_opt(2026, 1, 1),
+            ),
+        ];
+
+        for (period, expected) in cases {
+            assert_eq!(period.start(today), expected, "for {period:?}");
+        }
+    }
 }
