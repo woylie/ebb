@@ -251,8 +251,8 @@ Return the total time and time spent per project
 
 ###### **Options:**
 
-- `--from <FROM>` — Start time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); for the current day, week, month or year, use --day, --week, --month or --year
-- `--to <TO>` — End time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); for the current day, week, month or year, use --day, --week, --month or --year
+- `--from <FROM>` — Start date or time (yyyy-mm-dd, hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); for the current day, week, month or year, use --day, --week, --month or --year
+- `--to <TO>` — End date or time (yyyy-mm-dd, hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); a date includes that day; for the current day, week, month or year, use --day, --week, --month or --year
 - `-y`, `--year` — Report time spent in the current year
 - `-m`, `--month` — Report time spent in the current month
 - `-w`, `--week` — Report time spent in the current week

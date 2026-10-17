@@ -692,3 +692,73 @@ fn report_counts_a_running_frame_after_the_current_time_as_zero()
 
     Ok(())
 }
+
+fn local_timestamp(datetime: &str) -> Result<i64, Box<dyn std::error::Error>> {
+    let naive = chrono::NaiveDateTime::parse_from_str(datetime, "%Y-%m-%d %H:%M")?;
+    let local = Local
+        .from_local_datetime(&naive)
+        .single()
+        .ok_or("ambiguous local time")?;
+    Ok(local.timestamp())
+}
+
+#[test]
+fn report_covers_whole_days_with_dates() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let frames = [
+        ("2026-10-09 23:00", "2026-10-09 23:30", "before"),
+        ("2026-10-10 10:00", "2026-10-10 11:00", "inside"),
+        ("2026-10-11 00:30", "2026-10-11 01:00", "after"),
+    ];
+    let mut toml_content = String::new();
+    for (start, end, project) in frames {
+        let (start, end) = (local_timestamp(start)?, local_timestamp(end)?);
+        toml_content.push_str(&format!(
+            "[[frames]]\nstart_time = {start}\nend_time = {end}\nproject = \"{project}\"\nupdated_at = {end}\n\n"
+        ));
+    }
+    fs::write(tmp.path().join("frames.toml"), toml_content)?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    let assert = cmd
+        .arg("report")
+        .arg("--from")
+        .arg("2026-10-10")
+        .arg("--to")
+        .arg("2026-10-10")
+        .arg("--format")
+        .arg("json")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .success();
+
+    let json: Value = serde_json::from_slice(&assert.get_output().stdout)?;
+    assert_eq!(
+        json["timespan"]["from"],
+        local_timestamp("2026-10-10 00:00")?
+    );
+    assert_eq!(json["timespan"]["to"], local_timestamp("2026-10-11 00:00")?);
+    assert_eq!(json["total_duration"], 3600);
+    assert_eq!(json["projects"]["inside"]["duration"], 3600);
+
+    Ok(())
+}
+
+#[test]
+fn report_rejects_a_from_that_is_neither_a_date_nor_a_time()
+-> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("report")
+        .arg("--from")
+        .arg("2026-13-01")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains(
+            "'2026-13-01' is not a date or time",
+        ));
+
+    Ok(())
+}

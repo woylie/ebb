@@ -179,11 +179,11 @@ pub struct ProjectArgs {
         .multiple(false),
 ))]
 pub struct ReportArgs {
-    /// Start time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); for the current day, week, month or year, use --day, --week, --month or --year
-    #[arg(long, value_parser=parse_flexible_datetime)]
+    /// Start date or time (yyyy-mm-dd, hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); for the current day, week, month or year, use --day, --week, --month or --year
+    #[arg(long, value_parser=parse_range_start)]
     from: Option<DateTime<Local>>,
-    /// End time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); for the current day, week, month or year, use --day, --week, --month or --year
-    #[arg(long, value_parser=parse_flexible_datetime)]
+    /// End date or time (yyyy-mm-dd, hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); a date includes that day; for the current day, week, month or year, use --day, --week, --month or --year
+    #[arg(long, value_parser=parse_range_end)]
     to: Option<DateTime<Local>>,
     /// Report time spent in the current year
     #[arg(short, long)]
@@ -543,18 +543,65 @@ fn parse_ago(input: &str) -> Result<DateTime<Local>> {
 }
 
 fn parse_flexible_datetime(input: &str) -> Result<DateTime<Local>> {
+    parse_local_datetime(input).unwrap_or_else(|| {
+        Err(anyhow!(
+            "'{input}' is not a time. Write it as hh:mm, hh:mm:ss, \
+             yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601."
+        ))
+    })
+}
+
+fn parse_range_start(input: &str) -> Result<DateTime<Local>> {
+    parse_range_bound(input, "start", Some)
+}
+
+fn parse_range_end(input: &str) -> Result<DateTime<Local>> {
+    parse_range_bound(input, "end", |date| date.succ_opt())
+}
+
+fn parse_range_bound(
+    input: &str,
+    edge: &str,
+    midnight_of: impl Fn(NaiveDate) -> Option<NaiveDate>,
+) -> Result<DateTime<Local>> {
+    if let Ok(date) = NaiveDate::parse_from_str(input, "%Y-%m-%d") {
+        return midnight_of(date)
+            .and_then(|day| {
+                day.and_time(NaiveTime::MIN)
+                    .and_local_timezone(Local)
+                    .single()
+            })
+            .ok_or_else(|| {
+                anyhow!(
+                    "Midnight at the {edge} of {input} does not exist or occurs twice \
+                     in the local time zone. Give a date and time instead."
+                )
+            });
+    }
+
+    parse_local_datetime(input).unwrap_or_else(|| {
+        Err(anyhow!(
+            "'{input}' is not a date or time. Write it as yyyy-mm-dd, hh:mm, hh:mm:ss, \
+             yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601."
+        ))
+    })
+}
+
+fn parse_local_datetime(input: &str) -> Option<Result<DateTime<Local>>> {
     if let Ok(dt_fixed) = DateTime::parse_from_rfc3339(input) {
-        return Ok(dt_fixed.with_timezone(&Local));
+        return Some(Ok(dt_fixed.with_timezone(&Local)));
     }
 
     let dt_formats = ["%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"];
 
     for fmt in &dt_formats {
         if let Ok(naive_dt) = NaiveDateTime::parse_from_str(input, fmt) {
-            return Local
-                .from_local_datetime(&naive_dt)
-                .single()
-                .ok_or_else(|| anyhow!("Ambiguous local datetime"));
+            return Some(
+                Local
+                    .from_local_datetime(&naive_dt)
+                    .single()
+                    .ok_or_else(|| anyhow!("Ambiguous local datetime")),
+            );
         }
     }
 
@@ -564,15 +611,14 @@ fn parse_flexible_datetime(input: &str) -> Result<DateTime<Local>> {
         if let Ok(naive_time) = NaiveTime::parse_from_str(input, fmt) {
             let today = Local::now().date_naive();
             let naive_dt = NaiveDateTime::new(today, naive_time);
-            return Local
-                .from_local_datetime(&naive_dt)
-                .single()
-                .ok_or_else(|| anyhow!("Ambiguous local datetime"));
+            return Some(
+                Local
+                    .from_local_datetime(&naive_dt)
+                    .single()
+                    .ok_or_else(|| anyhow!("Ambiguous local datetime")),
+            );
         }
     }
 
-    Err(anyhow!(
-        "'{input}' is not a time. Write it as hh:mm, hh:mm:ss, \
-         yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601."
-    ))
+    None
 }
