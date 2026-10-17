@@ -84,6 +84,7 @@ Show working hour balance
 - `-m`, `--month` — Report time spent in the current month
 - `-w`, `--week` — Report time spent in the current week
 - `-d`, `--day` — Report time spent on the current day
+- `--exclude-today` — End at the start of the current day, counting only finished days
 
 ## `ebb cancel`
 

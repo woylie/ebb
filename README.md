@@ -120,13 +120,7 @@ The commands related to time tracking are:
 
 ### Reporting
 
-- `ebb balance` - Prints the current time balance: expected work hours, actual
-  work hours, and the remaining work hours to break even.
-  A negative remaining value indicates overtime. This overview requires the
-  working hours, vacation days, sick days, and holidays to be configured
-  correctly. By default, the regarded time frame starts at first logged entry
-  and ends at the end of the current day. Run `ebb balance --help` to view
-  options to change the time frame.
+- `ebb balance` - Print the expected, actual and remaining work hours.
 - `ebb report` - Print a report listing the recorded time per project and tag.
 
 ### Important to Know

@@ -82,6 +82,11 @@ pub fn run_balance(args: &BalanceArgs, config_path: &Path, format: &Format) -> a
     let timespan = resolve_timespan(args, now, &frames.frames)?;
 
     if timespan.from > timespan.to {
+        if args.exclude_today {
+            anyhow::bail!(
+                "'from' must not be after the start of today when --exclude-today is set"
+            );
+        }
         anyhow::bail!("'to' must be after 'from'");
     }
 
@@ -108,6 +113,11 @@ pub fn run_balance(args: &BalanceArgs, config_path: &Path, format: &Format) -> a
 
 fn resolve_timespan(args: &BalanceArgs, now: i64, frames: &[Frame]) -> anyhow::Result<Timespan> {
     let today = to_local(now).date_naive();
+    let end = if args.exclude_today {
+        local_midnight(today)?
+    } else {
+        now
+    };
 
     let from = if args.day {
         today
@@ -121,20 +131,20 @@ fn resolve_timespan(args: &BalanceArgs, now: i64, frames: &[Frame]) -> anyhow::R
         let from_ts = args
             .from
             .map(|dt| dt.with_timezone(&Utc).timestamp())
-            .or_else(|| frames.first().map(|f| f.start_time))
+            .or_else(|| frames.first().map(|f| f.start_time.min(end)))
             .unwrap_or(0);
         return Ok(Timespan {
             from: from_ts,
             to: args
                 .to
                 .map(|dt| dt.with_timezone(&Utc).timestamp())
-                .unwrap_or(now),
+                .unwrap_or(end),
         });
     };
 
     Ok(Timespan {
         from: local_midnight(from)?,
-        to: now,
+        to: end,
     })
 }
 
@@ -145,58 +155,36 @@ fn expected_duration(
     sick_days: &SickDays,
     vacations: &Vacations,
 ) -> anyhow::Result<i64> {
-    let start_date = timestamp_to_local_date(timespan.from);
-    let end_date = timestamp_to_local_date(timespan.to);
+    if timespan.from >= timespan.to {
+        return Ok(0);
+    }
 
-    let (full_weeks, remaining_days) = calculate_weeks_and_days(timespan);
-    let full_weeks = u32::try_from(full_weeks).context("The timespan runs backwards.")?;
-    let working_duration_per_week = config.working_hours.total_weekly_duration();
-    let full_week_duration = working_duration_per_week
-        .checked_mul(full_weeks)
-        .context("The expected working duration for the timespan is too large.")?;
+    let first_date = timestamp_to_local_date(timespan.from);
+    let last_date = timestamp_to_local_date(timespan.to - 1);
+    let day_offs = merge_day_offs_in_range(vacations, holidays, sick_days, first_date, last_date);
 
-    let remaining_days_duration =
-        calculate_remaining_days_hours(remaining_days, end_date, &config.working_hours);
-
-    let day_offs = merge_day_offs_in_range(vacations, holidays, sick_days, start_date, end_date);
-
-    let mut total_duration = full_week_duration + remaining_days_duration;
-    total_duration = subtract_day_offs(total_duration, &day_offs, config);
-
-    total_duration
-        .as_secs()
-        .try_into()
+    first_date
+        .iter_days()
+        .take_while(|date| *date <= last_date)
+        .map(|date| hours_owed(date, &config.working_hours, &day_offs))
+        .try_fold(Duration::ZERO, Duration::checked_add)
+        .and_then(|total| total.as_secs().try_into().ok())
         .context("The expected working duration for the timespan is too large.")
 }
 
-fn calculate_weeks_and_days(timespan: &Timespan) -> (i64, i64) {
-    let from_date = timestamp_to_local_date(timespan.from);
-    let to_date = timestamp_to_local_date(timespan.to);
-
-    let days_diff = (to_date - from_date).num_days() + 1;
-    let full_weeks = days_diff / 7;
-    let remaining_days = days_diff % 7;
-    (full_weeks, remaining_days)
-}
-
-fn calculate_remaining_days_hours(
-    remaining_days: i64,
-    end_date: NaiveDate,
-    working_days: &WorkingHours,
+/// The working hours for the date's weekday minus the days off on that date.
+fn hours_owed(
+    date: NaiveDate,
+    working_hours: &WorkingHours,
+    day_offs: &BTreeMap<NaiveDate, DayPortion>,
 ) -> Duration {
-    if remaining_days == 0 {
-        return Duration::ZERO;
+    let hours = working_hours.on(date.weekday());
+
+    match day_offs.get(&date) {
+        None => hours,
+        Some(DayPortion::Half) => hours / 2,
+        Some(DayPortion::Full) => Duration::ZERO,
     }
-
-    let start_date = end_date - chrono::Duration::days(remaining_days - 1);
-    let mut total = Duration::ZERO;
-
-    for offset in 0..remaining_days {
-        let current_date = start_date + chrono::Duration::days(offset);
-        total += working_days.on(current_date.weekday());
-    }
-
-    total
 }
 
 fn merge_day_offs_in_range(
@@ -230,26 +218,6 @@ fn add_portion(map: &mut BTreeMap<NaiveDate, DayPortion>, date: NaiveDate, porti
         .or_insert_with(|| portion.clone());
 }
 
-fn subtract_day_offs(
-    mut duration: Duration,
-    day_offs: &BTreeMap<NaiveDate, DayPortion>,
-    config: &Config,
-) -> Duration {
-    for (&date, portion) in day_offs {
-        let daily_duration = config.working_hours.on(date.weekday());
-        let subtract = match portion {
-            DayPortion::Full => daily_duration,
-            DayPortion::Half => daily_duration / 2,
-        };
-        if duration >= subtract {
-            duration -= subtract;
-        } else {
-            duration = Duration::ZERO;
-        }
-    }
-    duration
-}
-
 fn timestamp_to_local_date(secs: i64) -> NaiveDate {
     to_local(secs).date_naive()
 }
@@ -269,8 +237,7 @@ fn total_duration(frames: &Frames) -> i64 {
 mod tests {
     use super::*;
     use crate::types;
-    use chrono::Local;
-    use chrono::TimeZone;
+    use chrono::{Local, NaiveDateTime, TimeZone};
 
     const SECONDS_PER_HOUR: u64 = 3600;
 
@@ -285,7 +252,7 @@ mod tests {
                 .unwrap()
                 .timestamp(),
             to: Local
-                .from_local_datetime(&to_date.and_hms_opt(0, 0, 0).unwrap())
+                .from_local_datetime(&to_date.and_hms_opt(12, 0, 0).unwrap())
                 .unwrap()
                 .timestamp(),
         }
@@ -663,7 +630,26 @@ mod tests {
     }
 
     #[test]
-    fn test_rejects_reversed_timespan() {
+    fn test_does_not_owe_the_date_of_an_end_at_midnight() {
+        let config = make_config(WorkingHours::default());
+
+        let holidays: Holidays = BTreeMap::new();
+        let sick_days: SickDays = BTreeMap::new();
+        let vacations: Vacations = BTreeMap::new();
+
+        // Monday to Wednesday at midnight.
+        let timespan = Timespan {
+            from: timestamp("2024-01-01 00:00"),
+            to: timestamp("2024-01-03 00:00"),
+        };
+
+        let result =
+            expected_duration(&config, &timespan, &holidays, &sick_days, &vacations).unwrap();
+        assert_eq!(result, 2 * 8 * 60 * 60);
+    }
+
+    #[test]
+    fn test_owes_nothing_for_a_reversed_timespan() {
         let config = make_config(WorkingHours {
             monday: Duration::from_secs(8 * SECONDS_PER_HOUR),
             tuesday: Duration::from_secs(8 * SECONDS_PER_HOUR),
@@ -681,6 +667,85 @@ mod tests {
         let timespan = make_timespan(date(2024, 1, 16), date(2024, 1, 1));
         let result = expected_duration(&config, &timespan, &holidays, &sick_days, &vacations);
 
-        assert!(result.is_err());
+        assert_eq!(result.unwrap(), 0);
+    }
+
+    fn timestamp(datetime: &str) -> i64 {
+        NaiveDateTime::parse_from_str(datetime, "%Y-%m-%d %H:%M")
+            .unwrap()
+            .and_local_timezone(Local)
+            .unwrap()
+            .timestamp()
+    }
+
+    fn week_args(exclude_today: bool) -> BalanceArgs {
+        BalanceArgs {
+            from: None,
+            to: None,
+            year: false,
+            month: false,
+            week: true,
+            day: false,
+            exclude_today,
+        }
+    }
+
+    #[test]
+    fn test_ends_the_range_at_the_current_time() {
+        // A Wednesday at 10:00.
+        let now = timestamp("2026-10-07 10:00");
+        let timespan = resolve_timespan(&week_args(false), now, &[]).unwrap();
+
+        assert_eq!(timespan.from, timestamp("2026-10-05 00:00"));
+        assert_eq!(timespan.to, now);
+    }
+
+    #[test]
+    fn test_ends_the_range_at_the_start_of_today_with_exclude_today() {
+        // A Wednesday at 10:00.
+        let now = timestamp("2026-10-07 10:00");
+        let timespan = resolve_timespan(&week_args(true), now, &[]).unwrap();
+
+        assert_eq!(timespan.from, timestamp("2026-10-05 00:00"));
+        assert_eq!(timespan.to, timestamp("2026-10-07 00:00"));
+    }
+
+    #[test]
+    fn test_starts_an_empty_range_with_exclude_today_if_all_frames_are_from_today() {
+        // A Wednesday at 10:00.
+        let now = timestamp("2026-10-07 10:00");
+        let frames = [Frame {
+            start_time: timestamp("2026-10-07 08:00"),
+            end_time: timestamp("2026-10-07 09:00"),
+            project: "work".to_string(),
+            tags: vec![],
+            updated_at: timestamp("2026-10-07 09:00"),
+        }];
+        let args = BalanceArgs {
+            week: false,
+            ..week_args(true)
+        };
+        let timespan = resolve_timespan(&args, now, &frames).unwrap();
+
+        assert_eq!(timespan.from, timestamp("2026-10-07 00:00"));
+        assert_eq!(timespan.to, timestamp("2026-10-07 00:00"));
+    }
+
+    #[test]
+    fn test_ends_a_range_set_by_from_at_the_start_of_today_with_exclude_today() {
+        let now = timestamp("2026-10-07 10:00");
+        let from = NaiveDateTime::parse_from_str("2026-10-06 12:00", "%Y-%m-%d %H:%M")
+            .unwrap()
+            .and_local_timezone(Local)
+            .unwrap();
+        let args = BalanceArgs {
+            from: Some(from),
+            week: false,
+            ..week_args(true)
+        };
+        let timespan = resolve_timespan(&args, now, &[]).unwrap();
+
+        assert_eq!(timespan.from, from.timestamp());
+        assert_eq!(timespan.to, timestamp("2026-10-07 00:00"));
     }
 }

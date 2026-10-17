@@ -11,6 +11,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 
 - Add `--ago` to `start`, `restart` and `stop`.
+- Add `--exclude-today` to `balance` to count only finished days.
+
+### Changed
+
+- Owe no hours in `balance` for the date of a `--to` at midnight.
 
 ### Fixed
 
