@@ -52,9 +52,9 @@ Remaining: {remaining_duration:>width$}
 
 pub fn run_balance(args: &BalanceArgs, config_path: &Path, format: &Format) -> anyhow::Result<()> {
     if let (Some(from), Some(to)) = (args.from, args.to)
-        && from >= to
+        && from > to
     {
-        anyhow::bail!("'to' must be after 'from'");
+        anyhow::bail!("'to' must not be before 'from'");
     }
 
     let now = Utc::now().timestamp();
@@ -128,18 +128,18 @@ fn resolve_timespan(args: &BalanceArgs, now: i64, frames: &[Frame]) -> anyhow::R
     } else if args.year {
         today - Days::new(today.ordinal0().into())
     } else {
-        let from_ts = args
-            .from
-            .map(|dt| dt.with_timezone(&Utc).timestamp())
-            .or_else(|| frames.first().map(|f| f.start_time.min(end)))
-            .unwrap_or(0);
-        return Ok(Timespan {
-            from: from_ts,
-            to: args
-                .to
-                .map(|dt| dt.with_timezone(&Utc).timestamp())
-                .unwrap_or(end),
-        });
+        let from = match (args.from, frames.first()) {
+            (Some(date), _) => local_midnight(date)?,
+            (None, Some(frame)) => {
+                local_midnight(to_local(frame.start_time).date_naive())?.min(end)
+            }
+            (None, None) => 0,
+        };
+        let to = match args.to {
+            Some(date) => local_midnight(date + Days::new(1))?,
+            None => end,
+        };
+        return Ok(Timespan { from, to });
     };
 
     Ok(Timespan {
@@ -734,18 +734,49 @@ mod tests {
     #[test]
     fn test_ends_a_range_set_by_from_at_the_start_of_today_with_exclude_today() {
         let now = timestamp("2026-10-07 10:00");
-        let from = NaiveDateTime::parse_from_str("2026-10-06 12:00", "%Y-%m-%d %H:%M")
-            .unwrap()
-            .and_local_timezone(Local)
-            .unwrap();
         let args = BalanceArgs {
-            from: Some(from),
+            from: Some(date(2026, 10, 6)),
             week: false,
             ..week_args(true)
         };
         let timespan = resolve_timespan(&args, now, &[]).unwrap();
 
-        assert_eq!(timespan.from, from.timestamp());
+        assert_eq!(timespan.from, timestamp("2026-10-06 00:00"));
         assert_eq!(timespan.to, timestamp("2026-10-07 00:00"));
+    }
+
+    #[test]
+    fn test_includes_the_to_date() {
+        let now = timestamp("2026-10-17 10:00");
+        let args = BalanceArgs {
+            from: Some(date(2026, 10, 5)),
+            to: Some(date(2026, 10, 6)),
+            week: false,
+            ..week_args(false)
+        };
+        let timespan = resolve_timespan(&args, now, &[]).unwrap();
+
+        assert_eq!(timespan.from, timestamp("2026-10-05 00:00"));
+        assert_eq!(timespan.to, timestamp("2026-10-07 00:00"));
+    }
+
+    #[test]
+    fn test_starts_at_midnight_of_the_first_frame() {
+        let now = timestamp("2026-10-17 10:00");
+        let frames = [Frame {
+            start_time: timestamp("2026-10-06 14:00"),
+            end_time: timestamp("2026-10-06 15:00"),
+            project: "work".to_string(),
+            tags: vec![],
+            updated_at: timestamp("2026-10-06 15:00"),
+        }];
+        let args = BalanceArgs {
+            week: false,
+            ..week_args(false)
+        };
+        let timespan = resolve_timespan(&args, now, &frames).unwrap();
+
+        assert_eq!(timespan.from, timestamp("2026-10-06 00:00"));
+        assert_eq!(timespan.to, now);
     }
 }

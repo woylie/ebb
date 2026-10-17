@@ -16,7 +16,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- Owe no hours in `balance` for the date of a `--to` at midnight.
+- Take a date instead of a date time in the `--from` and `--to` options of
+  `balance`.
 
 ### Fixed
 
