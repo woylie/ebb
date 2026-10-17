@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 use crate::output::{DisplayOutput, print_output};
-use crate::persistence::{load_config, load_sick_days, load_vacations};
-use crate::types::DayPortion;
+use crate::persistence::{load_config, load_holidays, load_sick_days, load_vacations};
+use crate::types::{DayPortion, Holidays, WorkingHours};
 use crate::{DaysOffArgs, Format};
 use chrono::Datelike;
 use chrono::Local;
@@ -66,16 +66,25 @@ impl DisplayOutput for Output {
 
 pub fn run_daysoff(args: &DaysOffArgs, config_path: &Path, format: &Format) -> anyhow::Result<()> {
     let config = load_config(config_path)?;
+    let holidays = load_holidays(config_path)?;
     let mut sick_days = load_sick_days(config_path)?;
     let mut vacations = load_vacations(config_path)?;
     let year = args.year.unwrap_or_else(|| Local::now().year());
 
     filter_by_year(&mut sick_days, year);
-    let sick_days_taken = count_days(sick_days.values().map(|v| &v.portion));
+    let sick_days_taken = count_days(
+        sick_days.iter().map(|(date, v)| (date, &v.portion)),
+        &config.working_hours,
+        &holidays,
+    );
     let sick_days_allowed = config.allowed_sick_days(year);
 
     filter_by_year(&mut vacations, year);
-    let vacation_days_taken = count_days(vacations.values().map(|v| &v.portion));
+    let vacation_days_taken = count_days(
+        vacations.iter().map(|(date, v)| (date, &v.portion)),
+        &config.working_hours,
+        &holidays,
+    );
     let vacation_days_allowed = config.allowed_vacation_days(year);
 
     let vacation_days_remaining =
@@ -101,14 +110,17 @@ fn filter_by_year<T>(map: &mut BTreeMap<NaiveDate, T>, year: i32) {
     map.retain(|date, _| date.year() == year);
 }
 
-fn count_days<'a, I>(portions: I) -> f32
+fn count_days<'a, I>(days_off: I, working_hours: &WorkingHours, holidays: &Holidays) -> f32
 where
-    I: Iterator<Item = &'a DayPortion>,
+    I: Iterator<Item = (&'a NaiveDate, &'a DayPortion)>,
 {
-    portions
-        .map(|portion| match portion {
-            DayPortion::Full => 1.0,
-            DayPortion::Half => 0.5,
+    days_off
+        .map(|(date, portion)| {
+            if working_hours.on(date.weekday()).is_zero() {
+                return 0.0;
+            }
+            let holiday_halves = holidays.get(date).map_or(0, |entry| entry.portion.halves());
+            f32::from(portion.halves().min(2 - holiday_halves)) / 2.0
         })
         .sum()
 }

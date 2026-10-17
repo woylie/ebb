@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 use crate::serde_utils;
-use chrono::NaiveDate;
+use chrono::{NaiveDate, Weekday};
 use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap, HashSet};
@@ -102,6 +102,18 @@ impl WorkingHours {
             + self.saturday
             + self.sunday
     }
+
+    pub fn on(&self, weekday: Weekday) -> Duration {
+        match weekday {
+            Weekday::Mon => self.monday,
+            Weekday::Tue => self.tuesday,
+            Weekday::Wed => self.wednesday,
+            Weekday::Thu => self.thursday,
+            Weekday::Fri => self.friday,
+            Weekday::Sat => self.saturday,
+            Weekday::Sun => self.sunday,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -118,6 +130,15 @@ pub enum DayPortion {
     #[default]
     Full,
     Half,
+}
+
+impl DayPortion {
+    pub fn halves(&self) -> u8 {
+        match self {
+            DayPortion::Full => 2,
+            DayPortion::Half => 1,
+        }
+    }
 }
 
 impl fmt::Display for DayPortion {

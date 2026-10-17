@@ -100,3 +100,76 @@ fn daysoff_defaults_to_the_current_year() -> Result<(), Box<dyn std::error::Erro
 
     Ok(())
 }
+
+#[test]
+fn daysoff_counts_no_day_on_a_weekend_or_holiday() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+
+    // A Saturday, and a Tuesday that is a holiday.
+    let toml_content = r#"
+        [2026-10-10]
+        description = "Vacation"
+
+        [2026-10-06]
+        description = "Vacation"
+        portion = "half"
+    "#;
+    fs::write(tmp.path().join("vacations.toml"), toml_content.trim())?;
+
+    let toml_content = r#"
+        [2026-10-06]
+        description = "Holiday"
+    "#;
+    fs::write(tmp.path().join("holidays.toml"), toml_content.trim())?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    let assert = cmd
+        .arg("daysoff")
+        .arg("--year")
+        .arg("2026")
+        .arg("--format")
+        .arg("json")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .success();
+
+    let output: serde_json::Value = serde_json::from_slice(&assert.get_output().stdout)?;
+    assert_eq!(output["vacation_days_taken"], 0.0);
+
+    Ok(())
+}
+
+#[test]
+fn daysoff_counts_half_a_day_on_a_half_holiday() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+
+    // A Tuesday that is a half holiday.
+    let toml_content = r#"
+        [2026-10-06]
+        description = "Vacation"
+    "#;
+    fs::write(tmp.path().join("vacations.toml"), toml_content.trim())?;
+
+    let toml_content = r#"
+        [2026-10-06]
+        description = "Holiday"
+        portion = "half"
+    "#;
+    fs::write(tmp.path().join("holidays.toml"), toml_content.trim())?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    let assert = cmd
+        .arg("daysoff")
+        .arg("--year")
+        .arg("2026")
+        .arg("--format")
+        .arg("json")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .success();
+
+    let output: serde_json::Value = serde_json::from_slice(&assert.get_output().stdout)?;
+    assert_eq!(output["vacation_days_taken"], 0.5);
+
+    Ok(())
+}
