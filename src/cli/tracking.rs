@@ -141,6 +141,7 @@ pub fn run_restart(args: &RestartArgs, config_path: &Path, format: &Format) -> a
 
     let start_args = StartArgs {
         at: args.at,
+        ago: args.ago,
         no_gap: args.no_gap,
         project: last_frame.project.clone(),
         tags: last_frame.tags.clone(),
@@ -167,13 +168,14 @@ pub fn run_stop(args: &StopArgs, config_path: &Path, format: &Format) -> anyhow:
         bail!("No project started.");
     };
 
-    let StopArgs { at } = args;
-    let end_time = if let Some(at) = at {
+    let StopArgs { at, ago } = args;
+    let flag = time_flag(ago);
+    let end_time = if let Some(at) = at.or(*ago) {
         let end_time = at.timestamp();
         if end_time <= current_frame.start_time {
             bail!(
                 "End time ({}) is before start time ({}). \
-                    Please specify a later time or omit --at.",
+                    Please specify a later time or omit {flag}.",
                 format_datetime(end_time),
                 format_datetime(current_frame.start_time)
             );
@@ -235,8 +237,11 @@ fn resolve_current_frame(
         project,
         tags,
         at,
+        ago,
         no_gap,
     } = args;
+    let flag = time_flag(ago);
+    let at = &at.or(*ago);
 
     check_name(project, "The project name")?;
     for tag in tags {
@@ -247,7 +252,7 @@ fn resolve_current_frame(
         && at_dt.timestamp() > now.timestamp()
     {
         bail!(
-            "Start time ({}) is in the future. Please specify an earlier time or omit --at.",
+            "Start time ({}) is in the future. Please specify an earlier time or omit {flag}.",
             format_datetime(at_dt.timestamp())
         );
     }
@@ -256,7 +261,7 @@ fn resolve_current_frame(
     // time is checked against the running frame's start instead.
     let preceding_end = if let Some(running_frame) = &state.current_frame {
         if let Some(at_dt) = at {
-            check_switch_time(running_frame, at_dt)?;
+            check_switch_time(running_frame, at_dt, flag)?;
         }
         None
     } else if *no_gap || at.is_some() {
@@ -274,7 +279,7 @@ fn resolve_current_frame(
         {
             bail!(
                 "Start time ({}) is before the end of the last frame ({}). \
-                    Please specify a later time or omit --at.",
+                    Please specify a later time or omit {flag}.",
                 format_datetime(at_ts),
                 format_datetime(last_end)
             );
@@ -294,17 +299,21 @@ fn resolve_current_frame(
     })
 }
 
-fn check_switch_time(running_frame: &CurrentFrame, at: &DateTime<Local>) -> Result<()> {
+fn check_switch_time(running_frame: &CurrentFrame, at: &DateTime<Local>, flag: &str) -> Result<()> {
     if at.timestamp() <= running_frame.start_time {
         bail!(
             "Start time ({}) is not after the start of the running frame ({}). \
-                Please specify a later time or omit --at.",
+                Please specify a later time or omit {flag}.",
             format_datetime(at.timestamp()),
             format_datetime(running_frame.start_time)
         );
     }
 
     Ok(())
+}
+
+fn time_flag(ago: &Option<DateTime<Local>>) -> &'static str {
+    if ago.is_some() { "--ago" } else { "--at" }
 }
 
 fn stop_current_frame(

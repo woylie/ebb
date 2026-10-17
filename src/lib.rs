@@ -8,7 +8,7 @@ use crate::Commands::{
 };
 use crate::types::DayPortion;
 use anyhow::{Context, Result, anyhow};
-use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone};
+use chrono::{DateTime, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeDelta, TimeZone};
 use clap::CommandFactory;
 use clap::{ArgGroup, Args, Parser, Subcommand, ValueEnum};
 use clap_complete::aot;
@@ -114,10 +114,10 @@ pub enum Commands {
         .multiple(false),
 ))]
 pub struct BalanceArgs {
-    /// Start time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601)
+    /// Start time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); for the current day, week, month or year, use --day, --week, --month or --year
     #[arg(long, value_parser=parse_flexible_datetime)]
     from: Option<DateTime<Local>>,
-    /// End time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601)
+    /// End time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); for the current day, week, month or year, use --day, --week, --month or --year
     #[arg(long, value_parser=parse_flexible_datetime)]
     to: Option<DateTime<Local>>,
     /// Report time spent in the current year
@@ -176,10 +176,10 @@ pub struct ProjectArgs {
         .multiple(false),
 ))]
 pub struct ReportArgs {
-    /// Start time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601)
+    /// Start time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); for the current day, week, month or year, use --day, --week, --month or --year
     #[arg(long, value_parser=parse_flexible_datetime)]
     from: Option<DateTime<Local>>,
-    /// End time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601)
+    /// End time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); for the current day, week, month or year, use --day, --week, --month or --year
     #[arg(long, value_parser=parse_flexible_datetime)]
     to: Option<DateTime<Local>>,
     /// Report time spent in the current year
@@ -205,7 +205,7 @@ pub struct ReportArgs {
 #[derive(Debug, Args)]
 #[command(group(
     ArgGroup::new("start")
-        .args(&["at", "no_gap"])
+        .args(&["at", "ago", "no_gap"])
         .required(false)
         .multiple(false),
 ))]
@@ -213,6 +213,9 @@ pub struct RestartArgs {
     /// Time at which the project is restarted (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); if omitted, the current time is used
     #[arg(long, value_parser=parse_flexible_datetime)]
     at: Option<DateTime<Local>>,
+    /// How long ago the project was restarted, such as 30m or "1h 30m"; resolves to the time --at would name
+    #[arg(long, value_parser=parse_ago)]
+    ago: Option<DateTime<Local>>,
     /// Set the start time to the end time of the last saved frame
     #[arg(short = 'G', long)]
     no_gap: bool,
@@ -228,7 +231,7 @@ pub struct SickDayArgs {
 #[derive(Debug, Args)]
 #[command(group(
     ArgGroup::new("start")
-        .args(&["at", "no_gap"])
+        .args(&["at", "ago", "no_gap"])
         .required(false)
         .multiple(false),
 ))]
@@ -241,16 +244,28 @@ pub struct StartArgs {
     /// Time at which the project is started and a running frame is stopped (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); if omitted, the current time is used
     #[arg(long, value_parser=parse_flexible_datetime)]
     at: Option<DateTime<Local>>,
+    /// How long ago the project was started, such as 30m or "1h 30m"; resolves to the time --at would name
+    #[arg(long, value_parser=parse_ago)]
+    ago: Option<DateTime<Local>>,
     /// Set the start time to the end time of the last saved frame
     #[arg(short = 'G', long)]
     no_gap: bool,
 }
 
 #[derive(Debug, Args)]
+#[command(group(
+    ArgGroup::new("stop")
+        .args(&["at", "ago"])
+        .required(false)
+        .multiple(false),
+))]
 pub struct StopArgs {
     /// Time at which the project is stopped (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); if omitted, the current time is used
     #[arg(long, value_parser=parse_flexible_datetime)]
     at: Option<DateTime<Local>>,
+    /// How long ago the project was stopped, such as 30m or "1h 30m"; resolves to the time --at would name
+    #[arg(long, value_parser=parse_ago)]
+    ago: Option<DateTime<Local>>,
 }
 
 #[derive(Debug, Args)]
@@ -511,6 +526,17 @@ fn parse_tag(input: &str) -> Result<String> {
     }
 
     Ok(input.to_string())
+}
+
+fn parse_ago(input: &str) -> Result<DateTime<Local>> {
+    let duration = humantime::parse_duration(input)
+        .map_err(|_| anyhow!("'{input}' is not a duration. Write it as 30m, 2h or \"1h 30m\"."))?;
+
+    TimeDelta::from_std(duration)
+        .ok()
+        .and_then(|delta| Local::now().checked_sub_signed(delta))
+        .filter(|time| time.timestamp() >= 0)
+        .ok_or_else(|| anyhow!("'{input}' reaches back before 1970."))
 }
 
 fn parse_flexible_datetime(input: &str) -> Result<DateTime<Local>> {

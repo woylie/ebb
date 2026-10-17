@@ -316,3 +316,81 @@ fn stop_makes_an_existing_frames_file_private() -> Result<(), Box<dyn std::error
 
     Ok(())
 }
+
+#[test]
+fn stop_applies_ago_option() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let toml_content = r#"
+        [current_frame]
+        start_time = 1748723006
+        project = "firstproject"
+    "#;
+    fs::write(tmp.path().join("state.toml"), toml_content.trim())?;
+    let before = Utc::now().timestamp();
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("stop")
+        .arg("--ago")
+        .arg("10m")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .success();
+
+    let after = Utc::now().timestamp();
+    let frames: Frames = toml::from_str(&fs::read_to_string(tmp.path().join("frames.toml"))?)?;
+    let last_frame = frames.frames.last().expect("No frames found");
+    assert_eq!(last_frame.project, "firstproject");
+    assert!((before - 600..=after - 600).contains(&last_frame.end_time));
+
+    Ok(())
+}
+
+#[test]
+fn stop_fails_if_ago_is_before_start_time() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let state_path = tmp.path().join("state.toml");
+    let toml_content = format!(
+        r#"
+        [current_frame]
+        start_time = {}
+        project = "firstproject"
+    "#,
+        Utc::now().timestamp() - 600
+    );
+    fs::write(&state_path, toml_content.trim())?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("stop")
+        .arg("--ago")
+        .arg("1h")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(contains("is before start time"))
+        .stderr(contains("omit --ago"));
+
+    let state: State = toml::from_str(&fs::read_to_string(&state_path)?)?;
+    assert_eq!(state.current_frame.unwrap().project, "firstproject");
+
+    Ok(())
+}
+
+#[test]
+fn stop_fails_with_both_at_and_ago() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let mut cmd = Command::cargo_bin("ebb")?;
+
+    cmd.arg("stop")
+        .arg("--at")
+        .arg("10:00")
+        .arg("--ago")
+        .arg("10m")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(contains(
+            "the argument '--at <AT>' cannot be used with '--ago <AGO>'",
+        ));
+
+    Ok(())
+}

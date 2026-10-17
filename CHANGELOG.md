@@ -8,6 +8,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Add `--ago` to `start`, `restart` and `stop`.
+
 ### Fixed
 
 - Count no vacation or sick day in `daysoff` on a date without working hours or
