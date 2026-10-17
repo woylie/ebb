@@ -78,8 +78,8 @@ Show working hour balance
 
 ###### **Options:**
 
-- `--from <FROM>` — Start time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601)
-- `--to <TO>` — End time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601)
+- `--from <FROM>` — Start time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); for the current day, week, month or year, use --day, --week, --month or --year
+- `--to <TO>` — End time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); for the current day, week, month or year, use --day, --week, --month or --year
 - `-y`, `--year` — Report time spent in the current year
 - `-m`, `--month` — Report time spent in the current month
 - `-w`, `--week` — Report time spent in the current week
@@ -250,8 +250,8 @@ Return the total time and time spent per project
 
 ###### **Options:**
 
-- `--from <FROM>` — Start time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601)
-- `--to <TO>` — End time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601)
+- `--from <FROM>` — Start time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); for the current day, week, month or year, use --day, --week, --month or --year
+- `--to <TO>` — End time (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); for the current day, week, month or year, use --day, --week, --month or --year
 - `-y`, `--year` — Report time spent in the current year
 - `-m`, `--month` — Report time spent in the current month
 - `-w`, `--week` — Report time spent in the current week
@@ -268,6 +268,7 @@ Restart the last project
 ###### **Options:**
 
 - `--at <AT>` — Time at which the project is restarted (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); if omitted, the current time is used
+- `--ago <AGO>` — How long ago the project was restarted, such as 30m or "1h 30m"; resolves to the time --at would name
 - `-G`, `--no-gap` — Set the start time to the end time of the last saved frame
 
 ## `ebb sickday`
@@ -356,6 +357,7 @@ Start time tracking
 ###### **Options:**
 
 - `--at <AT>` — Time at which the project is started and a running frame is stopped (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); if omitted, the current time is used
+- `--ago <AGO>` — How long ago the project was started, such as 30m or "1h 30m"; resolves to the time --at would name
 - `-G`, `--no-gap` — Set the start time to the end time of the last saved frame
 
 ## `ebb status`
@@ -373,6 +375,7 @@ Stop time tracking
 ###### **Options:**
 
 - `--at <AT>` — Time at which the project is stopped (hh:mm, hh:mm:ss, yyyy-mm-dd hh:mm, yyyy-mm-dd hh:mm:ss, or ISO 8601); if omitted, the current time is used
+- `--ago <AGO>` — How long ago the project was stopped, such as 30m or "1h 30m"; resolves to the time --at would name
 
 ## `ebb tag`
 

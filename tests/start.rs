@@ -574,3 +574,168 @@ fn start_rejects_a_future_at_time() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn start_applies_ago_option() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let before = Local::now().timestamp();
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("start")
+        .arg("myproject")
+        .arg("--ago")
+        .arg("1h 30m")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .success();
+
+    let after = Local::now().timestamp();
+    let state: State = toml::from_str(&fs::read_to_string(tmp.path().join("state.toml"))?)?;
+    let start_time = state.current_frame.unwrap().start_time;
+    assert!((before - 5400..=after - 5400).contains(&start_time));
+
+    Ok(())
+}
+
+#[test]
+fn start_stops_the_running_frame_at_the_ago_time() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let running_start = Local::now().timestamp() - 3600;
+    let toml_content = format!(
+        r#"
+        [current_frame]
+        start_time = {running_start}
+        project = "firstproject"
+    "#
+    );
+    fs::write(tmp.path().join("state.toml"), toml_content.trim())?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("start")
+        .arg("secondproject")
+        .arg("--ago")
+        .arg("30m")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .success();
+
+    let state: State = toml::from_str(&fs::read_to_string(tmp.path().join("state.toml"))?)?;
+    let current_frame = state.current_frame.unwrap();
+    let frames: Frames = toml::from_str(&fs::read_to_string(tmp.path().join("frames.toml"))?)?;
+    let stopped_frame = frames.frames.last().unwrap();
+    assert_eq!(stopped_frame.project, "firstproject");
+    assert_eq!(stopped_frame.end_time, current_frame.start_time);
+    assert!(current_frame.start_time > running_start);
+
+    Ok(())
+}
+
+#[test]
+fn start_rejects_an_ago_before_the_running_frame() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let state_path = tmp.path().join("state.toml");
+    let toml_content = format!(
+        r#"
+        [current_frame]
+        start_time = {}
+        project = "firstproject"
+    "#,
+        Local::now().timestamp() - 600
+    );
+    fs::write(&state_path, toml_content.trim())?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("start")
+        .arg("secondproject")
+        .arg("--ago")
+        .arg("1h")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(contains("is not after the start of the running frame"))
+        .stderr(contains("omit --ago"));
+
+    let state: State = toml::from_str(&fs::read_to_string(&state_path)?)?;
+    assert_eq!(state.current_frame.unwrap().project, "firstproject");
+
+    Ok(())
+}
+
+#[test]
+fn start_fails_with_both_ago_and_at() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let mut cmd = Command::cargo_bin("ebb")?;
+
+    cmd.arg("start")
+        .arg("project")
+        .arg("--at")
+        .arg("10:00")
+        .arg("--ago")
+        .arg("30m")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(contains(
+            "the argument '--at <AT>' cannot be used with '--ago <AGO>'",
+        ));
+
+    Ok(())
+}
+
+#[test]
+fn start_fails_with_both_ago_and_no_gap() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let mut cmd = Command::cargo_bin("ebb")?;
+
+    cmd.arg("start")
+        .arg("project")
+        .arg("--ago")
+        .arg("30m")
+        .arg("--no-gap")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(contains(
+            "the argument '--ago <AGO>' cannot be used with '--no-gap'",
+        ));
+
+    Ok(())
+}
+
+#[test]
+fn start_rejects_an_ago_that_is_not_a_duration() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let mut cmd = Command::cargo_bin("ebb")?;
+
+    cmd.arg("start")
+        .arg("project")
+        .arg("--ago")
+        .arg("10:00")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(contains("'10:00' is not a duration"));
+
+    assert!(!tmp.path().join("state.toml").exists());
+
+    Ok(())
+}
+
+#[test]
+fn start_rejects_an_ago_before_1970() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let mut cmd = Command::cargo_bin("ebb")?;
+
+    cmd.arg("start")
+        .arg("project")
+        .arg("--ago")
+        .arg("100years")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(contains("'100years' reaches back before 1970"));
+
+    assert!(!tmp.path().join("state.toml").exists());
+
+    Ok(())
+}

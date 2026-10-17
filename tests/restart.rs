@@ -285,3 +285,72 @@ fn restart_rejects_a_future_at_time() -> Result<(), Box<dyn std::error::Error>> 
 
     Ok(())
 }
+
+#[test]
+fn restart_applies_ago_option() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let toml_content = r#"
+        [[frames]]
+        start_time = 1748723006
+        end_time = 1748725744
+        project = "myproject"
+        updated_at = 1748725744
+    "#;
+    fs::write(tmp.path().join("frames.toml"), toml_content.trim())?;
+    let before = chrono::Local::now().timestamp();
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("restart")
+        .arg("--ago")
+        .arg("15m")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .success();
+
+    let after = chrono::Local::now().timestamp();
+    let state: State = toml::from_str(&fs::read_to_string(tmp.path().join("state.toml"))?)?;
+    let current_frame = state.current_frame.unwrap();
+    assert_eq!(current_frame.project, "myproject");
+    assert!((before - 900..=after - 900).contains(&current_frame.start_time));
+
+    Ok(())
+}
+
+#[test]
+fn restart_fails_with_ago_and_no_gap() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let mut cmd = Command::cargo_bin("ebb")?;
+
+    cmd.arg("restart")
+        .arg("--ago")
+        .arg("15m")
+        .arg("--no-gap")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(contains(
+            "the argument '--ago <AGO>' cannot be used with '--no-gap'",
+        ));
+
+    Ok(())
+}
+
+#[test]
+fn restart_fails_with_ago_and_at() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let mut cmd = Command::cargo_bin("ebb")?;
+
+    cmd.arg("restart")
+        .arg("--at")
+        .arg("10:00")
+        .arg("--ago")
+        .arg("15m")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(contains(
+            "the argument '--at <AT>' cannot be used with '--ago <AGO>'",
+        ));
+
+    Ok(())
+}
