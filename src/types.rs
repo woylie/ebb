@@ -253,7 +253,7 @@ impl Frames {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Tabled)]
-pub struct Holiday {
+pub struct DayOff {
     pub date: NaiveDate,
     pub description: String,
 
@@ -262,33 +262,20 @@ pub struct Holiday {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct HolidayEntry {
+pub struct DayOffEntry {
     pub description: String,
 
     #[serde(default, skip_serializing_if = "is_default")]
     pub portion: DayPortion,
 }
 
-pub type Holidays = BTreeMap<NaiveDate, HolidayEntry>;
+pub type DayOffCalendar = BTreeMap<NaiveDate, DayOffEntry>;
 
-#[derive(Clone, Debug, Serialize, Deserialize, Tabled)]
-pub struct SickDay {
-    pub date: NaiveDate,
-    pub description: String,
+pub type HolidayEntry = DayOffEntry;
+pub type Holidays = DayOffCalendar;
 
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub portion: DayPortion,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct SickDayEntry {
-    pub description: String,
-
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub portion: DayPortion,
-}
-
-pub type SickDays = BTreeMap<NaiveDate, SickDayEntry>;
+pub type SickDayEntry = DayOffEntry;
+pub type SickDays = DayOffCalendar;
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct State {
@@ -301,24 +288,8 @@ pub struct Timespan {
     pub to: i64,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Tabled)]
-pub struct Vacation {
-    pub date: NaiveDate,
-    pub description: String,
-
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub portion: DayPortion,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct VacationEntry {
-    pub description: String,
-
-    #[serde(default, skip_serializing_if = "is_default")]
-    pub portion: DayPortion,
-}
-
-pub type Vacations = BTreeMap<NaiveDate, VacationEntry>;
+pub type VacationEntry = DayOffEntry;
+pub type Vacations = DayOffCalendar;
 
 fn is_default<T>(value: &T) -> bool
 where

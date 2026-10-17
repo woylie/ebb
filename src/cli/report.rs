@@ -7,7 +7,7 @@ use crate::output::{DisplayOutput, print_output};
 use crate::persistence::{load_frames, load_state};
 use crate::types::{Frame, Frames, Timespan};
 use crate::{Format, ReportArgs};
-use chrono::{Datelike, Days, Utc};
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
@@ -131,32 +131,23 @@ pub fn run_report(args: &ReportArgs, config_path: &Path, format: &Format) -> any
 fn resolve_timespan(args: &ReportArgs, now: i64, frames: &[Frame]) -> anyhow::Result<Timespan> {
     let today = to_local(now).date_naive();
 
-    let from = if args.day {
-        today
-    } else if args.week {
-        today - Days::new(today.weekday().num_days_from_monday().into())
-    } else if args.month {
-        today - Days::new(today.day0().into())
-    } else if args.year {
-        today - Days::new(today.ordinal0().into())
-    } else {
-        let from_ts = args
+    if let Some(start) = args.period.start(today) {
+        return Ok(Timespan {
+            from: local_midnight(start)?,
+            to: now,
+        });
+    }
+
+    Ok(Timespan {
+        from: args
             .from
             .map(|dt| dt.with_timezone(&Utc).timestamp())
             .or_else(|| frames.first().map(|f| f.start_time))
-            .unwrap_or(0);
-        return Ok(Timespan {
-            from: from_ts,
-            to: args
-                .to
-                .map(|dt| dt.with_timezone(&Utc).timestamp())
-                .unwrap_or(now),
-        });
-    };
-
-    Ok(Timespan {
-        from: local_midnight(from)?,
-        to: now,
+            .unwrap_or(0),
+        to: args
+            .to
+            .map(|dt| dt.with_timezone(&Utc).timestamp())
+            .unwrap_or(now),
     })
 }
 

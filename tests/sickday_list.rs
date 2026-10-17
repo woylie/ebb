@@ -82,3 +82,35 @@ fn list_sick_days_filters_by_year() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn list_sick_days_prints_json() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    fs::write(
+        tmp.path().join("sick_days.toml"),
+        "[2025-05-28]\ndescription = \"Some day\"\n",
+    )?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    let assert = cmd
+        .arg("sickday")
+        .arg("list")
+        .arg("--year")
+        .arg("2025")
+        .arg("--format")
+        .arg("json")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .success();
+
+    let json: serde_json::Value = serde_json::from_slice(&assert.get_output().stdout)?;
+    assert_eq!(
+        json,
+        serde_json::json!({
+            "sick_days": [{"date": "2025-05-28", "description": "Some day"}],
+            "filters": {"year": 2025}
+        })
+    );
+
+    Ok(())
+}
