@@ -18,6 +18,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Warn in `vacation add` and `sickday add` when a vacation day and a sick day on
   one date add up to more than the working part of that day.
 - Install shell completions for bash, fish and zsh with the Nix package.
+- Attach prebuilt binaries for Linux and macOS to each release, with checksums
+  and build provenance attestations.
 
 ### Changed
 
