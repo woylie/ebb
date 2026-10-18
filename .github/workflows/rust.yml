@@ -14,20 +14,25 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
+permissions: {}
 
 env:
   CARGO_TERM_COLOR: always
   RUSTFLAGS: "-Dwarnings"
+  # renovate: datasource=npm depName=prettier
+  PRETTIER_VERSION: "3.8.3"
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
+    permissions:
+      contents: read
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
@@ -45,8 +50,8 @@ jobs:
       - name: Run tests
         run: cargo test --locked --verbose
       - name: Check command line documentation
-        run: |
-          npm install --global prettier@3.8.3
+        run: | # zizmor: ignore[adhoc-packages]
+          npm install --global "prettier@${PRETTIER_VERSION}"
           ./gen-docs.sh
           git diff --exit-code command_line_help.md || {
             echo "::error file=command_line_help.md::File is out of date. Run ./gen-docs.sh"
@@ -54,11 +59,15 @@ jobs:
           }
 
   msrv:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
+    permissions:
+      contents: read
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Install the minimum supported Rust version
         run: |
           rust_version="$(grep '^rust-version' Cargo.toml | cut -d'"' -f2)"

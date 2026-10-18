@@ -3,6 +3,8 @@ version = 1
 [[annotations]]
 path = [
   ".envrc",
+  ".github/CODEOWNERS",
+  ".github/ISSUE_TEMPLATE/**",
   ".gitignore",
   ".prettierignore",
   "Cargo.lock",
@@ -11,6 +13,7 @@ path = [
   "deny.toml",
   "flake.lock",
   "renovate.json",
+  "SECURITY.md",
   "THIRD_PARTY"
 ]
 SPDX-FileCopyrightText = "NONE"
