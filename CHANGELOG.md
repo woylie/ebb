@@ -13,6 +13,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Add `--ago` to `start`, `restart` and `stop`.
 - Add `--exclude-today` to `balance` to count only finished days.
 - Allow passing a date as `--from` and `--to` to the `report` command.
+- Allow passing an end date to `vacation add`, `vacation remove`, `sickday add`
+  and `sickday remove` to add or remove a range of days.
+- Warn in `vacation add` and `sickday add` when a vacation day and a sick day on
+  one date add up to more than the working part of that day.
 
 ### Changed
 

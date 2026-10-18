@@ -165,9 +165,7 @@ Add a new holiday
 ###### **Arguments:**
 
 - `<DATE>` — Date of the holiday (yyyy-mm-dd, e.g. 2025-08-11)
-- `<DESCRIPTION>` — Name of the holiday (e.g. Mountain Day)
-
-  Default value: `Holiday`
+- `<DESCRIPTION>` — Name of the holiday (e.g. Mountain Day); defaults to "Holiday"
 
 ###### **Options:**
 
@@ -281,27 +279,28 @@ Manage sick days
 
 ###### **Subcommands:**
 
-- `add` — Add a new sick day
+- `add` — Add one or more sick days
 - `edit` — Edit the description of an existing sick day
 - `list` — List all sick days
-- `remove` — Remove a sick day
+- `remove` — Remove one or more sick days
 
 ## `ebb sickday add`
 
-Add a new sick day
+Add one or more sick days.
 
-**Usage:** `ebb sickday add [OPTIONS] <DATE> [DESCRIPTION]`
+A range spans at most a year. Days without working hours, full-day holidays and days that already have a sick day are skipped.
+
+**Usage:** `ebb sickday add [OPTIONS] <START_DATE> [END_DATE] [DESCRIPTION]`
 
 ###### **Arguments:**
 
-- `<DATE>` — Day of the sick day
-- `<DESCRIPTION>` — Description for the sick day
-
-  Default value: `Sick`
+- `<START_DATE>` — Start date (yyyy-mm-dd)
+- `<END_DATE>` — End date, inclusive (yyyy-mm-dd); defaults to the start date for a single day
+- `<DESCRIPTION>` — Description of the day off
 
 ###### **Options:**
 
-- `-p`, `--portion <PORTION>` — Switch between full-day and half-day holiday
+- `-p`, `--portion <PORTION>` — Switch between full-day and half-day
 
   Default value: `full`
 
@@ -336,13 +335,16 @@ List all sick days
 
 ## `ebb sickday remove`
 
-Remove a sick day
+Remove one or more sick days.
 
-**Usage:** `ebb sickday remove <DATE>`
+A range spans at most a year.
+
+**Usage:** `ebb sickday remove <START_DATE> [END_DATE]`
 
 ###### **Arguments:**
 
-- `<DATE>` — Date of the sick day to remove
+- `<START_DATE>` — Start date (yyyy-mm-dd)
+- `<END_DATE>` — End date, inclusive (yyyy-mm-dd); defaults to the start date for a single day
 
 ## `ebb start`
 
@@ -427,27 +429,28 @@ Manage vacation days
 
 ###### **Subcommands:**
 
-- `add` — Add a new vacation day
+- `add` — Add one or more vacation days
 - `edit` — Edit the description of an existing vacation day
 - `list` — List all vacation days
-- `remove` — Remove a vacation day
+- `remove` — Remove one or more vacation days
 
 ## `ebb vacation add`
 
-Add a new vacation day
+Add one or more vacation days.
 
-**Usage:** `ebb vacation add [OPTIONS] <DATE> [DESCRIPTION]`
+A range spans at most a year. Days without working hours, full-day holidays and days that already have a vacation day are skipped.
+
+**Usage:** `ebb vacation add [OPTIONS] <START_DATE> [END_DATE] [DESCRIPTION]`
 
 ###### **Arguments:**
 
-- `<DATE>` — Date of the vacation day
-- `<DESCRIPTION>` — Name of the vacation day
-
-  Default value: `Vacation`
+- `<START_DATE>` — Start date (yyyy-mm-dd)
+- `<END_DATE>` — End date, inclusive (yyyy-mm-dd); defaults to the start date for a single day
+- `<DESCRIPTION>` — Description of the day off
 
 ###### **Options:**
 
-- `-p`, `--portion <PORTION>` — Switch between full-day and half-day holiday
+- `-p`, `--portion <PORTION>` — Switch between full-day and half-day
 
   Default value: `full`
 
@@ -482,13 +485,16 @@ List all vacation days
 
 ## `ebb vacation remove`
 
-Remove a vacation day
+Remove one or more vacation days.
 
-**Usage:** `ebb vacation remove <DATE>`
+A range spans at most a year.
+
+**Usage:** `ebb vacation remove <START_DATE> [END_DATE]`
 
 ###### **Arguments:**
 
-- `<DATE>` — Date of the vacation day to remove
+- `<START_DATE>` — Start date (yyyy-mm-dd)
+- `<END_DATE>` — End date, inclusive (yyyy-mm-dd); defaults to the start date for a single day
 
 <hr/>
 
