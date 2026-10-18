@@ -85,7 +85,7 @@ pub fn format_duration(secs: i64) -> String {
 pub fn format_timerange(from: i64, to: i64) -> String {
     let from_str = format_timestamp(from);
     let to_str = format_timestamp(to);
-    format!("From: {from_str}\nTo: {to_str}")
+    format!("From: {from_str}\nUntil: {to_str}")
 }
 
 pub fn format_datetime(ts: i64) -> String {
