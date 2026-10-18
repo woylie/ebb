@@ -8,7 +8,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 CLI for time tracking and flex time balance.
 
-[Command-Line Help](https://github.com/woylie/ebb/blob/main/command_line_help.md)
+[Documentation](https://ebb.wlyx.dev)
 
 ## Features
 
@@ -64,123 +64,11 @@ To see a list of available shells, run:
 ebb generate-completions --help
 ```
 
-## Getting Started
+## Documentation
 
-### Configuration
-
-You can list all available configuration options with:
-
-```bash
-ebb config list
-```
-
-Modify the defaults with:
-
-```bash
-ebb config set <KEY> <VALUE>
-```
-
-For example: `ebb config set working_hours.monday 6h`
-
-- `sick_days_per_year.<YEAR>` - Defines how many sick days you are allowed to
-  take in a year. The value applies to the specified year and all subsequent
-  years, until a new value is set for a later year.
-- `vacation_days_per_year.<YEAR>` - Specifies the number of vacation days
-  allowed per year, starting from the given year. The value applies to the
-  specified year and all subsequent years, until a new value is set for a later
-  year.
-- `working_hours.<WEEKDAY>` - Defines how many hours you are supposed to work on
-  a weekday. The value is a duration string, e.g. `"6h"` or `"7h 30m"`.
-
-### Holidays, Vacation Days, and Sick Days
-
-You can manage holidays, vacation days, and sick days with `ebb holiday`,
-`ebb vacation`, and `ebb sickday`. Run the commands without further arguments
-to see the command line help.
-
-Holidays can be national holidays or other days on which you are not expected to
-work or log hours.
-
-You can render an overview with the count of taken and remaining vacation days
-and sick days for the current year or other years with `ebb daysoff` or
-`ebb daysoff --year 2024`.
-
-### Time Tracking
-
-The commands related to time tracking are:
-
-- `ebb start <PROJECT> [TAGS]` - Start tracking time for the given project with
-  optional tags. Tags are written as plain words, so
-  `ebb start website design review` records the project `website` with the tags
-  `design` and `review`. A project name or a tag that contains spaces has to be
-  quoted, as in `ebb start website "code review"`.
-- `ebb stop` - Stop tracking the current project.
-- `ebb cancel` - Cancel tracking without saving.
-- `ebb restart` - Restart the last project.
-- `ebb status` - Show the current time tracking status.
-
-### Reporting
-
-- `ebb balance` - Print the expected, actual and remaining work hours.
-- `ebb report` - Print a report listing the recorded time per project and tag.
-
-### Important to Know
-
-- Vacation days, holidays, and sick days can be full or half days. This is
-  relative to the expected working hours configured for that day. For example,
-  if Monday is configured with 8 expected working hours, a full day off will
-  reduce the flex time balance by 8 hours, and a half day off will
-  reduce it by 4 hours. If a day is configured with 6 expected working hours,
-  a full day off reduces the balance by 6 hours, and a half day off reduces the
-  balance by 3 hours. This logic may be improved in the future based on user
-  feedback.
-
-### Your Data
-
-Everything Ebb knows is stored as TOML files in a single directory, so you can
-read and edit all of it with a text editor. The directory is
-`~/.local/share/ebb`, or `$XDG_DATA_HOME/ebb` if you have that variable set to an
-absolute path. You can point Ebb somewhere else with `--data-dir` or by setting
-`EBB_DATA_DIR`.
-
-- `config.toml` - Your configuration.
-- `frames.toml` - Every time frame you have recorded. This is the file you
-  cannot reconstruct if you lose it.
-- `frames.toml.bak` - The contents of `frames.toml` as they were before the most
-  recent change. Ebb keeps one previous version, not a history.
-- `state.toml` - The frame that is currently running, if any.
-- `holidays.toml`, `sick_days.toml`, `vacations.toml` - Your days off.
-
-Nothing backs these files up for you, so copy the directory somewhere safe:
-
-```bash
-cp -r ~/.local/share/ebb ~/backups/ebb-$(date +%Y-%m-%d)
-```
-
-### If Something Looks Wrong
-
-Ebb refuses to run when a data file does not make sense, and the error names the
-file and the value, so start by reading it. Because the files are plain TOML, the
-repair is to open the named file and correct the entry by hand.
-
-If a project appears to be counted twice, compare `state.toml` with the end of
-`frames.toml`. A project can legitimately appear in both, but only when the entry
-in `frames.toml` ended before the one in `state.toml` started. If the same
-stretch of time is recorded in both, delete whichever of the two is wrong. To
-discard the running frame rather than record it, use `ebb cancel`.
-
-Before you edit `frames.toml`, copy it, because Ebb overwrites `frames.toml.bak`
-on the next change. If a change turns out to be wrong, you can restore the file
-Ebb saved:
-
-```bash
-cp ~/.local/share/ebb/frames.toml.bak ~/.local/share/ebb/frames.toml
-```
-
-### Further Help
-
-There's a [Markdown version of the command-line help](https://github.com/woylie/ebb/blob/main/command_line_help.md) available. You can also view help for any command with
-`-h` or `--help` (e.g., `ebb balance --help`).
+The [user guide](https://ebb.wlyx.dev) describes configuration, time tracking,
+reporting, days off and data storage, and includes the
+[command-line help](https://ebb.wlyx.dev/command_line_help.html).
 
 ## Development
 
@@ -242,10 +130,16 @@ Add SPDX header to file:
 pipx reuse annotate --copyright="YOUR NAME" --license="AGPL-3.0-or-later" <filename>
 ```
 
-Generate markdown documentation:
+Generate the command-line help in the book:
 
 ```bash
 ./gen-docs.sh
+```
+
+Preview the book:
+
+```bash
+mdbook serve book
 ```
 
 Generate `THIRD_PARTY` file:

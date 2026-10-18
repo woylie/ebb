@@ -53,8 +53,8 @@ jobs:
         run: | # zizmor: ignore[adhoc-packages]
           npm install --global "prettier@${PRETTIER_VERSION}"
           ./gen-docs.sh
-          git diff --exit-code command_line_help.md || {
-            echo "::error file=command_line_help.md::File is out of date. Run ./gen-docs.sh"
+          git diff --exit-code book/src/command_line_help.md || {
+            echo "::error file=book/src/command_line_help.md::File is out of date. Run ./gen-docs.sh"
             exit 1
           }
 

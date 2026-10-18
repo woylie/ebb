@@ -1,0 +1,12 @@
+[book]
+title = "Ebb"
+description = "CLI for time tracking and flex time balance."
+language = "en"
+src = "src"
+
+[output.html]
+site-url = "/"
+cname = "ebb.wlyx.dev"
+git-repository-url = "https://github.com/woylie/ebb"
+# the generated command-line help has a heading for every command
+sidebar-header-nav = false

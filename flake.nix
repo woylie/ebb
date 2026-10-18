@@ -60,6 +60,7 @@
 
         devShells.default = pkgs.mkShell {
           buildInputs = with pkgs; [
+            mdbook
             nixfmt
             prettier
             reuse

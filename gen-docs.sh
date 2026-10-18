@@ -13,10 +13,9 @@ fi
 
 set -x
 
-cargo run generate-docs > command_line_help.md
 tmp="$(mktemp)"
 trap 'rm -f "$tmp"' EXIT
 
 cargo run generate-docs > "$tmp"
-mv "$tmp" command_line_help.md
-prettier ./command_line_help.md --write
+mv "$tmp" book/src/command_line_help.md
+prettier book/src/command_line_help.md --write
