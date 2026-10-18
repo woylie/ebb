@@ -8,7 +8,7 @@ use crate::persistence::{
     load_config, load_holidays, load_sick_days, load_vacations, save_holidays, save_sick_days,
     save_vacations,
 };
-use crate::types::{DayOff, DayOffCalendar, DayOffEntry, DayPortion};
+use crate::types::{DayOff, DayOffCalendar, DayOffEntry, DayPortion, Holidays, WorkingHours};
 use crate::{
     DayOffAddArgs, DayOffRemoveArgs, Format, HolidayAddArgs, HolidayCommands, HolidayRemoveArgs,
     SickDayCommands, VacationCommands, parse_date,
@@ -31,6 +31,7 @@ pub(crate) struct Kind {
     load: fn(&Path) -> Result<DayOffCalendar>,
     save: fn(&Path, &DayOffCalendar) -> Result<()>,
     other: Option<&'static Kind>,
+    skips_days_without_work: bool,
 }
 
 pub(crate) static HOLIDAY: Kind = Kind {
@@ -45,6 +46,7 @@ pub(crate) static HOLIDAY: Kind = Kind {
     load: load_holidays,
     save: save_holidays,
     other: None,
+    skips_days_without_work: false,
 };
 
 pub(crate) static SICK_DAY: Kind = Kind {
@@ -59,6 +61,7 @@ pub(crate) static SICK_DAY: Kind = Kind {
     load: load_sick_days,
     save: save_sick_days,
     other: Some(&VACATION),
+    skips_days_without_work: true,
 };
 
 pub(crate) static VACATION: Kind = Kind {
@@ -73,6 +76,7 @@ pub(crate) static VACATION: Kind = Kind {
     load: load_vacations,
     save: save_vacations,
     other: Some(&SICK_DAY),
+    skips_days_without_work: true,
 };
 
 pub(crate) enum Command {
@@ -297,6 +301,19 @@ pub(crate) fn run(
             if calendar.contains_key(&date) {
                 anyhow::bail!("A {} already exists on {date}.", kind.noun);
             }
+            if kind.skips_days_without_work {
+                let working_hours = load_config(config_path)?.working_hours;
+                let holidays = load_holidays(config_path)?;
+                match skip_reason(date, &calendar, &working_hours, &holidays) {
+                    Some(SkipReason::NoWorkingHours) => {
+                        anyhow::bail!("{date} has no working hours. Choose another date.")
+                    }
+                    Some(SkipReason::Holiday) => {
+                        anyhow::bail!("{date} is a full-day holiday. Choose another date.")
+                    }
+                    Some(SkipReason::Existing) | None => {}
+                }
+            }
             let day_off = write_entry(kind, &mut calendar, date, entry, config_path)?;
             warn_about_overlaps(kind, std::slice::from_ref(&day_off), config_path);
             print_entry(kind, Action::Added, day_off, format)
@@ -436,17 +453,7 @@ fn add_range(
     let mut added = Vec::new();
     let mut skipped = Vec::new();
     for date in dates {
-        let reason = if calendar.contains_key(&date) {
-            Some(SkipReason::Existing)
-        } else if working_hours.on(date.weekday()).is_zero() {
-            Some(SkipReason::NoWorkingHours)
-        } else if halves_to_work(date, &working_hours, &holidays) == 0 {
-            Some(SkipReason::Holiday)
-        } else {
-            None
-        };
-
-        match reason {
+        match skip_reason(date, calendar, &working_hours, &holidays) {
             Some(reason) => skipped.push(Skipped { date, reason }),
             None => {
                 calendar.insert(date, entry.clone());
@@ -472,6 +479,23 @@ fn add_range(
         },
         format,
     )
+}
+
+fn skip_reason(
+    date: NaiveDate,
+    calendar: &DayOffCalendar,
+    working_hours: &WorkingHours,
+    holidays: &Holidays,
+) -> Option<SkipReason> {
+    if calendar.contains_key(&date) {
+        Some(SkipReason::Existing)
+    } else if working_hours.on(date.weekday()).is_zero() {
+        Some(SkipReason::NoWorkingHours)
+    } else if halves_to_work(date, working_hours, holidays) == 0 {
+        Some(SkipReason::Holiday)
+    } else {
+        None
+    }
 }
 
 fn check_range(first: NaiveDate, last: NaiveDate) -> Result<()> {

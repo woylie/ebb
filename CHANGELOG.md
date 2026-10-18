@@ -27,6 +27,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `26h 5m`.
 - Take a date instead of a date time in the `--from` and `--to` options of
   `balance`.
+- Reject a single date without working hours or on a full-day holiday in
+  `vacation add` and `sickday add`.
 
 ### Fixed
 
