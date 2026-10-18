@@ -44,6 +44,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Count two half days off on one date as a whole day off in `balance`, for
   example a half holiday and a half vacation day.
 - Reject a stop time in the future in `stop`.
+- Accept a `--to` before the first frame in `report` and `balance`.
+- Expect no working hours in `balance` if there are no frames.
 
 ## [0.2.1] - 2026-10-11
 

@@ -234,6 +234,58 @@ fn balance_rejects_a_to_before_from() -> Result<(), Box<dyn std::error::Error>> 
     Ok(())
 }
 
+#[test]
+fn balance_rejects_the_largest_date_in_to() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("balance")
+        .arg("--to")
+        .arg("+262142-12-31")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains(
+            "'+262142-12-31' is out of range.",
+        ));
+
+    Ok(())
+}
+
+#[test]
+fn balance_expects_nothing_if_to_is_before_the_first_frame()
+-> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    fs::write(
+        tmp.path().join("frames.toml"),
+        r#"
+        [[frames]]
+        start_time = 1791367200
+        end_time = 1791370800
+        project = "project1"
+        tags = []
+        updated_at = 1791370800
+        "#,
+    )?;
+
+    // The frame is on 2026-10-07.
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("balance")
+        .arg("--to")
+        .arg("2026-10-05")
+        .arg("--format")
+        .arg("json")
+        .env("EBB_DATA_DIR", tmp.path())
+        .env("TZ", "UTC")
+        .assert()
+        .success()
+        .stdout(predicates::str::contains(
+            r#""expected_working_seconds": 0,"#,
+        ));
+
+    Ok(())
+}
+
 // The time zone tests set TZ to a POSIX rule rather than a zone name, so they do not depend
 // on the installed time zone data.
 

@@ -12,7 +12,7 @@ use crate::types::{
 };
 use crate::{BalanceArgs, Format};
 use anyhow::Context;
-use chrono::{Datelike, Days, NaiveDate, Utc};
+use chrono::{Datelike, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -126,16 +126,21 @@ fn resolve_timespan(args: &BalanceArgs, now: i64, frames: &[Frame]) -> anyhow::R
         });
     }
 
+    let to = match args.to {
+        Some(date) => {
+            let next_day = date
+                .succ_opt()
+                .ok_or_else(|| anyhow::anyhow!("'{date}' is out of range."))?;
+            local_midnight(next_day)?.timestamp()
+        }
+        None => end,
+    };
     let from = match (args.from, frames.first()) {
         (Some(date), _) => local_midnight(date)?.timestamp(),
         (None, Some(frame)) => local_midnight(to_local(frame.start_time).date_naive())?
             .timestamp()
-            .min(end),
-        (None, None) => 0,
-    };
-    let to = match args.to {
-        Some(date) => local_midnight(date + Days::new(1))?.timestamp(),
-        None => end,
+            .min(to),
+        (None, None) => to,
     };
 
     Ok(Timespan { from, to })
