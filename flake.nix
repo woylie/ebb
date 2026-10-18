@@ -24,7 +24,7 @@
     flake-utils.lib.eachDefaultSystem (
       system:
       let
-        version = "0.2.1";
+        version = (builtins.fromTOML (builtins.readFile ./Cargo.toml)).package.version;
         src = ./.;
         cargoLock = {
           lockFile = ./Cargo.lock;
