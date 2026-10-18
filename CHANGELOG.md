@@ -27,6 +27,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- No longer fail on a day without a midnight in `balance` and `report`.
+- Start a day on which midnight occurs twice at the first midnight in `balance`
+  and `report`.
 - Count no vacation or sick day in `daysoff` on a date without working hours or
   on a holiday, and only half a day on a half holiday.
 - Count two half days off on one date as a whole day off in `balance`, for

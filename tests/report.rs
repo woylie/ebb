@@ -762,3 +762,86 @@ fn report_rejects_a_from_that_is_neither_a_date_nor_a_time()
 
     Ok(())
 }
+
+// The time zone tests set TZ to a POSIX rule rather than a zone name, so they do not depend
+// on the installed time zone data.
+
+#[test]
+fn report_starts_a_date_without_a_midnight_when_the_clock_jumps()
+-> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+
+    // In Africa/Cairo, the clock jumps from 00:00 to 01:00 on 2026-04-24.
+    let mut cmd = Command::cargo_bin("ebb")?;
+    let assert = cmd
+        .arg("report")
+        .arg("--from")
+        .arg("2026-04-24")
+        .arg("--format")
+        .arg("json")
+        .env("EBB_DATA_DIR", tmp.path())
+        .env("TZ", "EET-2EEST,M4.5.5/0,M10.5.4/24")
+        .assert()
+        .success();
+
+    let json: Value = serde_json::from_slice(&assert.get_output().stdout)?;
+    // 2026-04-24 01:00 local time.
+    assert_eq!(json["timespan"]["from"], 1776981600);
+
+    Ok(())
+}
+
+#[test]
+fn report_starts_a_date_whose_midnight_occurs_twice_at_the_first()
+-> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+
+    // In America/Havana, the clock goes back from 01:00 to 00:00 on 2026-11-01.
+    let mut cmd = Command::cargo_bin("ebb")?;
+    let assert = cmd
+        .arg("report")
+        .arg("--from")
+        .arg("2026-11-01")
+        .arg("--to")
+        .arg("2026-11-01")
+        .arg("--format")
+        .arg("json")
+        .env("EBB_DATA_DIR", tmp.path())
+        .env("TZ", "CST5CDT,M3.2.0/0,M11.1.0/1")
+        .assert()
+        .success();
+
+    let json: Value = serde_json::from_slice(&assert.get_output().stdout)?;
+    // 2026-11-01 00:00 at -04:00, and 2026-11-02 00:00 at -05:00.
+    assert_eq!(json["timespan"]["from"], 1793505600);
+    assert_eq!(json["timespan"]["to"], 1793595600);
+
+    Ok(())
+}
+
+#[test]
+fn report_accepts_a_midnight_right_after_the_clock_went_back()
+-> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+
+    // In Africa/Cairo, the clock goes back from 00:00 to 23:00 on 2026-10-29, so 23:00 to 23:59
+    // occur twice and midnight on 2026-10-30 occurs once.
+    let mut cmd = Command::cargo_bin("ebb")?;
+    let assert = cmd
+        .arg("report")
+        .arg("--from")
+        .arg("2026-10-30")
+        .arg("--to")
+        .arg("2026-10-30")
+        .arg("--format")
+        .arg("json")
+        .env("EBB_DATA_DIR", tmp.path())
+        .env("TZ", "EET-2EEST,M4.5.5/0,M10.5.4/24")
+        .assert()
+        .success();
+
+    let json: Value = serde_json::from_slice(&assert.get_output().stdout)?;
+    assert_eq!(json["timespan"]["from"], 1793311200);
+
+    Ok(())
+}

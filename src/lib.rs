@@ -575,11 +575,11 @@ fn parse_flexible_datetime(input: &str) -> Result<DateTime<Local>> {
 }
 
 fn parse_range_start(input: &str) -> Result<DateTime<Local>> {
-    parse_range_bound(input, "start", Some)
+    parse_range_bound(input, Some)
 }
 
 fn parse_range_end(input: &str) -> Result<DateTime<Local>> {
-    parse_range_bound(input, "end", |date| date.succ_opt())
+    parse_range_bound(input, |date| date.succ_opt())
 }
 
 fn parse_date(input: &str) -> Result<NaiveDate> {
@@ -589,22 +589,11 @@ fn parse_date(input: &str) -> Result<NaiveDate> {
 
 fn parse_range_bound(
     input: &str,
-    edge: &str,
     midnight_of: impl Fn(NaiveDate) -> Option<NaiveDate>,
 ) -> Result<DateTime<Local>> {
     if let Ok(date) = parse_date(input) {
-        return midnight_of(date)
-            .and_then(|day| {
-                day.and_time(NaiveTime::MIN)
-                    .and_local_timezone(Local)
-                    .single()
-            })
-            .ok_or_else(|| {
-                anyhow!(
-                    "Midnight at the {edge} of {input} does not exist or occurs twice \
-                     in the local time zone. Give a date and time instead."
-                )
-            });
+        let day = midnight_of(date).ok_or_else(|| anyhow!("'{input}' is out of range."))?;
+        return formatting::local_midnight(day);
     }
 
     parse_local_datetime(input).unwrap_or_else(|| {
