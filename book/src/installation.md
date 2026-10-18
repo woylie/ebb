@@ -1,5 +1,32 @@
 # Installation
 
+## Prebuilt Binaries
+
+Each release has archives for Linux and macOS:
+
+- `x86_64-unknown-linux-musl` and `aarch64-unknown-linux-musl` for Linux, linked
+  statically, so they run on any distribution
+- `x86_64-apple-darwin` and `aarch64-apple-darwin` for Intel and Apple Silicon
+  Macs
+
+Download the archive for your system from the
+[releases page](https://github.com/woylie/ebb/releases), verify that it was
+built from this repository, and unpack it:
+
+```bash
+version=v0.3.0
+target=aarch64-apple-darwin
+curl -LO "https://github.com/woylie/ebb/releases/download/$version/ebb-$version-$target.tar.gz"
+gh attestation verify "ebb-$version-$target.tar.gz" --repo woylie/ebb
+tar -xzf "ebb-$version-$target.tar.gz"
+```
+
+Without the GitHub CLI, you can compare the archive with the `SHA256SUMS` file of
+the release instead, using `sha256sum -c --ignore-missing SHA256SUMS` on Linux
+or `shasum -a 256 -c --ignore-missing SHA256SUMS` on macOS.
+
+Then move the `ebb` binary to a directory on your `PATH`.
+
 ## With Nix
 
 ```bash
