@@ -845,3 +845,70 @@ fn report_accepts_a_midnight_right_after_the_clock_went_back()
 
     Ok(())
 }
+
+#[test]
+fn report_rejects_a_time_that_occurs_twice() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+
+    // In America/Havana, the clock goes back from 01:00 to 00:00 on 2026-11-01.
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("report")
+        .arg("--from")
+        .arg("2026-11-01 00:30")
+        .env("EBB_DATA_DIR", tmp.path())
+        .env("TZ", "CST5CDT,M3.2.0/0,M11.1.0/1")
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains(
+            "Ambiguous time. Add the offset, e.g. 2026-11-01T00:30:00-04:00 or 2026-11-01T00:30:00-05:00.",
+        ));
+
+    Ok(())
+}
+
+#[test]
+fn report_accepts_a_time_that_occurs_twice_with_an_offset() -> Result<(), Box<dyn std::error::Error>>
+{
+    let tmp = tempdir()?;
+
+    // In America/Havana, the clock goes back from 01:00 to 00:00 on 2026-11-01.
+    let mut cmd = Command::cargo_bin("ebb")?;
+    let assert = cmd
+        .arg("report")
+        .arg("--from")
+        .arg("2026-11-01T00:30:00-05:00")
+        .arg("--to")
+        .arg("2026-11-01")
+        .arg("--format")
+        .arg("json")
+        .env("EBB_DATA_DIR", tmp.path())
+        .env("TZ", "CST5CDT,M3.2.0/0,M11.1.0/1")
+        .assert()
+        .success();
+
+    let json: Value = serde_json::from_slice(&assert.get_output().stdout)?;
+    // 2026-11-01 05:30 UTC.
+    assert_eq!(json["timespan"]["from"], 1793511000);
+
+    Ok(())
+}
+
+#[test]
+fn report_rejects_a_time_the_clock_skips() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+
+    // In America/Santiago, the clock jumps from 00:00 to 01:00 on 2026-09-06.
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("report")
+        .arg("--from")
+        .arg("2026-09-06 00:30")
+        .env("EBB_DATA_DIR", tmp.path())
+        .env("TZ", "<-04>4<-03>,M9.1.6/24,M4.1.6/24")
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains(
+            "Nonexistent time. The clock skips '2026-09-06 00:30' in the local time zone.",
+        ));
+
+    Ok(())
+}

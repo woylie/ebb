@@ -8,9 +8,7 @@ use crate::Commands::{
 };
 use crate::types::DayPortion;
 use anyhow::{Context, Result, anyhow};
-use chrono::{
-    DateTime, Datelike, Days, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeDelta, TimeZone,
-};
+use chrono::{DateTime, Datelike, Days, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeDelta};
 use clap::CommandFactory;
 use clap::{ArgGroup, Args, Parser, Subcommand, ValueEnum};
 use clap_complete::aot;
@@ -604,6 +602,20 @@ fn parse_range_bound(
     })
 }
 
+fn resolve_local(input: &str, local: NaiveDateTime) -> Result<DateTime<Local>> {
+    match formatting::local_instants(local)[..] {
+        [instant] => Ok(instant),
+        [] => Err(anyhow!(
+            "Nonexistent time. The clock skips '{input}' in the local time zone."
+        )),
+        [first, second, ..] => Err(anyhow!(
+            "Ambiguous time. Add the offset, e.g. {} or {}.",
+            first.to_rfc3339(),
+            second.to_rfc3339()
+        )),
+    }
+}
+
 fn parse_local_datetime(input: &str) -> Option<Result<DateTime<Local>>> {
     if let Ok(dt_fixed) = DateTime::parse_from_rfc3339(input) {
         return Some(Ok(dt_fixed.with_timezone(&Local)));
@@ -613,12 +625,7 @@ fn parse_local_datetime(input: &str) -> Option<Result<DateTime<Local>>> {
 
     for fmt in &dt_formats {
         if let Ok(naive_dt) = NaiveDateTime::parse_from_str(input, fmt) {
-            return Some(
-                Local
-                    .from_local_datetime(&naive_dt)
-                    .single()
-                    .ok_or_else(|| anyhow!("Ambiguous local datetime")),
-            );
+            return Some(resolve_local(input, naive_dt));
         }
     }
 
@@ -628,12 +635,7 @@ fn parse_local_datetime(input: &str) -> Option<Result<DateTime<Local>>> {
         if let Ok(naive_time) = NaiveTime::parse_from_str(input, fmt) {
             let today = Local::now().date_naive();
             let naive_dt = NaiveDateTime::new(today, naive_time);
-            return Some(
-                Local
-                    .from_local_datetime(&naive_dt)
-                    .single()
-                    .ok_or_else(|| anyhow!("Ambiguous local datetime")),
-            );
+            return Some(resolve_local(input, naive_dt));
         }
     }
 

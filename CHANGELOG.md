@@ -27,6 +27,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Explain why `--from`, `--to` and `--at` reject a time that occurs twice or that
+  the clock skips.
 - No longer fail on a day without a midnight in `balance` and `report`.
 - Start a day on which midnight occurs twice at the first midnight in `balance`
   and `report`.
