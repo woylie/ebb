@@ -31,12 +31,13 @@ pub fn local_midnight(date: NaiveDate) -> Result<DateTime<Local>> {
 
     (0..=24 * 60)
         .map(|minutes| midnight + TimeDelta::minutes(minutes))
-        .find_map(first_instant)
+        .find_map(|local| local_instants(local).into_iter().next())
         .ok_or_else(|| anyhow!("The start of {date} cannot be found in the local time zone."))
 }
 
-/// The earliest instant with the given local time, or `None` if the clock skips that time.
-fn first_instant(local: NaiveDateTime) -> Option<DateTime<Local>> {
+/// Returns every instant at which the local clock shows the given time, earliest first. The
+/// result is empty in a daylight saving gap and has two entries in an overlap.
+pub fn local_instants(local: NaiveDateTime) -> Vec<DateTime<Local>> {
     let candidates = match Local.from_local_datetime(&local) {
         LocalResult::Single(instant) => vec![instant],
         LocalResult::Ambiguous(first, second) => vec![first, second],
@@ -44,10 +45,13 @@ fn first_instant(local: NaiveDateTime) -> Option<DateTime<Local>> {
     };
 
     // chrono can return an instant at the edge of a clock change that shows another local time
-    candidates
+    let mut instants: Vec<DateTime<Local>> = candidates
         .into_iter()
         .filter(|instant| Local.from_utc_datetime(&instant.naive_utc()).naive_local() == local)
-        .min()
+        .collect();
+    // chrono orders the two instants of a repeated time by offset, not by time
+    instants.sort();
+    instants
 }
 
 pub fn format_duration(secs: i64) -> String {

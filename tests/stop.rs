@@ -423,3 +423,31 @@ fn stop_rejects_a_future_at_time() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn stop_rejects_a_time_that_occurs_twice() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let state_path = tmp.path().join("state.toml");
+    let toml_content = r#"
+        [current_frame]
+        start_time = 1748723006
+        project = "firstproject"
+    "#;
+    fs::write(&state_path, toml_content.trim())?;
+
+    // In America/Havana, the clock goes back from 01:00 to 00:00 on 2025-11-02.
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("stop")
+        .arg("--at")
+        .arg("2025-11-02 00:30")
+        .env("EBB_DATA_DIR", tmp.path())
+        .env("TZ", "CST5CDT,M3.2.0/0,M11.1.0/1")
+        .assert()
+        .failure()
+        .stderr(contains("Ambiguous time."));
+
+    let state: State = toml::from_str(&fs::read_to_string(&state_path)?)?;
+    assert_eq!(state.current_frame.unwrap().project, "firstproject");
+
+    Ok(())
+}
