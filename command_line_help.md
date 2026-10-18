@@ -152,7 +152,7 @@ Manage holidays
 ###### **Subcommands:**
 
 - `add` — Add a new holiday
-- `edit` — Edit the description of an existing holiday
+- `edit` — Change the description and portion of an existing holiday
 - `list` — List all holidays
 - `remove` — Remove a holiday
 
@@ -177,7 +177,7 @@ Add a new holiday
 
 ## `ebb holiday edit`
 
-Edit the description of an existing holiday
+Change the description and portion of an existing holiday
 
 **Usage:** `ebb holiday edit [OPTIONS] <DATE> <DESCRIPTION>`
 
@@ -188,7 +188,7 @@ Edit the description of an existing holiday
 
 ###### **Options:**
 
-- `-p`, `--portion <PORTION>` — Switch between full-day and half-day holiday
+- `-p`, `--portion <PORTION>` — New portion; omit to keep the current value
 
   Possible values: `full`, `half`
 
@@ -280,7 +280,7 @@ Manage sick days
 ###### **Subcommands:**
 
 - `add` — Add one or more sick days
-- `edit` — Edit the description of an existing sick day
+- `edit` — Change the description and portion of an existing sick day
 - `list` — List all sick days
 - `remove` — Remove one or more sick days
 
@@ -308,7 +308,7 @@ A range spans at most a year. Days without working hours, full-day holidays and 
 
 ## `ebb sickday edit`
 
-Edit the description of an existing sick day
+Change the description and portion of an existing sick day
 
 **Usage:** `ebb sickday edit [OPTIONS] <DATE> <DESCRIPTION>`
 
@@ -319,7 +319,7 @@ Edit the description of an existing sick day
 
 ###### **Options:**
 
-- `-p`, `--portion <PORTION>` — Switch between full-day and half-day holiday
+- `-p`, `--portion <PORTION>` — New portion; omit to keep the current value
 
   Possible values: `full`, `half`
 
@@ -430,7 +430,7 @@ Manage vacation days
 ###### **Subcommands:**
 
 - `add` — Add one or more vacation days
-- `edit` — Edit the description of an existing vacation day
+- `edit` — Change the description and portion of an existing vacation day
 - `list` — List all vacation days
 - `remove` — Remove one or more vacation days
 
@@ -458,7 +458,7 @@ A range spans at most a year. Days without working hours, full-day holidays and 
 
 ## `ebb vacation edit`
 
-Edit the description of an existing vacation day
+Change the description and portion of an existing vacation day
 
 **Usage:** `ebb vacation edit [OPTIONS] <DATE> <DESCRIPTION>`
 
@@ -469,7 +469,7 @@ Edit the description of an existing vacation day
 
 ###### **Options:**
 
-- `-p`, `--portion <PORTION>` — Switch between full-day and half-day holiday
+- `-p`, `--portion <PORTION>` — New portion; omit to keep the current value
 
   Possible values: `full`, `half`
 

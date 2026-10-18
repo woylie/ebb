@@ -339,13 +339,13 @@ pub struct DayOffRemoveArgs {
 pub enum HolidayCommands {
     /// Add a new holiday
     Add(HolidayAddArgs),
-    /// Edit the description of an existing holiday
+    /// Change the description and portion of an existing holiday.
     Edit {
         /// Date of the holiday to edit
         date: NaiveDate,
         /// New name for the holiday
         description: String,
-        /// Switch between full-day and half-day holiday
+        /// New portion; omit to keep the current value
         #[arg(short, long)]
         portion: Option<DayPortion>,
     },
@@ -381,13 +381,13 @@ pub enum SickDayCommands {
     /// A range spans at most a year. Days without working hours, full-day holidays and days that
     /// already have a sick day are skipped.
     Add(DayOffAddArgs),
-    /// Edit the description of an existing sick day
+    /// Change the description and portion of an existing sick day.
     Edit {
         /// Date of the sick day to edit
         date: NaiveDate,
         /// New description for the sick day
         description: String,
-        /// Switch between full-day and half-day holiday
+        /// New portion; omit to keep the current value
         #[arg(short, long)]
         portion: Option<DayPortion>,
     },
@@ -431,13 +431,13 @@ pub enum VacationCommands {
     /// A range spans at most a year. Days without working hours, full-day holidays and days that
     /// already have a vacation day are skipped.
     Add(DayOffAddArgs),
-    /// Edit the description of an existing vacation day
+    /// Change the description and portion of an existing vacation day.
     Edit {
         /// Date of the vacation day to edit
         date: NaiveDate,
         /// New name for the vacation day
         description: String,
-        /// Switch between full-day and half-day holiday
+        /// New portion; omit to keep the current value
         #[arg(short, long)]
         portion: Option<DayPortion>,
     },
