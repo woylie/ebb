@@ -51,7 +51,8 @@ nix build github:woylie/ebb/v0.2.1
 
 ### Shell Completions
 
-You can generate shell completions with:
+The Nix package includes completions for bash, fish and zsh. With any other
+installation, you can generate shell completions with:
 
 ```bash
 ebb generate-completions --shell <SHELL>
