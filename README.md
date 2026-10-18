@@ -49,7 +49,7 @@ Then move the `ebb` binary to a directory on your `PATH`.
 ### With Nix
 
 ```bash
-nix profile install github:woylie/ebb/v0.2.1
+nix profile install github:woylie/ebb/v0.3.0
 ```
 
 If the binary can't be found, ensure your Nix profile is in your `PATH`.
@@ -63,7 +63,7 @@ export PATH="$HOME/.nix-profile/bin:$PATH"
 With Cargo:
 
 ```bash
-git clone https://github.com/woylie/ebb.git --branch v0.2.1
+git clone https://github.com/woylie/ebb.git --branch v0.3.0
 cd ebb
 cargo build --release
 ./target/release/ebb
@@ -72,7 +72,7 @@ cargo build --release
 With Nix:
 
 ```bash
-nix build github:woylie/ebb/v0.2.1
+nix build github:woylie/ebb/v0.3.0
 ./result/bin/ebb
 ```
 
