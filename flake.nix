@@ -44,6 +44,14 @@
             inherit version src cargoLock;
             pname = "ebb";
             buildInputs = [ ];
+            nativeBuildInputs = [ pkgs.installShellFiles ];
+
+            postInstall = pkgs.lib.optionalString (pkgs.stdenv.buildPlatform.canExecute pkgs.stdenv.hostPlatform) ''
+              installShellCompletion --cmd ebb \
+                --bash <($out/bin/ebb generate-completions --shell bash) \
+                --fish <($out/bin/ebb generate-completions --shell fish) \
+                --zsh <($out/bin/ebb generate-completions --shell zsh)
+            '';
           };
         };
       in
