@@ -50,7 +50,7 @@ fn balance_prints_overview() -> Result<(), Box<dyn std::error::Error>> {
 
     let expected_output = r#"
 From: 2024-01-01 00:00:00 (Mon)
-To: 2024-12-13 00:00:00 (Fri)
+Until: 2024-12-13 00:00:00 (Fri)
 
 Expected:  1996h 22m 21s
 Actual:        1h 3m 40s
