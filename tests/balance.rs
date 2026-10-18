@@ -233,3 +233,89 @@ fn balance_rejects_a_to_before_from() -> Result<(), Box<dyn std::error::Error>> 
 
     Ok(())
 }
+
+// The time zone tests set TZ to a POSIX rule rather than a zone name, so they do not depend
+// on the installed time zone data.
+
+#[test]
+fn balance_starts_a_date_without_a_midnight_when_the_clock_jumps()
+-> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+
+    // In America/Santiago, the clock jumps from 00:00 to 01:00 on 2026-09-06.
+    let mut cmd = Command::cargo_bin("ebb")?;
+    let assert = cmd
+        .arg("balance")
+        .arg("--from")
+        .arg("2026-09-06")
+        .arg("--to")
+        .arg("2026-09-06")
+        .arg("--format")
+        .arg("json")
+        .env("EBB_DATA_DIR", tmp.path())
+        .env("TZ", "<-04>4<-03>,M9.1.6/24,M4.1.6/24")
+        .assert()
+        .success();
+
+    let output: serde_json::Value = serde_json::from_slice(&assert.get_output().stdout)?;
+    // 2026-09-06 01:00 and 2026-09-07 00:00 local time.
+    assert_eq!(output["timespan"]["from"], 1788667200);
+    assert_eq!(output["timespan"]["to"], 1788750000);
+
+    Ok(())
+}
+
+#[test]
+fn balance_starts_a_date_whose_midnight_occurs_twice_at_the_first()
+-> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+
+    // In America/Havana, the clock goes back from 01:00 to 00:00 on 2026-11-01.
+    let mut cmd = Command::cargo_bin("ebb")?;
+    let assert = cmd
+        .arg("balance")
+        .arg("--from")
+        .arg("2026-11-01")
+        .arg("--to")
+        .arg("2026-11-01")
+        .arg("--format")
+        .arg("json")
+        .env("EBB_DATA_DIR", tmp.path())
+        .env("TZ", "CST5CDT,M3.2.0/0,M11.1.0/1")
+        .assert()
+        .success();
+
+    let output: serde_json::Value = serde_json::from_slice(&assert.get_output().stdout)?;
+    // 2026-11-01 00:00 at -04:00.
+    assert_eq!(output["timespan"]["from"], 1793505600);
+
+    Ok(())
+}
+
+#[test]
+fn balance_starts_a_date_at_the_end_of_a_gap_that_spans_midnight()
+-> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+
+    // The clock jumps from 23:30 on 2026-09-06 to 00:30 on 2026-09-07. In America/Toronto, it
+    // jumped the same way on 1919-03-31.
+    let mut cmd = Command::cargo_bin("ebb")?;
+    let assert = cmd
+        .arg("balance")
+        .arg("--from")
+        .arg("2026-09-07")
+        .arg("--to")
+        .arg("2026-09-07")
+        .arg("--format")
+        .arg("json")
+        .env("EBB_DATA_DIR", tmp.path())
+        .env("TZ", "AAA3BBB,M9.1.0/23:30,M4.1.0/24")
+        .assert()
+        .success();
+
+    let output: serde_json::Value = serde_json::from_slice(&assert.get_output().stdout)?;
+    // 2026-09-07 00:30 at -02:00.
+    assert_eq!(output["timespan"]["from"], 1788748200);
+
+    Ok(())
+}

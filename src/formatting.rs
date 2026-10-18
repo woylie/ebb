@@ -3,7 +3,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 use anyhow::{Result, anyhow, bail};
-use chrono::{DateTime, Local, LocalResult, NaiveDate, NaiveTime, TimeZone};
+use chrono::{
+    DateTime, Local, LocalResult, NaiveDate, NaiveDateTime, NaiveTime, TimeDelta, TimeZone,
+};
 
 /// Loading a file checks every timestamp with this function.
 pub fn local_datetime(ts: i64) -> Result<DateTime<Local>> {
@@ -22,18 +24,30 @@ pub fn to_local(ts: i64) -> DateTime<Local> {
     local_datetime(ts).expect("timestamps are checked when their file is loaded")
 }
 
-/// Fails on a date on which the clock skips midnight.
-pub fn local_midnight(date: NaiveDate) -> Result<i64> {
-    date.and_time(NaiveTime::MIN)
-        .and_local_timezone(Local)
-        .earliest()
-        .map(|dt| dt.timestamp())
-        .ok_or_else(|| {
-            anyhow!(
-                "Midnight on {date} does not exist in the local time zone. \
-                 Please specify the start with --from instead."
-            )
-        })
+/// The first instant of a date in the local time zone. When midnight occurs twice, this is the
+/// first midnight. When the clock skips midnight, this is the moment the clock jumps.
+pub fn local_midnight(date: NaiveDate) -> Result<DateTime<Local>> {
+    let midnight = date.and_time(NaiveTime::MIN);
+
+    (0..=24 * 60)
+        .map(|minutes| midnight + TimeDelta::minutes(minutes))
+        .find_map(first_instant)
+        .ok_or_else(|| anyhow!("The start of {date} cannot be found in the local time zone."))
+}
+
+/// The earliest instant with the given local time, or `None` if the clock skips that time.
+fn first_instant(local: NaiveDateTime) -> Option<DateTime<Local>> {
+    let candidates = match Local.from_local_datetime(&local) {
+        LocalResult::Single(instant) => vec![instant],
+        LocalResult::Ambiguous(first, second) => vec![first, second],
+        LocalResult::None => vec![],
+    };
+
+    // chrono can return an instant at the edge of a clock change that shows another local time
+    candidates
+        .into_iter()
+        .filter(|instant| Local.from_utc_datetime(&instant.naive_utc()).naive_local() == local)
+        .min()
 }
 
 pub fn format_duration(secs: i64) -> String {

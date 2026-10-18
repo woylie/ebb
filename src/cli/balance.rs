@@ -114,25 +114,27 @@ pub fn run_balance(args: &BalanceArgs, config_path: &Path, format: &Format) -> a
 fn resolve_timespan(args: &BalanceArgs, now: i64, frames: &[Frame]) -> anyhow::Result<Timespan> {
     let today = to_local(now).date_naive();
     let end = if args.exclude_today {
-        local_midnight(today)?
+        local_midnight(today)?.timestamp()
     } else {
         now
     };
 
     if let Some(start) = args.period.start(today) {
         return Ok(Timespan {
-            from: local_midnight(start)?,
+            from: local_midnight(start)?.timestamp(),
             to: end,
         });
     }
 
     let from = match (args.from, frames.first()) {
-        (Some(date), _) => local_midnight(date)?,
-        (None, Some(frame)) => local_midnight(to_local(frame.start_time).date_naive())?.min(end),
+        (Some(date), _) => local_midnight(date)?.timestamp(),
+        (None, Some(frame)) => local_midnight(to_local(frame.start_time).date_naive())?
+            .timestamp()
+            .min(end),
         (None, None) => 0,
     };
     let to = match args.to {
-        Some(date) => local_midnight(date + Days::new(1))?,
+        Some(date) => local_midnight(date + Days::new(1))?.timestamp(),
         None => end,
     };
 

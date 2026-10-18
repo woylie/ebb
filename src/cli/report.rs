@@ -133,7 +133,7 @@ fn resolve_timespan(args: &ReportArgs, now: i64, frames: &[Frame]) -> anyhow::Re
 
     if let Some(start) = args.period.start(today) {
         return Ok(Timespan {
-            from: local_midnight(start)?,
+            from: local_midnight(start)?.timestamp(),
             to: now,
         });
     }
