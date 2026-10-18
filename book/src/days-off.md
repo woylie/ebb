@@ -16,8 +16,8 @@ and sick days for the current year or other years with `ebb daysoff` or
 Vacation days, holidays, and sick days can be full or half days. This is
 relative to the expected working hours configured for that day. For example,
 if Monday is configured with 8 expected working hours, a full day off will
-reduce the flex time balance by 8 hours, and a half day off will
-reduce it by 4 hours. If a day is configured with 6 expected working hours,
-a full day off reduces the balance by 6 hours, and a half day off reduces the
-balance by 3 hours. This logic may be improved in the future based on user
+reduce the expected working hours by 8 hours, and a half day off will
+reduce them by 4 hours. If a day is configured with 6 expected working hours,
+a full day off reduces them by 6 hours, and a half day off reduces them by 3
+hours. This logic may be improved in the future based on user
 feedback.
