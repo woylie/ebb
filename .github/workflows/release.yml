@@ -103,8 +103,12 @@ jobs:
       - name: Attach to a draft release
         run: |
           assets=(dist/*.tar.gz dist/SHA256SUMS)
-          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
-            gh release upload "$TAG" "${assets[@]}" --repo "$GITHUB_REPOSITORY"
+          if draft=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft 2> /dev/null); then
+            flags=()
+            if [[ $draft == true ]]; then
+              flags+=(--clobber)
+            fi
+            gh release upload "$TAG" "${assets[@]}" --repo "$GITHUB_REPOSITORY" "${flags[@]}"
           else
             flags=(--draft --verify-tag --title "$TAG" --notes "")
             if [[ $TAG == *-* ]]; then
