@@ -5,24 +5,24 @@
 name: Release
 
 on:
-  release:
-    types: [published]
+  push:
+    tags: ["v*"]
   workflow_dispatch:
     inputs:
       tag:
-        description: Release tag to attach binaries to, e.g. v0.3.0
+        description: Tag whose draft release gets the binaries, e.g. v0.3.0
         required: true
         type: string
 
 concurrency:
-  group: release-${{ github.event.release.tag_name || inputs.tag }}
+  group: release-${{ inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
 permissions: {}
 
 env:
   CARGO_TERM_COLOR: always
-  TAG: ${{ github.event.release.tag_name || inputs.tag }}
+  TAG: ${{ inputs.tag || github.ref_name }}
   # renovate: datasource=github-releases depName=rust-lang/rust
   RUST_VERSION: "1.99.0"
 
@@ -100,8 +100,14 @@ jobs:
         with:
           subject-path: dist/*.tar.gz
 
-      # without --clobber, so an asset that already exists is never replaced
-      - name: Upload to the release
-        run: gh release upload "$TAG" dist/*.tar.gz dist/SHA256SUMS --repo "$GITHUB_REPOSITORY"
+      - name: Attach to a draft release
+        run: |
+          assets=(dist/*.tar.gz dist/SHA256SUMS)
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release upload "$TAG" "${assets[@]}" --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$TAG" "${assets[@]}" --repo "$GITHUB_REPOSITORY" \
+              --draft --verify-tag --title "$TAG" --notes ""
+          fi
         env:
           GH_TOKEN: ${{ github.token }}
