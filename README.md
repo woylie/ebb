@@ -174,3 +174,13 @@ Generate `THIRD_PARTY` file:
 ```bash
 ./gen-third-party.sh
 ```
+
+Release a new version:
+
+1. Bump the version with `./bump.sh major`, `minor`, `patch`, `pre` or an
+   explicit version, e.g. `./bump.sh 0.3.0`.
+2. Merge the change, tag the merge commit and push the tag, e.g.
+   `git tag v0.3.0 && git push origin v0.3.0`.
+3. The tag starts the Release workflow, which creates a draft release for the
+   tag and attaches the binaries. Once it has finished, add the release notes to
+   the draft and publish it, which also publishes the book.

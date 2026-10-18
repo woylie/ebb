@@ -17,5 +17,5 @@ tmp="$(mktemp)"
 trap 'rm -f "$tmp"' EXIT
 
 cargo run generate-docs > "$tmp"
-mv "$tmp" book/src/command_line_help.md
+cat "$tmp" >book/src/command_line_help.md
 prettier book/src/command_line_help.md --write

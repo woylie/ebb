@@ -20,4 +20,4 @@ tmp="$(mktemp)"
 trap 'rm -f "$tmp"' EXIT
 
 cargo license --color never --avoid-dev-deps > "$tmp"
-mv "$tmp" THIRD_PARTY
+cat "$tmp" > THIRD_PARTY
