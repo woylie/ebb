@@ -110,7 +110,7 @@ fn report_without_frames() -> Result<(), Box<dyn std::error::Error>> {
     let expected_json = json!({
         "total_duration": 0,
         "timespan": {
-            "from": 0,
+            "from": 1750282303,
             "to": 1750282303
         },
         "projects": {}

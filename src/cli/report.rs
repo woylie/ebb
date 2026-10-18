@@ -138,17 +138,16 @@ fn resolve_timespan(args: &ReportArgs, now: i64, frames: &[Frame]) -> anyhow::Re
         });
     }
 
-    Ok(Timespan {
-        from: args
-            .from
-            .map(|dt| dt.with_timezone(&Utc).timestamp())
-            .or_else(|| frames.first().map(|f| f.start_time))
-            .unwrap_or(0),
-        to: args
-            .to
-            .map(|dt| dt.with_timezone(&Utc).timestamp())
-            .unwrap_or(now),
-    })
+    let to = args
+        .to
+        .map(|dt| dt.with_timezone(&Utc).timestamp())
+        .unwrap_or(now);
+    let from = match args.from {
+        Some(dt) => dt.with_timezone(&Utc).timestamp(),
+        None => frames.first().map_or(to, |frame| frame.start_time.min(to)),
+    };
+
+    Ok(Timespan { from, to })
 }
 
 fn total_duration_by_project(frames: &Frames) -> (HashMap<String, ProjectDuration>, i64) {
