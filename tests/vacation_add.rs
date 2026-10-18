@@ -359,23 +359,46 @@ fn add_vacation_succeeds_if_the_sick_days_cannot_be_read() -> Result<(), Box<dyn
 }
 
 #[test]
-fn add_vacation_does_not_warn_about_a_sick_day_without_working_hours()
--> Result<(), Box<dyn std::error::Error>> {
+fn add_vacation_rejects_a_day_without_working_hours() -> Result<(), Box<dyn std::error::Error>> {
     let tmp = tempdir()?;
-    fs::write(
-        tmp.path().join("sick_days.toml"),
-        "[2026-10-10]\ndescription = \"Sick\"\n",
-    )?;
 
-    // A Saturday, which daysoff counts for neither.
+    // A Saturday.
     let mut cmd = Command::cargo_bin("ebb")?;
     cmd.arg("vacation")
         .arg("add")
         .arg("2026-10-10")
         .env("EBB_DATA_DIR", tmp.path())
         .assert()
-        .success()
-        .stderr("");
+        .failure()
+        .stderr(contains(
+            "2026-10-10 has no working hours. Choose another date.",
+        ));
+
+    assert!(!tmp.path().join("vacations.toml").exists());
+
+    Ok(())
+}
+
+#[test]
+fn add_vacation_rejects_a_full_day_holiday() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    fs::write(
+        tmp.path().join("holidays.toml"),
+        "[2026-10-12]\ndescription = \"Holiday\"\n",
+    )?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("vacation")
+        .arg("add")
+        .arg("2026-10-12")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .failure()
+        .stderr(contains(
+            "2026-10-12 is a full-day holiday. Choose another date.",
+        ));
+
+    assert!(!tmp.path().join("vacations.toml").exists());
 
     Ok(())
 }
