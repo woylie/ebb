@@ -149,7 +149,7 @@ bump_cargo() {
 
 bump_changelog() {
   local new_version=$1 today link_line unreleased_link='' release_link=''
-  today=$(date -u +'%Y-%m-%d')
+  today=$(date +'%Y-%m-%d')
   link_line=$(grep -E '^\[[^]]+\]: .+/compare/.+\.\.\.HEAD$' "$changelog" | head -n 1 || true)
 
   if [[ -n $link_line && $link_line =~ ^(\[[^]]+\]):\ (.+/compare/)(.+)\.\.\.HEAD$ ]]; then
