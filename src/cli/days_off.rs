@@ -116,13 +116,28 @@ where
 {
     days_off
         .map(|(date, portion)| {
-            if working_hours.on(date.weekday()).is_zero() {
-                return 0.0;
-            }
-            let holiday_halves = holidays.get(date).map_or(0, |entry| entry.portion.halves());
-            f32::from(portion.halves().min(2 - holiday_halves)) / 2.0
+            f32::from(
+                portion
+                    .halves()
+                    .min(halves_to_work(*date, working_hours, holidays)),
+            ) / 2.0
         })
         .sum()
+}
+
+/// The halves of the date that a vacation or sick day can take: none without working hours,
+/// and none of the part a holiday covers.
+pub(crate) fn halves_to_work(
+    date: NaiveDate,
+    working_hours: &WorkingHours,
+    holidays: &Holidays,
+) -> u8 {
+    if working_hours.on(date.weekday()).is_zero() {
+        return 0;
+    }
+    2 - holidays
+        .get(&date)
+        .map_or(0, |entry| entry.portion.halves())
 }
 
 fn normalize_zero(x: f32) -> f32 {

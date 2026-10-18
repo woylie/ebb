@@ -78,3 +78,42 @@ fn add_sick_day_fails_if_date_exists() -> Result<(), Box<dyn std::error::Error>>
 
     Ok(())
 }
+
+#[test]
+fn remove_sick_day_range_prints_json() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let file = tmp.path().join("sick_days.toml");
+    fs::write(
+        &file,
+        "[2026-10-06]\ndescription = \"Flu\"\n\n[2026-10-07]\ndescription = \"Flu\"\nportion = \"half\"\n",
+    )?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    let assert = cmd
+        .arg("sickday")
+        .arg("remove")
+        .arg("2026-10-05")
+        .arg("2026-10-09")
+        .arg("--format")
+        .arg("json")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .success();
+
+    let json: serde_json::Value = serde_json::from_slice(&assert.get_output().stdout)?;
+    assert_eq!(
+        json,
+        serde_json::json!({
+            "sick_days": [
+                {"date": "2026-10-06", "description": "Flu"},
+                {"date": "2026-10-07", "description": "Flu", "portion": "half"}
+            ]
+        })
+    );
+
+    let contents = fs::read_to_string(&file)?;
+    let parsed: BTreeMap<String, SickDayEntry> = toml::from_str(&contents)?;
+    assert!(parsed.is_empty());
+
+    Ok(())
+}

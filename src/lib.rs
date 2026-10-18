@@ -293,19 +293,54 @@ pub enum ConfigCommands {
     },
 }
 
+#[derive(Debug, Args)]
+pub struct HolidayAddArgs {
+    /// Date of the holiday (yyyy-mm-dd, e.g. 2025-08-11)
+    date: NaiveDate,
+    /// Name of the holiday (e.g. Mountain Day); defaults to "Holiday"
+    description: Option<String>,
+    /// Switch between full-day and half-day holiday
+    #[arg(short, long, default_value = "full")]
+    portion: DayPortion,
+}
+
+/// The arguments of `vacation add` and `sickday add`.
+#[derive(Debug, Args)]
+pub struct DayOffAddArgs {
+    /// Start date (yyyy-mm-dd)
+    #[arg(value_name = "START_DATE")]
+    date: NaiveDate,
+    /// End date, inclusive (yyyy-mm-dd); defaults to the start date for a single day
+    #[arg(value_name = "END_DATE")]
+    last_day_or_description: Option<String>,
+    /// Description of the day off
+    description: Option<String>,
+    /// Switch between full-day and half-day
+    #[arg(short, long, default_value = "full")]
+    portion: DayPortion,
+}
+
+#[derive(Debug, Args)]
+pub struct HolidayRemoveArgs {
+    /// Date of the holiday to remove
+    date: NaiveDate,
+}
+
+/// The arguments of `vacation remove` and `sickday remove`.
+#[derive(Debug, Args)]
+pub struct DayOffRemoveArgs {
+    /// Start date (yyyy-mm-dd)
+    #[arg(value_name = "START_DATE")]
+    date: NaiveDate,
+    /// End date, inclusive (yyyy-mm-dd); defaults to the start date for a single day
+    #[arg(value_name = "END_DATE")]
+    end_date: Option<NaiveDate>,
+}
+
 #[derive(Debug, Subcommand)]
 pub enum HolidayCommands {
     /// Add a new holiday
-    Add {
-        /// Date of the holiday (yyyy-mm-dd, e.g. 2025-08-11)
-        date: NaiveDate,
-        /// Name of the holiday (e.g. Mountain Day)
-        #[arg(default_value = "Holiday")]
-        description: String,
-        /// Switch between full-day and half-day holiday
-        #[arg(short, long, default_value = "full")]
-        portion: Option<DayPortion>,
-    },
+    Add(HolidayAddArgs),
     /// Edit the description of an existing holiday
     Edit {
         /// Date of the holiday to edit
@@ -323,11 +358,7 @@ pub enum HolidayCommands {
         year: Option<i32>,
     },
     /// Remove a holiday
-    Remove {
-        /// Date of the holiday to remove
-        #[arg(required = true)]
-        date: NaiveDate,
-    },
+    Remove(HolidayRemoveArgs),
 }
 
 #[derive(Debug, Subcommand)]
@@ -347,17 +378,11 @@ pub enum ProjectCommands {
 
 #[derive(Debug, Subcommand)]
 pub enum SickDayCommands {
-    /// Add a new sick day
-    Add {
-        /// Day of the sick day
-        date: NaiveDate,
-        /// Description for the sick day
-        #[arg(default_value = "Sick")]
-        description: String,
-        /// Switch between full-day and half-day holiday
-        #[arg(short, long, default_value = "full")]
-        portion: Option<DayPortion>,
-    },
+    /// Add one or more sick days.
+    ///
+    /// A range spans at most a year. Days without working hours, full-day holidays and days that
+    /// already have a sick day are skipped.
+    Add(DayOffAddArgs),
     /// Edit the description of an existing sick day
     Edit {
         /// Date of the sick day to edit
@@ -374,12 +399,10 @@ pub enum SickDayCommands {
         #[arg(short, long)]
         year: Option<i32>,
     },
-    /// Remove a sick day
-    Remove {
-        /// Date of the sick day to remove
-        #[arg(required = true)]
-        date: NaiveDate,
-    },
+    /// Remove one or more sick days.
+    ///
+    /// A range spans at most a year.
+    Remove(DayOffRemoveArgs),
 }
 
 #[derive(Debug, Subcommand)]
@@ -405,17 +428,11 @@ pub enum TagCommands {
 
 #[derive(Debug, Subcommand)]
 pub enum VacationCommands {
-    /// Add a new vacation day
-    Add {
-        /// Date of the vacation day
-        date: NaiveDate,
-        /// Name of the vacation day
-        #[arg(default_value = "Vacation")]
-        description: String,
-        /// Switch between full-day and half-day holiday
-        #[arg(short, long, default_value = "full")]
-        portion: Option<DayPortion>,
-    },
+    /// Add one or more vacation days.
+    ///
+    /// A range spans at most a year. Days without working hours, full-day holidays and days that
+    /// already have a vacation day are skipped.
+    Add(DayOffAddArgs),
     /// Edit the description of an existing vacation day
     Edit {
         /// Date of the vacation day to edit
@@ -432,12 +449,10 @@ pub enum VacationCommands {
         #[arg(short, long)]
         year: Option<i32>,
     },
-    /// Remove a vacation day
-    Remove {
-        /// Date of the vacation day to remove
-        #[arg(required = true)]
-        date: NaiveDate,
-    },
+    /// Remove one or more vacation days.
+    ///
+    /// A range spans at most a year.
+    Remove(DayOffRemoveArgs),
 }
 
 pub fn run(cli: &Cli) -> Result<()> {
@@ -458,7 +473,7 @@ pub fn run(cli: &Cli) -> Result<()> {
         DaysOff(args) => cli::days_off::run_daysoff(args, &config_path()?, format),
         Holiday(args) => cli::calendar::run(
             &cli::calendar::HOLIDAY,
-            (&args.command).into(),
+            (&args.command).try_into()?,
             &config_path()?,
             format,
         ),
@@ -467,7 +482,7 @@ pub fn run(cli: &Cli) -> Result<()> {
         Restart(args) => cli::tracking::run_restart(args, &config_path()?, format),
         SickDay(args) => cli::calendar::run(
             &cli::calendar::SICK_DAY,
-            (&args.command).into(),
+            (&args.command).try_into()?,
             &config_path()?,
             format,
         ),
@@ -477,7 +492,7 @@ pub fn run(cli: &Cli) -> Result<()> {
         Tag(args) => cli::tag::run_tag(args, &config_path()?, format),
         Vacation(args) => cli::calendar::run(
             &cli::calendar::VACATION,
-            (&args.command).into(),
+            (&args.command).try_into()?,
             &config_path()?,
             format,
         ),
