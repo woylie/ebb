@@ -307,12 +307,12 @@ pub(crate) fn run(
             description,
             portion,
         } => {
-            if !calendar.contains_key(&date) {
+            let Some(existing) = calendar.get(&date) else {
                 anyhow::bail!("No {} found on {date}.", kind.noun);
-            }
+            };
             let entry = DayOffEntry {
                 description,
-                portion: portion.unwrap_or(DayPortion::Full),
+                portion: portion.unwrap_or_else(|| existing.portion.clone()),
             };
             let day_off = write_entry(kind, &mut calendar, date, entry, config_path)?;
             print_entry(kind, Action::Updated, day_off, format)

@@ -81,3 +81,57 @@ fn edit_vacation_fails_if_not_exists() -> Result<(), Box<dyn std::error::Error>>
 
     Ok(())
 }
+
+#[test]
+fn edit_vacation_keeps_the_portion_without_portion_option() -> Result<(), Box<dyn std::error::Error>>
+{
+    let tmp = tempdir()?;
+    let file = tmp.path().join("vacations.toml");
+    fs::write(
+        &file,
+        "[2026-10-06]\ndescription = \"Trip\"\nportion = \"half\"\n",
+    )?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("vacation")
+        .arg("edit")
+        .arg("2026-10-06")
+        .arg("Short trip")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .success();
+
+    let contents = fs::read_to_string(&file)?;
+    let parsed: BTreeMap<String, VacationEntry> = toml::from_str(&contents)?;
+    assert_eq!(parsed["2026-10-06"].description, "Short trip");
+    assert_eq!(parsed["2026-10-06"].portion, DayPortion::Half);
+
+    Ok(())
+}
+
+#[test]
+fn edit_vacation_sets_the_portion_with_portion_option() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp = tempdir()?;
+    let file = tmp.path().join("vacations.toml");
+    fs::write(
+        &file,
+        "[2026-10-06]\ndescription = \"Trip\"\nportion = \"half\"\n",
+    )?;
+
+    let mut cmd = Command::cargo_bin("ebb")?;
+    cmd.arg("vacation")
+        .arg("edit")
+        .arg("2026-10-06")
+        .arg("Trip")
+        .arg("--portion")
+        .arg("full")
+        .env("EBB_DATA_DIR", tmp.path())
+        .assert()
+        .success();
+
+    let contents = fs::read_to_string(&file)?;
+    let parsed: BTreeMap<String, VacationEntry> = toml::from_str(&contents)?;
+    assert_eq!(parsed["2026-10-06"].portion, DayPortion::Full);
+
+    Ok(())
+}
